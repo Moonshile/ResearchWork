@@ -1,0 +1,872 @@
+/*
+ * Godson-T
+ * Kaiqiang Duan, 2014-12-10
+ */
+
+#if (is_defined "findInvsFromParaRulesByInvs");
+    let createIsaModel = ();
+#else;
+    let createIsaModel = load "creatIsaModel0125.fl";
+#endif;
+createIsaModel;
+
+let dist = 1000;
+
+//************************************* constants ****************************************
+
+// Cache State
+let INVALID = 0 + dist;
+let DIRTY = 1 + dist;
+let VALID = 2 + dist;
+
+// Boolean
+let True = 3 + dist;
+let False = 4 + dist;
+
+// Replace Stage
+let NON = 5 + dist;
+let REQUIRE = 6 + dist;
+let REQREPALL = 7 + dist;
+let RANDOM = 8 + dist;
+let RANDINV = 9 + dist;
+let DESIGNATED = 10 + dist;
+let TOREP = 11 + dist;
+let DONE = 12 + dist;
+let REPALLDONE = 13 + dist;
+
+// Current Rule which require Replacement
+let None = 14 + dist;
+let NLNCR = 15 + dist;
+let NLNCW = 16 + dist;
+let LNCFR = 17 + dist;
+let LCFR = 18 + dist;
+let LNCNFR = 19 + dist;
+
+//**************************************** types ******************************************
+
+// NodeType stands for different cpu nodes
+let NodeType = [1, 2];
+// DataType is the range of data
+let DataType = [1, 2];
+// LockType is id of different lock
+let LockType = [1, 2];
+// CacheType denotes different cache in every node
+// e.g., CacheType = [1, 2] means there are 2 caches in each node
+let CacheType = [1, 2];
+// AddrType stands for address range in the memory
+let AddrType = [1, 2];
+
+let BooleanType = [True, False];
+
+let CacheState = [INVALID, DIRTY, VALID];
+
+let ReplaceStage = [NON, REQUIRE, REQREPALL, RANDOM, RANDINV, DESIGNATED, TOREP, DONE, REPALLDONE];
+
+let ReplaceRule = [None, NLNCR, NLNCW, LNCFR, LCFR, LNCNFR];
+
+//************************************** type table ***************************************
+
+let typeTable = 
+    let tab0 = tbl_create 10 in
+    // memory
+    let tab0 = tbl_insert tab0 "memory.data" DataType in
+    // lock
+    let tab0 = tbl_insert tab0 "lock.owner" NodeType in
+    let tab0 = tbl_insert tab0 "lock.beUsed" BooleanType in
+    // inProtection: 2-dimensional array
+    let tab0 = tbl_insert tab0 "lock.inProtection" BooleanType in
+    // node
+    /* 
+     * Each node has several caches, and each cache has its states.
+     * There's more than one node there, so both nodes and caches in it are parameterized.
+     * But invFinder only support 1 parameter, so caches in nodes are designed to be a
+     * 2-dimensional array, and can be accessed by index (i - 1)*NodeNum + j, with i and j are
+     * parameter of nodes and caches respectively, and NodeNum is length of NodeType, in fact.
+     */
+    // caches in node, 2-dimensional with nodeN ¡Á cacheN
+    let tab0 = tbl_insert tab0 "node.cache.state" CacheState in
+    let tab0 = tbl_insert tab0 "node.cache.addr" AddrType in
+    let tab0 = tbl_insert tab0 "node.cache.data" DataType in
+    // other structures in node
+    let tab0 = tbl_insert tab0 "node.hasLock" BooleanType in
+    // also is 2-dimensional, with nodeN ¡Á addrN
+    let tab0 = tbl_insert tab0 "node.firstRead" BooleanType in
+    // current state before replacement
+    let tab0 = tbl_insert tab0 "curNode" NodeType in
+    let tab0 = tbl_insert tab0 "curCache" CacheType in
+    let tab0 = tbl_insert tab0 "curMemory" AddrType in
+    let tab0 = tbl_insert tab0 "curData" DataType in
+    let tab0 = tbl_insert tab0 "curLock" LockType in
+    // replace stage
+    let tab0 = tbl_insert tab0 "replace" ReplaceStage in
+    // rule which require replacement
+    let tab0 = tbl_insert tab0 "repRule" ReplaceRule in
+    tab0;
+// typeTable
+
+//************************************** is_array table ***************************************
+
+// aritTable denotes whether the var is an array or not
+let aritTable = 
+    let tab0 = tbl_create 10 in
+    // memory
+    let tab0 = tbl_insert tab0 "memory.data" 1 in
+    // lock
+    let tab0 = tbl_insert tab0 "lock.owner" 1 in
+    let tab0 = tbl_insert tab0 "lock.beUsed" 1 in
+    // inProtection: 2-dimensional array
+    let tab0 = tbl_insert tab0 "lock.inProtection" 1 in
+    // node
+    // caches in node, 2-dimensional with nodeN ¡Á cacheN
+    let tab0 = tbl_insert tab0 "node.cache.state" 1 in
+    let tab0 = tbl_insert tab0 "node.cache.addr" 1 in
+    let tab0 = tbl_insert tab0 "node.cache.data" 1 in
+    // other structures in node
+    let tab0 = tbl_insert tab0 "node.hasLock" 1 in
+    // also is 2-dimensional, with nodeN ¡Á addrN
+    let tab0 = tbl_insert tab0 "node.firstRead" 1 in
+    // current state before replacement
+    let tab0 = tbl_insert tab0 "curNode" 0 in
+    let tab0 = tbl_insert tab0 "curCache" 0 in
+    let tab0 = tbl_insert tab0 "curMemory" 0 in
+    let tab0 = tbl_insert tab0 "curData" 0 in
+    let tab0 = tbl_insert tab0 "curLock" 0 in
+    // replace stage
+    let tab0 = tbl_insert tab0 "replace" 0 in
+    // rule which require replacement
+    let tab0 = tbl_insert tab0 "repRule" 0 in
+    tab0;
+// aritTable
+
+//************************************** enum value table ***************************************
+
+let enumValTab = 
+    let tab0 = tbl_create 20 in
+    let tab0 = tbl_insert tab0 (INVALID) "INVALID" in
+    let tab0 = tbl_insert tab0 (DIRTY) "DIRTY" in
+    let tab0 = tbl_insert tab0 (VALID) "VALID" in
+    let tab0 = tbl_insert tab0 (True) "true" in
+    let tab0 = tbl_insert tab0 (False) "false" in
+    let tab0 = tbl_insert tab0 (NON) "NON" in
+    let tab0 = tbl_insert tab0 (REQUIRE) "REQUIRE" in
+    let tab0 = tbl_insert tab0 (REQREPALL) "REQREPALL" in
+    let tab0 = tbl_insert tab0 (RANDOM) "RANDOM" in
+    let tab0 = tbl_insert tab0 (RANDINV) "RANDINV" in
+    let tab0 = tbl_insert tab0 (DESIGNATED) "DESIGNATED" in
+    let tab0 = tbl_insert tab0 (TOREP) "TOREP" in
+    let tab0 = tbl_insert tab0 (DONE) "DONE" in
+    let tab0 = tbl_insert tab0 (REPALLDONE) "REPALLDONE" in
+    let tab0 = tbl_insert tab0 (None) "None" in
+    let tab0 = tbl_insert tab0 (NLNCR) "NLNCR" in
+    let tab0 = tbl_insert tab0 (NLNCW) "NLNCW" in
+    let tab0 = tbl_insert tab0 (LNCFR) "LNCFR" in
+    let tab0 = tbl_insert tab0 (LCFR) "LCFR" in
+    let tab0 = tbl_insert tab0 (LNCNFR) "LNCNFR" in
+    tab0;
+// enumValTab
+
+//************************************** type name table ***************************************
+
+let typeNameTab = 
+    let tab0 = tbl_create 6 in
+    let tab0 = tbl_insert tab0 NodeType "Int" in
+    let tab0 = tbl_insert tab0 DataType "Int" in
+    let tab0 = tbl_insert tab0 LockType "Int" in
+    let tab0 = tbl_insert tab0 CacheType "Int" in
+    let tab0 = tbl_insert tab0 AddrType "Int" in
+    let tab0 = tbl_insert tab0 BooleanType "Bool" in
+    let tab0 = tbl_insert tab0 CacheState "CacheState" in
+    let tab0 = tbl_insert tab0 ReplaceStage "ReplaceStage" in
+    let tab0 = tbl_insert tab0 ReplaceRule "ReplaceRule" in
+    tab0;
+// typeNameTab
+
+//************************************** functions ***************************************
+
+// number of nodes
+let NodeNum = length NodeType;
+// number of memories
+let MemoryNum = length AddrType;
+// number of caches
+let CacheNum = length CacheType;
+// number of data
+let DataNum = length DataType;
+// number of caches
+let LockNum = length LockType;
+
+// get parameterized 2 dimensional variables in cache j of node i
+let para2d name i j = Param name ((i - 1)*NodeNum + j);
+
+//************************************** rules ***************************************
+
+//************************************** replacement ***************************************
+
+let RI i dummy1 dummy2 dummy3 dummy4 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const REQUIRE)) in
+    let node = eqn (left->(Const i)) (right->(Var (Global "curNode"))) in
+    let eInv = 
+        let notInv j = neg (eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID))) in
+        neg (forallForm CacheNum notInv)
+    in
+    let form = andList [state, node, eInv] in
+    let assgn = assign (Global "replace") (Const RANDINV) in
+    guard form assgn;
+// RI
+
+let CRIC i j dummy1 dummy2 dummy3 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const RANDINV)) in
+    let node = eqn (left->(Const i)) (right->(Var (Global "curNode"))) in
+    let inv = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID)) in
+    let form = andList [state, node, inv] in
+    let assgn1 = assign (Global "curCache") (Const j) in
+    let assgn2 = assign (Global "replace") (Const DONE) in
+    guard form (parallel [assgn1, assgn2]);
+// CRIC
+
+let RNI i dummy1 dummy2 dummy3 dummy4 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const REQUIRE)) in
+    let node = eqn (left->(Const i)) (right->(Var (Global "curNode"))) in
+    let noInv = 
+        let notInv j = neg (eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID))) in
+        forallForm CacheNum notInv
+    in
+    let form = andList [state, node, noInv] in
+    let assgn = assign (Global "replace") (Const RANDOM) in
+    guard form assgn;
+// RNI
+
+let CRC i dummy1 dummy2 dummy3 dummy4 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const RANDOM)) in
+    let assgn1 = assign (Global "curCache") (Const i) in
+    let assgn2 = assign (Global "replace") (Const DESIGNATED)in
+    guard state (parallel [assgn1, assgn2]);
+// CRC
+
+let DCND i j dummy1 dummy2 dummy3 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const DESIGNATED)) in
+    let node = eqn (left->(Const i)) (right->(Var (Global "curNode"))) in
+    let cache = eqn (left->(Const j)) (right->(Var (Global "curCache"))) in
+    let notDirty = neg (eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const DIRTY))) in
+    let form = andList [state, node, cache, notDirty] in
+    let assgn = assign (Global "replace") (Const DONE) in
+    guard form assgn;
+// DCND
+
+let DCD i j dummy1 dummy2 dummy3 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const DESIGNATED)) in
+    let node = eqn (left->(Const i)) (right->(Var (Global "curNode"))) in
+    let cache = eqn (left->(Const j)) (right->(Var (Global "curCache"))) in
+    let dirty = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const DIRTY)) in
+    let form = andList [state, node, cache, dirty] in
+    let assgn = assign (Global "replace") (Const TOREP) in
+    guard form assgn;
+// DCD
+
+let Replace i j a dummy1 dummy2 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const TOREP)) in
+    let node = eqn (left->(Const i)) (right->(Var (Global "curNode"))) in
+    let cache = eqn (left->(Const j)) (right->(Var (Global "curCache"))) in
+    let addr = eqn (left->(Const a)) (right->(Var (para2d "node.cache.addr" i j))) in
+    let form = andList [state, node, cache, addr] in
+    let assgn1 = assign (Param "memory.data" a) (Var (para2d "node.cache.data" i j)) in
+    let assgn2 = assign (para2d "node.cache.state" i j) (Const INVALID) in
+    let assgn3 = assign (Global "replace") (Const DONE) in
+    guard form (parallel [assgn1, assgn2, assgn3]);
+// Replace
+
+let RepAll i j a dummy1 dummy2 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const REQREPALL)) in
+    let dirty = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const DIRTY)) in
+    let addr = eqn (left->(Const a)) (right->(Var (para2d "node.cache.addr" i j))) in
+    let form = andList [state, dirty, addr] in
+    let assgn1 = assign (Param "memory.data" a) (Var (para2d "node.cache.data" i j)) in
+    let assgn2 = assign (para2d "node.cache.state" i j) (Const INVALID) in
+    guard form (parallel [assgn1, assgn2]);
+// RepAll
+
+let RepAllDone dummy1 dummy2 dummy3 dummy4 dummy5 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const REQREPALL)) in
+    let noDirty =
+        let nNotDirty i =
+            let cNotDirty j = neg (eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const DIRTY))) in
+            forallForm CacheNum cNotDirty
+        in
+        forallForm NodeNum nNotDirty
+    in
+    let form = andList [state, noDirty] in
+    let assgn = assign (Global "replace") (Const REPALLDONE) in
+    guard form assgn;
+//RepAllDone
+
+//************************************** No Lock Read ***************************************
+
+let NLNCRR i a dummy1 dummy2 dummy3 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let noLock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const False)) in
+    let notCached =
+        let nc j =
+            let inv = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID)) in
+            let notA = neg (eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a))) in
+            orList [inv, notA]
+        in
+        forallForm CacheNum nc
+    in
+    let form = andList [state, noLock, notCached] in
+    let assgn1 = assign (Global "curNode") (Const i) in
+    let assgn2 = assign (Global "curMemory") (Const a) in
+    let assgn3 = assign (Global "replace") (Const REQUIRE) in
+    let assgn4 = assign (Global "repRule") (Const NLNCR) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4]);
+// NLNCRR
+
+let NLNCRD i j a dummy1 dummy2 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const DONE)) in
+    let rule = eqn (left->(Var (Global "repRule"))) (right->(Const NLNCR)) in
+    let node = eqn (left->(Var (Global "curNode"))) (right->(Const i)) in
+    let cache = eqn (left->(Var (Global "curCache"))) (right->(Const j)) in
+    let memory = eqn (left->(Var (Global "curMemory"))) (right->(Const a)) in
+    let form = andList [state, rule, node, cache, memory] in
+    let assgn1 = assign (para2d "node.cache.addr" i j) (Const a) in
+    let assgn2 = assign (para2d "node.cache.data" i j) (Var (Param "memory.data" a)) in
+    let assgn3 = assign (para2d "node.cache.state" i j) (Const VALID) in
+    let assgn4 = assign (Global "replace") (Const NON) in
+    let assgn5 = assign (Global "repRule") (Const None) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);
+// NLNCRD
+
+//************************************** No Lock Write ***************************************
+
+let NLCW i j a d dummy1 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let noLock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const False)) in
+    let notInv = neg (eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID))) in
+    let addr = eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a)) in
+    let notProtected =
+        let anp l = eqn (left->(Var (para2d "lock.inProtection" l a))) (right->(Const False)) in
+        forallForm LockNum anp
+    in
+    let form = andList [state, noLock, notInv, addr, notProtected] in
+    let assgn1 = assign (para2d "node.cache.data" i j) (Const d) in
+    let assgn2 = assign (para2d "node.cache.state" i j) (Const DIRTY) in
+    guard form (parallel [assgn1, assgn2]);
+// NLCW
+
+let NLNCWR i a d dummy1 dummy2 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let noLock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const False)) in
+    let notCached =
+        let nc j =
+            let inv = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID)) in
+            let notA = neg (eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a))) in
+            orList [inv, notA]
+        in
+        forallForm CacheNum nc
+    in
+    let notProtected =
+        let anp l = eqn (left->(Var (para2d "lock.inProtection" l a))) (right->(Const False)) in
+        forallForm LockNum anp
+    in
+    let form = andList [state, noLock, notCached, notProtected] in
+    let assgn1 = assign (Global "curNode") (Const i) in
+    let assgn2 = assign (Global "curMemory") (Const a) in
+    let assgn3 = assign (Global "curData") (Const d) in
+    let assgn4 = assign (Global "replace") (Const REQUIRE) in
+    let assgn5 = assign (Global "repRule") (Const NLNCW) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);
+// NLNCWR
+
+let NLNCWD i j a d dummy1 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const DONE)) in
+    let rule = eqn (left->(Var (Global "repRule"))) (right->(Const NLNCW)) in
+    let node = eqn (left->(Var (Global "curNode"))) (right->(Const i)) in
+    let cache = eqn (left->(Var (Global "curCache"))) (right->(Const j)) in
+    let memory = eqn (left->(Var (Global "curMemory"))) (right->(Const a)) in
+    let data = eqn (left->(Var (Global "curData"))) (right->(Const d)) in
+    let form = andList [state, rule, node, cache, memory, data] in
+    let assgn1 = assign (para2d "node.cache.addr" i j) (Const a) in
+    let assgn2 = assign (para2d "node.cache.data" i j) (Const d) in
+    let assgn3 = assign (para2d "node.cache.state" i j) (Const DIRTY) in
+    let assgn4 = assign (Global "replace") (Const NON) in
+    let assgn5 = assign (Global "repRule") (Const None) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);
+// NLNCWD
+
+//************************************** Locked Read ***************************************
+
+let LCFRRA i j a l dummy1 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+    let beUsed = eqn (left->(Var (Param "lock.beUsed" l))) (right->(Const True)) in
+    let owner = eqn (left->(Var (Param "lock.owner" l))) (right->(Const i)) in
+    let firstRead = eqn (left->(Var (para2d "node.firstRead" i a))) (right->(Const True)) in
+    let notInv = neg (eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID))) in
+    let addr = eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a)) in
+    let form = andList [state, lock, beUsed, owner, firstRead, notInv, addr] in
+    let assgn1 = assign (Global "curNode") (Const i) in
+    let assgn2 = assign (Global "curCache") (Const j) in
+    let assgn3 = assign (Global "curMemory") (Const a) in
+    let assgn4 = assign (Global "curLock") (Const l) in
+    let assgn5 = assign (Global "replace") (Const REQREPALL) in
+    let assgn6 = assign (Global "repRule") (Const LCFR) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5, assgn6]);
+// LCFRRA
+
+let LCFRAD dummy1 dummy2 dummy3 dummy4 dummy5 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const REPALLDONE)) in
+    let rule = eqn (left->(Var (Global "repRule"))) (right->(Const LCFR)) in
+    let form  = andList [state, rule] in
+    let assgn = assign (Global "replace") (Const DESIGNATED) in
+    guard form assgn;
+// LCFRAD
+
+let LCFRD i j a l dummy1 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const DONE)) in
+    let rule = eqn (left->(Var (Global "repRule"))) (right->(Const LCFR)) in
+    let node = eqn (left->(Var (Global "curNode"))) (right->(Const i)) in
+    let cache = eqn (left->(Var (Global "curCache"))) (right->(Const j)) in
+    let memory = eqn (left->(Var (Global "curMemory"))) (right->(Const a)) in
+    let lock = eqn (left->(Var (Global "curLock"))) (right->(Const l)) in
+    let form = andList [state, rule, node, cache, memory, lock] in
+    let assgn1 = assign (para2d "node.cache.data" i j) (Var (Param "memory.data" a)) in
+    let assgn2 = assign (para2d "node.cache.state" i j) (Const VALID) in
+    let assgn3 = assign (para2d "node.firstRead" i a) (Const False) in
+    let assgn4 = assign (para2d "lock.inProtection" l a) (Const True) in
+    let assgn5 = assign (Global "replace") (Const NON) in
+    let assgn6 = assign (Global "repRule") (Const None) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5, assgn6]);
+// LCFRD
+
+let LNCFRRA i a l dummy1 dummy2 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+    let beUsed = eqn (left->(Var (Param "lock.beUsed" l))) (right->(Const True)) in
+    let owner = eqn (left->(Var (Param "lock.owner" l))) (right->(Const i)) in
+    let firstRead = eqn (left->(Var (para2d "node.firstRead" i a))) (right->(Const True)) in
+    let notCached =
+        let nc j =
+            let inv = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID)) in
+            let notA = neg (eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a))) in
+            orList [inv, notA]
+        in
+        forallForm CacheNum nc
+    in
+    let form = andList [state, lock, beUsed, owner, firstRead, notCached] in
+    let assgn1 = assign (Global "curNode") (Const i) in
+    let assgn2 = assign (Global "curMemory") (Const a) in
+    let assgn3 = assign (Global "curLock") (Const l) in
+    let assgn4 = assign (Global "replace") (Const REQREPALL) in
+    let assgn5= assign (Global "repRule") (Const LNCFR) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);
+// LNCFRRA
+
+let LNCFRAD dummy1 dummy2 dummy3 dummy4 dummy5 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const REPALLDONE)) in
+    let rule = eqn (left->(Var (Global "repRule"))) (right->(Const LNCFR)) in
+    let form  = andList [state, rule] in
+    let assgn = assign (Global "replace") (Const REQUIRE) in
+    guard form assgn;
+// LNCFRAD
+
+let LNCFRD i j a l dummy1 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const DONE)) in
+    let rule = eqn (left->(Var (Global "repRule"))) (right->(Const LNCFR)) in
+    let node = eqn (left->(Var (Global "curNode"))) (right->(Const i)) in
+    let cache = eqn (left->(Var (Global "curCache"))) (right->(Const j)) in
+    let memory = eqn (left->(Var (Global "curMemory"))) (right->(Const a)) in
+    let lock = eqn (left->(Var (Global "curLock"))) (right->(Const l)) in
+    let form = andList [state, rule, node, cache, memory, lock] in
+    let assgn1 = assign (para2d "node.cache.addr" i j) (Const a) in
+    let assgn2 = assign (para2d "node.cache.data" i j) (Var (Param "memory.data" a)) in
+    let assgn3 = assign (para2d "node.cache.state" i j) (Const VALID) in
+    let assgn4 = assign (para2d "node.firstRead" i a) (Const False) in
+    let assgn5 = assign (para2d "lock.inProtection" l a) (Const True) in
+    let assgn6 = assign (Global "replace") (Const NON) in
+    let assgn7 = assign (Global "repRule") (Const None) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5, assgn6, assgn7]);
+// LNCFRD
+
+let LNCNFRR i a l dummy1 dummy2 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+    let beUsed = eqn (left->(Var (Param "lock.beUsed" l))) (right->(Const True)) in
+    let owner = eqn (left->(Var (Param "lock.owner" l))) (right->(Const i)) in
+    let notFirstRead = eqn (left->(Var (para2d "node.firstRead" i a))) (right->(Const False)) in
+    let notCached =
+        let nc j =
+            let inv = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID)) in
+            let notA = neg (eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a))) in
+            orList [inv, notA]
+        in
+        forallForm CacheNum nc
+    in
+    let form = andList [state, lock, beUsed, owner, notFirstRead, notCached] in
+    let assgn1 = assign (Global "curNode") (Const i) in
+    let assgn2 = assign (Global "curMemory") (Const a) in
+    let assgn3 = assign (Global "curLock") (Const l) in
+    let assgn4 = assign (Global "replace") (Const REQUIRE) in
+    let assgn5= assign (Global "repRule") (Const LNCNFR) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);
+// LNCNFRR
+
+let LNCNFRD i j a l dummy1 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const DONE)) in
+    let rule = eqn (left->(Var (Global "repRule"))) (right->(Const LNCNFR)) in
+    let node = eqn (left->(Var (Global "curNode"))) (right->(Const i)) in
+    let cache = eqn (left->(Var (Global "curCache"))) (right->(Const j)) in
+    let memory = eqn (left->(Var (Global "curMemory"))) (right->(Const a)) in
+    let lock = eqn (left->(Var (Global "curLock"))) (right->(Const l)) in
+    let form = andList [state, rule, node, cache, memory, lock] in
+    let assgn1 = assign (para2d "node.cache.addr" i j) (Const a) in
+    let assgn2 = assign (para2d "node.cache.data" i j) (Var (Param "memory.data" a)) in
+    let assgn3 = assign (para2d "node.cache.state" i j) (Const VALID) in
+    let assgn4 = assign (para2d "lock.inProtection" l a) (Const True) in
+    let assgn5 = assign (Global "replace") (Const NON) in
+    let assgn6 = assign (Global "repRule") (Const None) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5, assgn6]);
+// LNCNFRD
+
+//************************************** Locked Write ***************************************
+
+let LCW i j a d l =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+    let beUsed = eqn (left->(Var (Param "lock.beUsed" l))) (right->(Const True)) in
+    let owner = eqn (left->(Var (Param "lock.owner" l))) (right->(Const i)) in
+    let notInv = neg (eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID))) in
+    let addr = eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a)) in
+    let protect =
+        let p m = 
+            let inPro = eqn (left->(Var (para2d "lock.inProtection" m a))) (Const True) in
+            let same = eqn (Const m) (Const l) in
+            implyForm inPro same
+        in
+        forallForm LockNum p
+    in
+    let form = andList [state, lock, beUsed, owner, notInv, addr, protect] in
+    let assgn1 = assign (Param "memory.data" a) (Const d) in
+    let assgn2 = assign (para2d "node.cache.data" i j) (Const d) in
+    let assgn3 = assign (para2d "node.cache.state" i j) (Const VALID) in
+    let assgn4 = assign (para2d "lock.inProtection" l a) (Const True) in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4]);
+// LCW
+
+let LNCW i a d l dummy1 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+    let beUsed = eqn (left->(Var (Param "lock.beUsed" l))) (right->(Const True)) in
+    let owner = eqn (left->(Var (Param "lock.owner" l))) (right->(Const i)) in
+    let notCached =
+        let nc j =
+            let inv = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const INVALID)) in
+            let notA = neg (eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a))) in
+            orList [inv, notA]
+        in
+        forallForm CacheNum nc
+    in
+    let protect =
+        let p m = 
+            let inPro = eqn (left->(Var (para2d "lock.inProtection" m a))) (Const True) in
+            let same = eqn (Const m) (Const l) in
+            implyForm inPro same
+        in
+        forallForm LockNum p
+    in
+    let form = andList [state, lock, beUsed, owner, notCached, protect] in
+    let assgn1 = assign (Param "memory.data" a) (Const d) in
+    let assgn2 = assign (para2d "lock.inProtection" l a) (Const True) in
+    guard form (parallel [assgn1, assgn2]);
+// LNCW
+
+//************************************** Lock Manager ***************************************
+
+let Acquire i l dummy1 dummy2 dummy3 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let noLock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const False)) in
+    let notUsed = eqn (left->(Var (Param "lock.beUsed" l))) (right->(Const False)) in
+    let form = andList [state, noLock, notUsed] in
+    let assgn1 = assign (Param "lock.beUsed" l) (Const True) in
+    let assgn2 = assign (Param "lock.owner" l) (Const i) in
+    let assgn3 = assign (Param "node.hasLock" i) (Const True) in
+    let assgn4 =
+        let fr a = assign (para2d "node.firstRead" i a) (Const True) in
+        forallStatement MemoryNum fr
+    in
+    guard form (parallel [assgn1, assgn2, assgn3, assgn4]);
+// Acquire
+
+let Release i l dummy1 dummy2 dummy3 =
+    let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+    let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+    let beUsed = eqn (left->(Var (Param "lock.beUsed" l))) (right->(Const True)) in
+    let owner = eqn (left->(Var (Param "lock.owner" l))) (right->(Const i)) in
+    let form = andList [state, lock, beUsed, owner] in
+    let assgn1 = assign (Param "lock.beUsed" l) (Const False) in
+    let assgn2 = assign (Param "node.hasLock" i) (Const False) in
+    let assgn3 =
+        let protect a = assign (para2d "lock.inProtection" l a) (Const False) in
+        forallStatement MemoryNum protect
+    in
+    guard form (parallel [assgn1, assgn2, assgn3]);
+// Release
+
+//************************************** rules ***************************************
+
+let rules = [RI, CRIC, RNI, CRC, DCND, DCD, Replace, RepAll, RepAllDone, 
+    NLNCRR, NLNCRD, 
+    NLCW, NLNCWR, NLNCWD, 
+    LCFRRA, LCFRAD, LCFRD, LNCFRRA, LNCFRAD, LNCFRD, LNCNFRR, LNCNFRD, 
+    LCW, LNCW, 
+    Acquire, Release];
+// rules
+
+let ruleTable = 
+    let tab0 = tbl_create 20 in
+    let tab0 = tbl_insert tab0 "RI" RI in
+    let tab0 = tbl_insert tab0 "CRIC" CRIC in
+    let tab0 = tbl_insert tab0 "RNI" RNI in
+    let tab0 = tbl_insert tab0 "CRC" CRC in
+    let tab0 = tbl_insert tab0 "DCND" DCND in
+    let tab0 = tbl_insert tab0 "DCD" DCD in
+    let tab0 = tbl_insert tab0 "Replace" Replace in
+    let tab0 = tbl_insert tab0 "RepAll" RepAll in
+    let tab0 = tbl_insert tab0 "RepAllDone" RepAllDone in
+    let tab0 = tbl_insert tab0 "NLNCRR" NLNCRR in
+    let tab0 = tbl_insert tab0 "NLNCRD" NLNCRD in
+    let tab0 = tbl_insert tab0 "NLCW" NLCW in
+    let tab0 = tbl_insert tab0 "NLNCWR" NLNCWR in
+    let tab0 = tbl_insert tab0 "NLNCWD" NLNCWD in
+    let tab0 = tbl_insert tab0 "LCFRRA" LCFRRA in
+    let tab0 = tbl_insert tab0 "LCFRAD" LCFRAD in
+    let tab0 = tbl_insert tab0 "LCFRD" LCFRD in
+    let tab0 = tbl_insert tab0 "LNCFRRA" LNCFRRA in
+    let tab0 = tbl_insert tab0 "LNCFRAD" LNCFRAD in
+    let tab0 = tbl_insert tab0 "LNCFRD" LNCFRD in
+    let tab0 = tbl_insert tab0 "LNCNFRR" LNCNFRR in
+    let tab0 = tbl_insert tab0 "LNCNFRD" LNCNFRD in
+    let tab0 = tbl_insert tab0 "LCW" LCW in
+    let tab0 = tbl_insert tab0 "LNCW" LNCW in
+    let tab0 = tbl_insert tab0 "Acquire" Acquire in
+    let tab0 = tbl_insert tab0 "Release" Release in
+    tab0;
+// ruleTable
+
+let paraNumTable = 
+    let tab0 = tbl_create 20 in
+    let tab0 = tbl_insert tab0 "RI" 1 in
+    let tab0 = tbl_insert tab0 "CRIC" 2 in
+    let tab0 = tbl_insert tab0 "RNI" 1 in
+    let tab0 = tbl_insert tab0 "CRC" 1 in
+    let tab0 = tbl_insert tab0 "DCND" 2 in
+    let tab0 = tbl_insert tab0 "DCD" 2 in
+    let tab0 = tbl_insert tab0 "Replace" 3 in
+    let tab0 = tbl_insert tab0 "RepAll" 3 in
+    let tab0 = tbl_insert tab0 "RepAllDone" 0 in
+    let tab0 = tbl_insert tab0 "NLNCRR" 2 in
+    let tab0 = tbl_insert tab0 "NLNCRD" 3 in
+    let tab0 = tbl_insert tab0 "NLCW" 4 in
+    let tab0 = tbl_insert tab0 "NLNCWR" 3 in
+    let tab0 = tbl_insert tab0 "NLNCWD" 4 in
+    let tab0 = tbl_insert tab0 "LCFRRA" 4 in
+    let tab0 = tbl_insert tab0 "LCFRAD" 0 in
+    let tab0 = tbl_insert tab0 "LCFRD" 4 in
+    let tab0 = tbl_insert tab0 "LNCFRRA" 3 in
+    let tab0 = tbl_insert tab0 "LNCFRAD" 0 in
+    let tab0 = tbl_insert tab0 "LNCFRD" 4 in
+    let tab0 = tbl_insert tab0 "LNCNFRR" 3 in
+    let tab0 = tbl_insert tab0 "LNCNFRD" 4 in
+    let tab0 = tbl_insert tab0 "LCW" 5 in
+    let tab0 = tbl_insert tab0 "LNCW" 4 in
+    let tab0 = tbl_insert tab0 "Acquire" 2 in
+    let tab0 = tbl_insert tab0 "Release" 2 in
+    tab0;
+// paraNumTable
+
+//************************************** rules ***************************************
+
+let iniStatement d =
+    let assgn1 =
+        let state i =
+            let s j = assign (para2d "node.cache.state" i j) (Const INVALID) in
+            forallStatement CacheNum s
+        in
+        forallStatement NodeNum state
+    in
+    let assgn2 =
+        let hasLock i = assign (Param "node.hasLock" i) (Const False) in
+        forallStatement NodeNum hasLock
+    in
+    let assgn3 =
+        let firstRead i =
+            let f a = assign (para2d "node.firstRead" i a) (Const True) in
+            forallStatement MemoryNum f
+        in
+        forallStatement NodeNum firstRead
+    in
+    let assgn4 =
+        let curN i = assign (Global "curNode") (Const i) in
+        forallStatement NodeNum curN
+    in
+    let assgn5 =
+        let curC j = assign (Global "curCache") (Const j) in
+        forallStatement CacheNum curC
+    in
+    let assgn6 =
+        let data a = assign (Param "memory.data" a) (Const d) in
+        forallStatement MemoryNum data
+    in
+    let assgn7 =
+        let curM a = assign (Global "curMemory") (Const a) in
+        forallStatement MemoryNum curM
+    in
+    let assgn8 = assign (Global "curData") (Const d) in
+    let assgn9 =
+        let beUsed l = assign (Param "lock.beUsed" l) (Const False) in
+        forallStatement LockNum beUsed
+    in
+    let assgn10 =
+        let curL l = assign (Global "curLock") (Const l) in
+        forallStatement LockNum curL
+    in
+    let assgn11 =
+        let inProtection l =
+            let ip a = assign (para2d "lock.inProtection" l a) (Const False) in
+            forallStatement MemoryNum ip
+        in
+        forallStatement LockNum inProtection
+    in
+    let assgn12 = assign (Global "replace") (Const NON) in
+    let assgn13 = assign (Global "repRule") (Const None) in
+    parallel [assgn1, assgn2, assgn3, assgn4, assgn5, assgn6, 
+        assgn7, assgn8, assgn9, assgn10, assgn11, assgn12, assgn13];
+// iniStatement
+
+//************************************** thy def ***************************************
+
+//createThyDef aritTable typeTable typeNameTab enumValTab "godson-t"; 
+
+//************************************** Makefile ***************************************
+
+createMakefile "godson-t";
+
+//************************************** Invariants ***************************************
+
+let DeadlockFree i dummy1 dummy2 dummy3 dummy4 = 
+    let ant =
+        let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+        let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+        andList [state, lock]
+    in
+    let cons =
+        let eLock =
+            let elo l =
+                let notUsed = eqn (left->(Var (Param "lock.beUsed" l))) (Const False) in
+                let notOwn = neg (eqn (left->(Var (Param "lock.owner" l))) (Const i)) in
+                orList [notUsed, notOwn]
+            in
+            neg (forallForm LockNum elo)
+        in
+        let nOther =
+            let mlock m =
+                let nlock n =
+                    let same = eqn (left->(Const m)) (right->(Const n)) in
+                    let mNotUsed = eqn (left->(Var (Param "lock.beUsed" m))) (right->(Const False)) in
+                    let nNotUsed = eqn (left->(Var (Param "lock.beUsed" n))) (right->(Const False)) in
+                    let notOwnM = neg (eqn (left->(Var (Param "lock.owner" m))) (right->(Const i))) in
+                    let notOwnN = neg (eqn (left->(Var (Param "lock.owner" n))) (right->(Const i))) in
+                    orList [same, mNotUsed, nNotUsed, notOwnM, notOwnN]
+                in
+                forallForm LockNum nlock
+            in
+            forallForm LockNum mlock
+        in
+        andList [eLock, nOther]
+    in
+    implyForm ant cons;
+// DeadlockFree
+
+let Coherence i j a dummy1 dummy2 =
+    let ant =
+        let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
+        let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
+        let notFirstRead = eqn (left->(Var (para2d "node.firstRead" i a))) (right->(Const False)) in
+        let valid = eqn (left->(Var (para2d "node.cache.state" i j))) (right->(Const VALID)) in
+        let addr = eqn (left->(Var (para2d "node.cache.addr" i j))) (right->(Const a)) in
+        andList [state, lock, notFirstRead, valid, addr]
+    in
+    let cons = eqn (left->(Var (para2d "node.cache.data" i j))) (right->(Var (Param "memory.data" a))) in
+    implyForm ant cons;
+// Coherence
+
+//************************************** generate SMV **********************************
+
+load "trans2smv.fl";
+
+let paraTypeTable = 
+    let tab0 = tbl_create 20 in
+    let tab0 = tbl_insert tab0 "RI" [NodeType, [], [], [], []] in
+    let tab0 = tbl_insert tab0 "CRIC" [NodeType, CacheType, [], [], []] in
+    let tab0 = tbl_insert tab0 "RNI" [NodeType, [], [], [], []] in
+    let tab0 = tbl_insert tab0 "CRC" [CacheType, [], [], [], []] in
+    let tab0 = tbl_insert tab0 "DCND" [NodeType, CacheType, [], [], []] in
+    let tab0 = tbl_insert tab0 "DCD" [NodeType, CacheType, [], [], []] in
+    let tab0 = tbl_insert tab0 "Replace" [NodeType, CacheType, AddrType, [], []] in
+    let tab0 = tbl_insert tab0 "RepAll" [NodeType, CacheType, AddrType, [], []] in
+    let tab0 = tbl_insert tab0 "RepAllDone" [[], [], [], [], []] in
+    let tab0 = tbl_insert tab0 "NLNCRR" [NodeType, AddrType, [], [], []] in
+    let tab0 = tbl_insert tab0 "NLNCRD" [NodeType, CacheType, AddrType, [], []] in
+    let tab0 = tbl_insert tab0 "NLCW" [NodeType, CacheType, AddrType, DataType, []] in
+    let tab0 = tbl_insert tab0 "NLNCWR" [NodeType, AddrType, DataType, [], []] in
+    let tab0 = tbl_insert tab0 "NLNCWD" [NodeType, CacheType, AddrType, DataType, []] in
+    let tab0 = tbl_insert tab0 "LCFRRA" [NodeType, CacheType, AddrType, LockType, []] in
+    let tab0 = tbl_insert tab0 "LCFRAD" [[], [], [], [], []] in
+    let tab0 = tbl_insert tab0 "LCFRD" [NodeType, CacheType, AddrType, LockType, []] in
+    let tab0 = tbl_insert tab0 "LNCFRRA" [NodeType, AddrType, LockType, [], []] in
+    let tab0 = tbl_insert tab0 "LNCFRAD" [[], [], [], [], []] in
+    let tab0 = tbl_insert tab0 "LNCFRD" [NodeType, CacheType, AddrType, LockType, []] in
+    let tab0 = tbl_insert tab0 "LNCNFRR" [NodeType, AddrType, LockType, [], []] in
+    let tab0 = tbl_insert tab0 "LNCNFRD" [NodeType, CacheType, AddrType, LockType, []] in
+    let tab0 = tbl_insert tab0 "LCW" [NodeType, CacheType, AddrType, DataType, LockType] in
+    let tab0 = tbl_insert tab0 "LNCW" [NodeType, AddrType, DataType, LockType, []] in
+    let tab0 = tbl_insert tab0 "Acquire" [NodeType, LockType, [], [], []] in
+    let tab0 = tbl_insert tab0 "Release" [NodeType, LockType, [], [], []] in
+    tab0;
+// paraTypeTable
+
+let ruleFuncMap rule [a, b, c, d, e] = rule a b c d e;
+
+let invTable =
+    let tab0 = tbl_create 2 in
+    let tab0 = tbl_insert tab0 "DeadlockFree" DeadlockFree in
+    let tab0 = tbl_insert tab0 "Coherence" Coherence in
+    tab0;
+// invTable
+
+let invTypeTable =
+    let tab0 = tbl_create 2 in
+    let tab0 = tbl_insert tab0 "DeadlockFree" [NodeType, [], [], [], []] in
+    let tab0 = tbl_insert tab0 "Coherence" [NodeType, CacheType, AddrType, [], []] in
+    tab0;
+// invTypeTable
+
+let invFuncMap inv [a, b, c, d, e] = inv a b c d e;
+
+trans2smv "godson-t" typeTable ruleTable paraTypeTable invTable invTypeTable 
+    (iniStatement (hd DataType)) ruleFuncMap invFuncMap enumValTab dist;
+
+//************************************** Process ***************************************
+/*
+load "tbl.fl";
+
+let symIndice = [1, 2, 3] then
+let newParasMethod = newParas dist symIndice then
+let parasOfInvMethod = parasOfInv dist symIndice then
+//find invariants
+val (invs, relLib) = findInvsFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable symIndice
+typeTable [1, 2, 3] "godson-t" "godson-t" enumValTab [DeadlockFree, Coherence] (tbl_keys ruleTable)  [] [] in
+//show invariants
+printStrList (map (formula2str enumValTab) invs) fseq
+printTable invs relLib fseq
+fclose fdebugGCR fseq
+fclose fdebug fseq
+fclose fdebug2;
+*/

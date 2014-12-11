@@ -1,0 +1,4127 @@
+(*
+	Godson-T Protocol
+*)
+
+(*user-defined type*)
+type cacheState = Invalid | Dirty | Valid
+(*type data = 0 | 1
+type memoryAddr = 1 | 2*)
+
+(*Lock set*)
+var Lock_1_owner : proc
+var Lock_1_beUsed : bool
+var Lock_2_owner : proc
+var Lock_2_beUsed : bool
+
+(*Memory*)
+var Memory_1_data : int
+var Memory_2_data : int
+var Memory_3_data : int
+
+(*Lasting*)
+var Lasting_1 : bool
+
+(*Node*)
+array Cache_1_state[proc] : cacheState
+array Cache_1_addr[proc] : int
+array Cache_1_data[proc] : int
+array Cache_2_state[proc] : cacheState
+array Cache_2_addr[proc] : int
+array Cache_2_data[proc] : int
+array FirstRead_a1[proc] : bool
+array FirstRead_a2[proc] : bool
+array FirstRead_a3[proc] : bool
+array HasLock[proc] : bool
+
+(*Init*)
+init(z) {
+	Lock_1_beUsed = False &&
+	Lock_2_beUsed = False &&
+	Memory_1_data = 0 && 
+	Memory_2_data = 0 &&
+	Memory_3_data = 0 &&
+	Lasting_1 = False &&
+	Cache_1_state[z] = Invalid &&
+	Cache_2_state[z] = Invalid &&
+	FirstRead_a1[z] = True &&
+	FirstRead_a2[z] = True &&
+	FirstRead_a3[z] = True &&
+	HasLock[z] = False
+}
+
+(*Invariance*)
+
+unsafe (z1 z2) {HasLock[z1] = True && HasLock[z2] = True && FirstRead_a1[z1] = False && FirstRead_a2[z2] = False && Lasting_1 = True && Cache_1_state[z1] = Valid && Cache_1_addr[z1] = 1 && Cache_1_data[z1] <> Memory_1_data && Cache_2_state[z2] = Valid && Cache_2_addr[z2] = 1 && Cache_2_data[z2] <> Memory_1_data }
+
+(*Transitions*)
+(*****************************************************************************************************************************************)
+transition l1_Acquire(n)
+requires { HasLock[n] = False && Lock_1_beUsed = False && Lock_2_beUsed = False }
+{
+	Lock_1_beUsed := True;
+	Lock_1_owner := n;
+	FirstRead_a1[j] := case
+								| j = n : True
+								| _ : FirstRead_a1[j];
+	FirstRead_a2[j] := case
+								| j = n : True
+								| _ : FirstRead_a2[j];
+	FirstRead_a3[j] := case
+								| j = n : True
+								| _ : FirstRead_a3[j];
+	HasLock[j] := case
+								| j = n : True
+								| _ : HasLock[j];					
+}
+
+
+transition l2_Acquire(n)
+requires { HasLock[n] = False && Lock_1_beUsed = False && Lock_2_beUsed = False }
+{
+	Lock_2_beUsed := True;
+	Lock_2_owner := n;
+	FirstRead_a1[j] := case
+								| j = n : True
+								| _ : FirstRead_a1[j];
+	FirstRead_a2[j] := case
+								| j = n : True
+								| _ : FirstRead_a2[j];
+	FirstRead_a3[j] := case
+								| j = n : True
+								| _ : FirstRead_a3[j];
+	HasLock[j] := case
+								| j = n : True
+								| _ : HasLock[j];					
+}
+
+transition l1_Release(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n}
+{
+	Lock_1_beUsed := False;
+	HasLock[j] := case
+								| j = n : False
+								| _ : HasLock[j];	
+}
+
+transition l2_Release(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n}
+{
+	Lock_2_beUsed := False;
+	HasLock[j] := case
+								| j = n : False
+								| _ : HasLock[j];	
+}
+
+
+(*****************************************************************************************************************************************)
+(* a[1-3]C[1-2]A[1-3]_NotLock NotCache and Replace Dirty A[1-3] *)
+transition a1C1A2_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1A3_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2A2_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a1C2A3_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1A3_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1A1_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2A3_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a2C2A1_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a3C1A1_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1A2_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2A1_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a3C2A2_NLNCD_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2] NotLock NotCache Cache Invalid *)
+transition a1C1_NLNCI_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2_NLNCI_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+transition a2C1_NLNCI_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2_NLNCI_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+transition a3C1_NLNCI_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2_NLNCI_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2] NotLock NotCache Cache Invalid Other*)
+transition a1C1_NLNCIO_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] <> Invalid && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2_NLNCIO_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] <> Invalid && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+transition a2C1_NLNCIO_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] <> Invalid && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2_NLNCIO_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] <> Invalid && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+transition a3C1_NLNCIO_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] <> Invalid && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2_NLNCIO_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] <> Invalid && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+(*****************************************************************************************************************************************)
+(* a[1-3]C[1-2]_NotLock NotCache and Replace Valid A[1-3] *)
+transition a1C1A2_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 1 }
+{
+
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1A3_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 1 }
+{
+
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2A2_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 1 }
+{
+
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a1C2A3_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 1 }
+{
+
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1A3_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 2 }
+{
+
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1A1_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 2 }
+{
+
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2A3_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 2 }
+{
+
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a2C2A1_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 2 }
+{
+
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a3C1A1_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 3 }
+{
+
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1A2_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 3 }
+{
+
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2A1_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 3 }
+{
+
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a3C2A2_NLNCV_Read(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 3 }
+{
+
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+(*****************************************************************************************************************************************)
+(*Transition a[1-3]C[1-2]_Lock[1-2] FirstRead Dirty *)
+transition a1C1_L1_FD_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L1_FD_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C1_L2_FD_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L2_FD_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+
+transition a2C1_L1_FD_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 }
+{
+	Memory_2_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L1_FD_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 }
+{
+	Memory_2_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C1_L2_FD_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 }
+{
+	Memory_2_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L2_FD_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 }
+{
+	Memory_2_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+
+transition a3C1_L1_FD_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 }
+{
+	Memory_3_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L1_FD_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 }
+{
+	Memory_3_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C1_L2_FD_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 }
+{
+	Memory_3_data := Cache_1_data[n];
+
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L2_FD_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 }
+{
+	Memory_3_data := Cache_2_data[n];
+
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+
+(*****************************************************************************************************************************************)
+(*Transition a[1-3]C[1-2]A[1-3]_Lock[1-2] FirstRead A[1-3] Dirty Cache Replace *)
+transition a1C1A2_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C1A2_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2A2_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2A2_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+
+transition a1C1A3_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C1A3_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2A3_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2A3_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+
+transition a2C1A3_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C1A3_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2A3_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2A3_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+
+transition a2C1A1_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C1A1_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2A1_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2A1_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+
+
+transition a3C1A1_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C1A1_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2A1_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2A1_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+
+transition a3C1A2_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C1A2_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2A2_L1_FDR_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2A2_L2_FDR_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]_Lock[1-2] FirstRead Valid *)
+transition a1C1_L1_FV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Valid && Cache_1_addr[n] = 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C1_L2_FV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Valid && Cache_1_addr[n] = 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L1_FV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Valid && Cache_2_addr[n] = 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L2_FV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Valid && Cache_2_addr[n] = 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+
+transition a2C1_L1_FV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Valid && Cache_1_addr[n] = 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C1_L2_FV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Valid && Cache_1_addr[n] = 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L1_FV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Valid && Cache_2_addr[n] = 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L2_FV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Valid && Cache_2_addr[n] =2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a3C1_L1_FV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Valid && Cache_1_addr[n] = 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C1_L2_FV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Valid && Cache_1_addr[n] = 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L1_FV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Valid && Cache_2_addr[n] = 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L2_FV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Valid && Cache_2_addr[n] = 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]_Lock[1-2] FirstRead InValid *)
+transition a1C1_L1_FI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C1_L2_FI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L1_FI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L2_FI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+
+transition a2C1_L1_FI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C1_L2_FI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L1_FI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L2_FI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a3C1_L1_FI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C1_L2_FI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L1_FI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L2_FI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]_Lock[1-2] FirstRead NotCache InValid *)
+
+transition a1C1_L1_FNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C1_L2_FNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L1_FNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+transition a1C2_L2_FNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = True && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+	FirstRead_a1[j] := case
+								| j = n : False
+								| _ : FirstRead_a1[j];
+}
+
+
+transition a2C1_L1_FNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C1_L2_FNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L1_FNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a2C2_L2_FNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = True && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+	FirstRead_a2[j] := case
+								| j = n : False
+								| _ : FirstRead_a2[j];
+}
+
+transition a3C1_L1_FNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C1_L2_FNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L1_FNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+transition a3C2_L2_FNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = True && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+	FirstRead_a3[j] := case
+								| j = n : False
+								| _ : FirstRead_a3[j];
+}
+
+
+
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]_Lock[1-2] Not FirstRead Cache Invalid *)
+transition a1C1_L1_NFI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1_L2_NFI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2_L1_NFI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2_L2_NFI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1_L1_NFI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1_L2_NFI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2_L1_NFI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2_L2_NFI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a3C1_L1_NFI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1_L2_NFI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2_L1_NFI_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2_L2_NFI_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]_Lock[1-2] Not FirstRead Not Cache *)
+transition a1C1_L1_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1_L2_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2_L1_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2_L2_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1_L1_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1_L2_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2_L1_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2_L2_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a3C1_L1_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1_L2_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2_L1_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2_L2_NFNC_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]_Lock[1-2] Not FirstRead Replace Valid Cache *)
+transition a1C1_L1_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1_L2_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2_L1_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a1[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 1 && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2_L2_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a1[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 1 && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_1_data
+								| _ : Cache_2_data[j];
+}
+
+
+transition a2C1_L1_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1_L2_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2_L1_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a2[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 2 && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2_L2_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a2[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 2 && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_2_data
+								| _ : Cache_2_data[j];
+}
+
+transition a3C1_L1_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1_L2_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2_L1_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && FirstRead_a3[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 3 && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2_L2_NFNCV_Read(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && FirstRead_a3[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 3 && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : Memory_3_data
+								| _ : Cache_2_data[j];
+}
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1] Not Lock Invalid Cache Write *)
+transition a1C1D0_NLI_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid  }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1_NLI_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a1C2D0_NLI_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1_NLI_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1D0_NLI_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid  }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1_NLI_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a2C2D0_NLI_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1_NLI_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+transition a3C1D0_NLI_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid  }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1_NLI_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a3C2D0_NLI_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1_NLI_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1] Not Lock Not Cache Write *)
+transition a1C1D0_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a1C2D0_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1D0_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a2C2D0_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+transition a3C1D0_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3								
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a3C2D0_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1_NLNC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1] Not Lock Not Cache Write *)
+transition a1C1D0_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2D0_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 1 && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 1 && Cache_1_addr[n] <> 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1D0_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2D0_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 2 && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 2 && Cache_1_addr[n] <> 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+transition a3C1D0_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Valid && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2D0_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 3 && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1_NLNCV_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Valid && Cache_2_addr[n] <> 3 && Cache_1_addr[n] <> 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1]A[1-3] Not Lock Not Cache and Replace Dirty Cache A[1-3] Write *)
+transition a1C1D0A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2D0A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 1 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+transition a1C1D0A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 1
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2D0A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 1 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 1
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+transition a2C1D0A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 3 && Cache_2_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2D0A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1A3_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 3 && Cache_1_addr[n] <> 2 }
+{
+	Memory_3_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+transition a2C1D0A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_addr[j] := case
+								| j = n : 2
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2D0A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 2 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_addr[j] := case
+								| j = n : 2
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a3C1D0A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 2 && Cache_2_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_1_data[n];
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2D0A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1A2_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 2 && Cache_1_addr[n] <> 3 }
+{
+	Memory_2_data := Cache_2_data[n];
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+transition a3C1D0A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] = Dirty && Cache_1_addr[n] = 1 && Cache_2_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_1_data[n];
+	Lasting_1 := False;
+	Cache_1_addr[j] := case
+								| j = n : 3
+								| _ : Cache_1_addr[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2D0A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1A1_NLNCD_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] = Dirty && Cache_2_addr[n] = 1 && Cache_1_addr[n] <> 3 }
+{
+	Memory_1_data := Cache_2_data[n];
+	Lasting_1 := False;
+	Cache_2_addr[j] := case
+								| j = n : 3
+								| _ : Cache_2_addr[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1] Not Lock with Cache Write *)
+transition a1C1D0_NLC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1_NLC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 1 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a1C2D0_NLC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1_NLC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 1 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+transition a2C1D0_NLC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1_NLC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 2 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a2C2D0_NLC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1_NLC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 2 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+transition a3C1D0_NLC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1_NLC_Write(n)
+requires { HasLock[n] = False && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 3 }
+{
+	Cache_1_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a3C2D0_NLC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1_NLC_Write(n)
+requires { HasLock[n] = False && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 3 }
+{
+	Cache_2_state[j] := case
+								| j = n : Dirty
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+
+
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1] Lock[1-2] Cache Invalid Write *)
+transition a1C1D0_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C1D0_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C1D1_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+transition a1C1D1_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+
+transition a1C2D0_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C2D0_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C2D1_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+transition a1C2D1_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+
+
+transition a2C1D0_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C1D0_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C1D1_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_2_data := 1;
+}
+
+transition a2C1D1_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_2_data := 1;
+}
+
+
+transition a2C2D0_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C2D0_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C2D1_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_2_data := 1;
+}
+
+transition a2C2D1_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_2_data := 1;
+}
+
+
+
+transition a3C1D0_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C1D0_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C1D1_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_3_data := 1;
+}
+
+transition a3C1D1_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_state[n] = Invalid }
+{
+	Memory_3_data := 1;
+}
+
+
+transition a3C2D0_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C2D0_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C2D1_L1_I_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_3_data := 1;
+}
+
+transition a3C2D1_L2_I_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_state[n] = Invalid }
+{
+	Memory_3_data := 1;
+}
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1] Lock[1-2] Not Cache Write *)
+transition a1C1D0_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C1D0_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C1D1_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+transition a1C1D1_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+
+transition a1C2D0_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C2D0_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1C2D1_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+transition a1C2D1_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+
+
+transition a2C1D0_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C1D0_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C1D1_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 1;
+}
+
+transition a2C1D1_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 1;
+}
+
+
+transition a2C2D0_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C2D0_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Memory_2_data := 0;
+}
+
+transition a2C2D1_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Memory_2_data := 1;
+}
+
+transition a2C2D1_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 2 }
+{
+	Memory_2_data := 1;
+}
+
+
+
+transition a3C1D0_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C1D0_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C1D1_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 1;
+}
+
+transition a3C1D1_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] = Invalid && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 1;
+}
+
+
+transition a3C2D0_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C2D0_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Memory_3_data := 0;
+}
+
+transition a3C2D1_L1_NC_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Memory_3_data := 1;
+}
+
+transition a3C2D1_L2_NC_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] = Invalid && Cache_1_addr[n] <> 3 }
+{
+	Memory_3_data := 1;
+}
+
+
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]D[0-1] Lock[1-2] Not Cache Other Cache Not Invalid Write *)
+transition a1D0_L1_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1D0_L2_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+}
+
+transition a1D1_L1_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+transition a1D1_L2_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_addr[n] <> 1 && Cache_2_addr[n] <> 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+}
+
+transition a2D0_L1_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 0;
+}
+
+transition a2D0_L2_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 0;
+}
+
+transition a2D1_L1_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 1;
+}
+
+transition a2D1_L2_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_addr[n] <> 2 && Cache_2_addr[n] <> 2 }
+{
+	Memory_2_data := 1;
+}
+
+transition a3D0_L1_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 0;
+}
+
+transition a3D0_L2_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 0;
+}
+
+transition a3D1_L1_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 1;
+}
+
+transition a3D1_L2_NCNI_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_addr[n] <> 3 && Cache_2_addr[n] <> 3 }
+{
+	Memory_3_data := 1;
+}
+
+
+(*****************************************************************************************************************************************)
+(* Transition a[1-3]C[1-2]D[0-1] Lock[1-2] Cache Write *)
+transition a1C1D0_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D0_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a1C1D1_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a1C2D0_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D0_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 1 }
+{
+	Memory_1_data := 0;
+	Lasting_1 := True;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+transition a1C2D1_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 1 }
+{
+	Memory_1_data := 1;
+	Lasting_1 := True;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+transition a2C1D0_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 2 }
+{
+	Memory_2_data := 0;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D0_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 2 }
+{
+	Memory_2_data := 0;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 2 }
+{
+	Memory_2_data := 1;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a2C1D1_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 2 }
+{
+	Memory_2_data := 1;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a2C2D0_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 2 }
+{
+	Memory_2_data := 0;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D0_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 2 }
+{
+	Memory_2_data := 0;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 2 }
+{
+	Memory_2_data := 1;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+transition a2C2D1_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 2 }
+{
+	Memory_2_data := 1;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
+
+
+
+
+
+transition a3C1D0_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 3 }
+{
+	Memory_3_data := 0;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D0_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 3 }
+{
+	Memory_3_data := 0;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 0
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 3 }
+{
+	Memory_3_data := 1;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+transition a3C1D1_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_1_state[n] <> Invalid && Cache_1_addr[n] = 3 }
+{
+	Memory_3_data := 1;
+	Cache_1_state[j] := case
+								| j = n : Valid
+								| _ : Cache_1_state[j];
+	Cache_1_data[j] := case
+								| j = n : 1
+								| _ : Cache_1_data[j];
+}
+
+
+transition a3C2D0_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 3 }
+{
+	Memory_3_data := 0;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D0_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 3 }
+{
+	Memory_3_data := 0;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 0
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1_L1_C_Write(n)
+requires { HasLock[n] = True && Lock_1_beUsed = True && Lock_1_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 3 }
+{
+	Memory_3_data := 1;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+transition a3C2D1_L2_C_Write(n)
+requires { HasLock[n] = True && Lock_2_beUsed = True && Lock_2_owner = n && Cache_2_state[n] <> Invalid && Cache_2_addr[n] = 3 }
+{
+	Memory_3_data := 1;
+	Cache_2_state[j] := case
+								| j = n : Valid
+								| _ : Cache_2_state[j];
+	Cache_2_data[j] := case
+								| j = n : 1
+								| _ : Cache_2_data[j];
+}
+
+
