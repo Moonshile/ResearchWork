@@ -1,0 +1,705 @@
+This program should be regarded as a DEBUGGING aid, not as a 
+certifier of correctness.
+Call with the -l flag or read the license file for terms
+and conditions of use.
+Run this program with "-h" for the list of options.
+
+Bugs, questions, and comments should be directed to
+"melatti@di.uniroma1.it".
+
+CMurphi compiler last modified date: Jun  2 2014
+Include files last modified date:    Jul 12 2011
+==========================================================================
+
+==========================================================================
+Caching Murphi Release 5.4.9
+Finite-state Concurrent System Verifier.
+
+Caching Murphi Release 5.4.9 is based on various versions of Murphi.
+Caching Murphi Release 5.4.9 :
+Copyright (C) 2009-2012 by Sapienza University of Rome.
+Murphi release 3.1 :
+Copyright (C) 1992 - 1999 by the Board of Trustees of
+Leland Stanford Junior University.
+
+==========================================================================
+
+Protocol: godson-t-1lock
+
+Algorithm:
+	Verification by breadth first search.
+	with symmetry algorithm 3 -- Heuristic Small Memory Normalization
+	with permutation trial limit 10.
+
+Memory usage:
+
+	* The size of each state is 200 bits (rounded up to 32 bytes).
+	* The memory allocated for the hash table and state queue is
+	  2147 Mbytes.
+	  With two words of overhead per state, the maximum size of
+	  the state space is 52634437 states.
+	   * Use option "-k" or "-m" to increase this, if necessary.
+	* Capacity in queue for breadth-first search: 5263443 states.
+	   * Change the constant gPercentActiveStates in mu_prolog.inc
+	     to increase this, if necessary.
+
+Progress Report:
+
+	1000 states explored in 2.40s, with 1239 rules fired and 563 states in the queue.
+	2000 states explored in 2.41s, with 2532 rules fired and 940 states in the queue.
+	3000 states explored in 2.42s, with 3891 rules fired and 1309 states in the queue.
+	4000 states explored in 2.42s, with 5305 rules fired and 1883 states in the queue.
+	5000 states explored in 2.43s, with 6796 rules fired and 2452 states in the queue.
+	6000 states explored in 2.44s, with 8347 rules fired and 3009 states in the queue.
+	7000 states explored in 2.44s, with 9798 rules fired and 3530 states in the queue.
+	8000 states explored in 2.45s, with 11248 rules fired and 4066 states in the queue.
+	9000 states explored in 2.45s, with 12733 rules fired and 4721 states in the queue.
+	10000 states explored in 2.46s, with 14196 rules fired and 4925 states in the queue.
+	11000 states explored in 2.47s, with 15675 rules fired and 5562 states in the queue.
+	12000 states explored in 2.48s, with 17270 rules fired and 6142 states in the queue.
+	13000 states explored in 2.48s, with 18542 rules fired and 6368 states in the queue.
+	14000 states explored in 2.49s, with 20147 rules fired and 6824 states in the queue.
+	15000 states explored in 2.50s, with 21700 rules fired and 7298 states in the queue.
+	16000 states explored in 2.51s, with 23080 rules fired and 7594 states in the queue.
+	17000 states explored in 2.52s, with 24508 rules fired and 7948 states in the queue.
+	18000 states explored in 2.52s, with 26044 rules fired and 8292 states in the queue.
+	19000 states explored in 2.53s, with 27876 rules fired and 8665 states in the queue.
+	20000 states explored in 2.54s, with 29513 rules fired and 9095 states in the queue.
+	21000 states explored in 2.55s, with 30940 rules fired and 9384 states in the queue.
+	22000 states explored in 2.56s, with 32388 rules fired and 9721 states in the queue.
+	23000 states explored in 2.57s, with 34070 rules fired and 9976 states in the queue.
+	24000 states explored in 2.58s, with 35588 rules fired and 10159 states in the queue.
+	25000 states explored in 2.59s, with 37039 rules fired and 10327 states in the queue.
+	26000 states explored in 2.59s, with 38552 rules fired and 10719 states in the queue.
+	27000 states explored in 2.60s, with 39877 rules fired and 10919 states in the queue.
+	28000 states explored in 2.61s, with 41226 rules fired and 11191 states in the queue.
+	29000 states explored in 2.62s, with 42837 rules fired and 11574 states in the queue.
+	30000 states explored in 2.63s, with 44918 rules fired and 11940 states in the queue.
+	31000 states explored in 2.64s, with 46854 rules fired and 12148 states in the queue.
+	32000 states explored in 2.65s, with 48356 rules fired and 12288 states in the queue.
+	33000 states explored in 2.66s, with 49825 rules fired and 12628 states in the queue.
+	34000 states explored in 2.67s, with 51233 rules fired and 12778 states in the queue.
+	35000 states explored in 2.68s, with 52725 rules fired and 13086 states in the queue.
+	36000 states explored in 2.69s, with 54420 rules fired and 13500 states in the queue.
+	37000 states explored in 2.70s, with 57122 rules fired and 13932 states in the queue.
+	38000 states explored in 2.71s, with 58422 rules fired and 14020 states in the queue.
+	39000 states explored in 2.72s, with 59721 rules fired and 14075 states in the queue.
+	40000 states explored in 2.73s, with 61323 rules fired and 14397 states in the queue.
+	41000 states explored in 2.73s, with 63177 rules fired and 14785 states in the queue.
+	42000 states explored in 2.75s, with 65123 rules fired and 15011 states in the queue.
+	43000 states explored in 2.76s, with 66597 rules fired and 15214 states in the queue.
+	44000 states explored in 2.76s, with 68313 rules fired and 15543 states in the queue.
+	45000 states explored in 2.77s, with 70262 rules fired and 16048 states in the queue.
+	46000 states explored in 2.78s, with 72499 rules fired and 16531 states in the queue.
+	47000 states explored in 2.79s, with 75764 rules fired and 16944 states in the queue.
+	48000 states explored in 2.80s, with 78535 rules fired and 17223 states in the queue.
+	49000 states explored in 2.81s, with 80064 rules fired and 17248 states in the queue.
+	50000 states explored in 2.82s, with 81405 rules fired and 17436 states in the queue.
+	51000 states explored in 2.83s, with 83474 rules fired and 17831 states in the queue.
+	52000 states explored in 2.84s, with 85390 rules fired and 17941 states in the queue.
+	53000 states explored in 2.85s, with 86752 rules fired and 18191 states in the queue.
+	54000 states explored in 2.86s, with 88824 rules fired and 18617 states in the queue.
+	55000 states explored in 2.87s, with 90891 rules fired and 19143 states in the queue.
+	56000 states explored in 2.88s, with 94057 rules fired and 19579 states in the queue.
+	57000 states explored in 2.89s, with 97677 rules fired and 19797 states in the queue.
+	58000 states explored in 2.90s, with 99821 rules fired and 20103 states in the queue.
+	59000 states explored in 2.91s, with 101659 rules fired and 20451 states in the queue.
+	60000 states explored in 2.92s, with 103640 rules fired and 20757 states in the queue.
+	61000 states explored in 2.93s, with 105346 rules fired and 21122 states in the queue.
+	62000 states explored in 2.94s, with 107013 rules fired and 21541 states in the queue.
+	63000 states explored in 2.95s, with 109804 rules fired and 21830 states in the queue.
+	64000 states explored in 2.96s, with 112205 rules fired and 22194 states in the queue.
+	65000 states explored in 2.97s, with 114820 rules fired and 22618 states in the queue.
+	66000 states explored in 2.98s, with 116557 rules fired and 22952 states in the queue.
+	67000 states explored in 2.99s, with 118004 rules fired and 23375 states in the queue.
+	68000 states explored in 3.00s, with 120500 rules fired and 23696 states in the queue.
+	69000 states explored in 3.01s, with 122545 rules fired and 23890 states in the queue.
+	70000 states explored in 3.02s, with 124701 rules fired and 24105 states in the queue.
+	71000 states explored in 3.03s, with 127319 rules fired and 24332 states in the queue.
+	72000 states explored in 3.04s, with 131333 rules fired and 24371 states in the queue.
+	73000 states explored in 3.06s, with 133487 rules fired and 24659 states in the queue.
+	74000 states explored in 3.07s, with 135780 rules fired and 24968 states in the queue.
+	75000 states explored in 3.08s, with 137645 rules fired and 25347 states in the queue.
+	76000 states explored in 3.08s, with 139091 rules fired and 25761 states in the queue.
+	77000 states explored in 3.09s, with 141884 rules fired and 26020 states in the queue.
+	78000 states explored in 3.11s, with 144462 rules fired and 26392 states in the queue.
+	79000 states explored in 3.12s, with 147410 rules fired and 26786 states in the queue.
+	80000 states explored in 3.13s, with 148793 rules fired and 27128 states in the queue.
+	81000 states explored in 3.14s, with 151050 rules fired and 27616 states in the queue.
+	82000 states explored in 3.15s, with 152970 rules fired and 27789 states in the queue.
+	83000 states explored in 3.16s, with 154898 rules fired and 27925 states in the queue.
+	84000 states explored in 3.17s, with 157472 rules fired and 28091 states in the queue.
+	85000 states explored in 3.18s, with 160932 rules fired and 28180 states in the queue.
+	86000 states explored in 3.20s, with 164102 rules fired and 28499 states in the queue.
+	87000 states explored in 3.21s, with 166866 rules fired and 28815 states in the queue.
+	88000 states explored in 3.22s, with 169141 rules fired and 29243 states in the queue.
+	89000 states explored in 3.23s, with 172330 rules fired and 29568 states in the queue.
+	90000 states explored in 3.24s, with 174927 rules fired and 29955 states in the queue.
+	91000 states explored in 3.25s, with 176985 rules fired and 30341 states in the queue.
+	92000 states explored in 3.26s, with 178541 rules fired and 30861 states in the queue.
+	93000 states explored in 3.27s, with 180167 rules fired and 31308 states in the queue.
+	94000 states explored in 3.28s, with 183246 rules fired and 31746 states in the queue.
+	95000 states explored in 3.29s, with 185344 rules fired and 32077 states in the queue.
+	96000 states explored in 3.30s, with 188133 rules fired and 32183 states in the queue.
+	97000 states explored in 3.31s, with 190422 rules fired and 32537 states in the queue.
+	98000 states explored in 3.32s, with 192889 rules fired and 32746 states in the queue.
+	99000 states explored in 3.33s, with 194943 rules fired and 33157 states in the queue.
+	100000 states explored in 3.34s, with 196511 rules fired and 33667 states in the queue.
+	101000 states explored in 3.35s, with 198136 rules fired and 34104 states in the queue.
+	102000 states explored in 3.36s, with 201187 rules fired and 34563 states in the queue.
+	103000 states explored in 3.38s, with 203427 rules fired and 34830 states in the queue.
+	104000 states explored in 3.39s, with 205052 rules fired and 34880 states in the queue.
+	105000 states explored in 3.40s, with 206771 rules fired and 34957 states in the queue.
+	106000 states explored in 3.41s, with 208720 rules fired and 35048 states in the queue.
+	107000 states explored in 3.42s, with 210936 rules fired and 35160 states in the queue.
+	108000 states explored in 3.44s, with 214029 rules fired and 35422 states in the queue.
+	109000 states explored in 3.45s, with 217336 rules fired and 35681 states in the queue.
+	110000 states explored in 3.47s, with 220624 rules fired and 35896 states in the queue.
+	111000 states explored in 3.48s, with 223436 rules fired and 36221 states in the queue.
+	112000 states explored in 3.49s, with 225094 rules fired and 36742 states in the queue.
+	113000 states explored in 3.49s, with 226650 rules fired and 37156 states in the queue.
+	114000 states explored in 3.51s, with 229747 rules fired and 37635 states in the queue.
+	115000 states explored in 3.52s, with 231824 rules fired and 38032 states in the queue.
+	116000 states explored in 3.53s, with 234457 rules fired and 38109 states in the queue.
+	117000 states explored in 3.55s, with 237491 rules fired and 38115 states in the queue.
+	118000 states explored in 3.56s, with 239476 rules fired and 38475 states in the queue.
+	119000 states explored in 3.57s, with 240958 rules fired and 38928 states in the queue.
+	120000 states explored in 3.58s, with 242559 rules fired and 39425 states in the queue.
+	121000 states explored in 3.59s, with 246050 rules fired and 39863 states in the queue.
+	122000 states explored in 3.61s, with 247936 rules fired and 39850 states in the queue.
+	123000 states explored in 3.62s, with 249657 rules fired and 39859 states in the queue.
+	124000 states explored in 3.63s, with 251609 rules fired and 39850 states in the queue.
+	125000 states explored in 3.65s, with 253519 rules fired and 39863 states in the queue.
+	126000 states explored in 3.66s, with 256120 rules fired and 39808 states in the queue.
+	127000 states explored in 3.67s, with 258740 rules fired and 40094 states in the queue.
+	128000 states explored in 3.68s, with 261278 rules fired and 40466 states in the queue.
+	129000 states explored in 3.70s, with 263994 rules fired and 40494 states in the queue.
+	130000 states explored in 3.71s, with 266672 rules fired and 40555 states in the queue.
+	131000 states explored in 3.72s, with 268439 rules fired and 40954 states in the queue.
+	132000 states explored in 3.74s, with 271422 rules fired and 41338 states in the queue.
+	133000 states explored in 3.75s, with 273213 rules fired and 41796 states in the queue.
+	134000 states explored in 3.76s, with 274803 rules fired and 42095 states in the queue.
+	135000 states explored in 3.76s, with 276499 rules fired and 42580 states in the queue.
+	136000 states explored in 3.77s, with 278305 rules fired and 42911 states in the queue.
+	137000 states explored in 3.79s, with 282715 rules fired and 43154 states in the queue.
+	138000 states explored in 3.80s, with 285073 rules fired and 43560 states in the queue.
+	139000 states explored in 3.81s, with 286646 rules fired and 43564 states in the queue.
+	140000 states explored in 3.83s, with 288702 rules fired and 43928 states in the queue.
+	141000 states explored in 3.84s, with 291481 rules fired and 44282 states in the queue.
+	142000 states explored in 3.85s, with 293111 rules fired and 44449 states in the queue.
+	143000 states explored in 3.86s, with 294929 rules fired and 44832 states in the queue.
+	144000 states explored in 3.88s, with 297846 rules fired and 45267 states in the queue.
+	145000 states explored in 3.89s, with 299589 rules fired and 45666 states in the queue.
+	146000 states explored in 3.90s, with 301203 rules fired and 45998 states in the queue.
+	147000 states explored in 3.91s, with 302955 rules fired and 46490 states in the queue.
+	148000 states explored in 3.92s, with 304727 rules fired and 46799 states in the queue.
+	149000 states explored in 3.94s, with 309140 rules fired and 47062 states in the queue.
+	150000 states explored in 3.95s, with 311842 rules fired and 47400 states in the queue.
+	151000 states explored in 3.97s, with 313912 rules fired and 47364 states in the queue.
+	152000 states explored in 3.98s, with 315995 rules fired and 47315 states in the queue.
+	153000 states explored in 4.00s, with 318515 rules fired and 47258 states in the queue.
+	154000 states explored in 4.02s, with 321236 rules fired and 47222 states in the queue.
+	155000 states explored in 4.03s, with 323611 rules fired and 47225 states in the queue.
+	156000 states explored in 4.04s, with 326221 rules fired and 47376 states in the queue.
+	157000 states explored in 4.06s, with 328816 rules fired and 47326 states in the queue.
+	158000 states explored in 4.08s, with 331462 rules fired and 47403 states in the queue.
+	159000 states explored in 4.09s, with 333395 rules fired and 47832 states in the queue.
+	160000 states explored in 4.10s, with 335181 rules fired and 48134 states in the queue.
+	161000 states explored in 4.11s, with 336769 rules fired and 48575 states in the queue.
+	162000 states explored in 4.12s, with 338562 rules fired and 48970 states in the queue.
+	163000 states explored in 4.13s, with 340301 rules fired and 49305 states in the queue.
+	164000 states explored in 4.15s, with 345187 rules fired and 49560 states in the queue.
+	165000 states explored in 4.16s, with 347068 rules fired and 49696 states in the queue.
+	166000 states explored in 4.17s, with 349745 rules fired and 49901 states in the queue.
+	167000 states explored in 4.19s, with 352000 rules fired and 50044 states in the queue.
+	168000 states explored in 4.20s, with 353593 rules fired and 50478 states in the queue.
+	169000 states explored in 4.21s, with 355387 rules fired and 50781 states in the queue.
+	170000 states explored in 4.22s, with 357009 rules fired and 51230 states in the queue.
+	171000 states explored in 4.24s, with 358767 rules fired and 51617 states in the queue.
+	172000 states explored in 4.25s, with 360460 rules fired and 51945 states in the queue.
+	173000 states explored in 4.27s, with 365412 rules fired and 52211 states in the queue.
+	174000 states explored in 4.29s, with 367664 rules fired and 52307 states in the queue.
+	175000 states explored in 4.30s, with 369554 rules fired and 52176 states in the queue.
+	176000 states explored in 4.32s, with 371845 rules fired and 52117 states in the queue.
+	177000 states explored in 4.33s, with 373669 rules fired and 51953 states in the queue.
+	178000 states explored in 4.35s, with 375006 rules fired and 51880 states in the queue.
+	179000 states explored in 4.36s, with 377219 rules fired and 52225 states in the queue.
+	180000 states explored in 4.37s, with 378875 rules fired and 52559 states in the queue.
+	181000 states explored in 4.39s, with 381763 rules fired and 52733 states in the queue.
+	182000 states explored in 4.40s, with 382804 rules fired and 52692 states in the queue.
+	183000 states explored in 4.41s, with 384379 rules fired and 52869 states in the queue.
+	184000 states explored in 4.42s, with 386116 rules fired and 53207 states in the queue.
+	185000 states explored in 4.44s, with 388607 rules fired and 53407 states in the queue.
+	186000 states explored in 4.45s, with 390699 rules fired and 53783 states in the queue.
+	187000 states explored in 4.46s, with 392201 rules fired and 53960 states in the queue.
+
+The following is the error trace for the error:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+Startstate Init, d:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:Undefined
+lock[1].beUsed:false
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:false
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+Rule Acquire, l:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+Rule LNCFRR, l:1, a:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:REQUIRE
+repRule:LNCFR
+----------
+
+Rule RI, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:RANDINV
+repRule:LNCFR
+----------
+
+Rule CRIC, j:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:DONE
+repRule:LNCFR
+----------
+
+Rule LNCFRD, l:1, a:1, j:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+Rule NLNCWR, d:2, a:1, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:1
+curData:2
+curLock:1
+replace:REQUIRE
+repRule:NLNCW
+----------
+
+Rule RI, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:1
+curData:2
+curLock:1
+replace:RANDINV
+repRule:NLNCW
+----------
+
+Rule CRIC, j:1, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:1
+curData:2
+curLock:1
+replace:DONE
+repRule:NLNCW
+----------
+
+Rule NLNCWD, d:2, a:1, j:1, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:DIRTY
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:1
+curData:2
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+Rule NLNCWR, d:1, a:2, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:DIRTY
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:REQUIRE
+repRule:NLNCW
+----------
+
+Rule RNI, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:DIRTY
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:RANDOM
+repRule:NLNCW
+----------
+
+Rule CRC, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:DIRTY
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:DESIGNATED
+repRule:NLNCW
+----------
+
+Rule DCD, j:1, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:DIRTY
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:TOREP
+repRule:NLNCW
+----------
+
+Rule Replace, m:1, j:1, i:2 fired.
+memory[1].data:2
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:DONE
+repRule:NLNCW
+----------
+
+Rule NLNCWD, d:1, a:2, j:1, i:2 fired.
+The last state of the trace (in full) is:
+memory[1].data:2
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:DIRTY
+node[2].cache[1].addr:2
+node[2].cache[1].data:1
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+End of the error trace.
+
+==========================================================================
+
+Result:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+State Space Explored:
+
+	187992 states, 393597 rules fired in 4.47s.
+
+Analysis of State Space:
+
+	There are rules that are never fired.
+	If you are running with symmetry, this may be why.  Otherwise,
+	please run this program with "-pr" for the rules information.

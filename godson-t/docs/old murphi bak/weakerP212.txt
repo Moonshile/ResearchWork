@@ -1,0 +1,388 @@
+This program should be regarded as a DEBUGGING aid, not as a 
+certifier of correctness.
+Call with the -l flag or read the license file for terms
+and conditions of use.
+Run this program with "-h" for the list of options.
+
+Bugs, questions, and comments should be directed to
+"melatti@di.uniroma1.it".
+
+CMurphi compiler last modified date: Jun  2 2014
+Include files last modified date:    Jul 12 2011
+==========================================================================
+
+==========================================================================
+Caching Murphi Release 5.4.9
+Finite-state Concurrent System Verifier.
+
+Caching Murphi Release 5.4.9 is based on various versions of Murphi.
+Caching Murphi Release 5.4.9 :
+Copyright (C) 2009-2012 by Sapienza University of Rome.
+Murphi release 3.1 :
+Copyright (C) 1992 - 1999 by the Board of Trustees of
+Leland Stanford Junior University.
+
+==========================================================================
+
+Protocol: godson-t-weakerP
+
+Algorithm:
+	Verification by breadth first search.
+	with symmetry algorithm 3 -- Heuristic Small Memory Normalization
+	with permutation trial limit 10.
+
+Memory usage:
+
+	* The size of each state is 232 bits (rounded up to 32 bytes).
+	* The memory allocated for the hash table and state queue is
+	  21474 Mbytes.
+	  With two words of overhead per state, the maximum size of
+	  the state space is 526344041 states.
+	   * Use option "-k" or "-m" to increase this, if necessary.
+	* Capacity in queue for breadth-first search: 52634404 states.
+	   * Change the constant gPercentActiveStates in mu_prolog.inc
+	     to increase this, if necessary.
+
+Progress Report:
+
+	1000 states explored in 7.67s, with 1253 rules fired and 750 states in the queue.
+	2000 states explored in 7.67s, with 2661 rules fired and 1384 states in the queue.
+	3000 states explored in 7.68s, with 4126 rules fired and 2001 states in the queue.
+	4000 states explored in 7.68s, with 5599 rules fired and 2524 states in the queue.
+	5000 states explored in 7.69s, with 7092 rules fired and 3219 states in the queue.
+	6000 states explored in 7.69s, with 8528 rules fired and 3762 states in the queue.
+	7000 states explored in 7.70s, with 9992 rules fired and 4299 states in the queue.
+	8000 states explored in 7.70s, with 11522 rules fired and 4844 states in the queue.
+	9000 states explored in 7.71s, with 12996 rules fired and 5288 states in the queue.
+	10000 states explored in 7.71s, with 14427 rules fired and 5843 states in the queue.
+	11000 states explored in 7.72s, with 16044 rules fired and 6340 states in the queue.
+	12000 states explored in 7.73s, with 17688 rules fired and 6800 states in the queue.
+	13000 states explored in 7.73s, with 19286 rules fired and 7216 states in the queue.
+	14000 states explored in 7.74s, with 20687 rules fired and 7737 states in the queue.
+	15000 states explored in 7.74s, with 22176 rules fired and 8139 states in the queue.
+	16000 states explored in 7.75s, with 23695 rules fired and 8655 states in the queue.
+	17000 states explored in 7.76s, with 25144 rules fired and 9090 states in the queue.
+	18000 states explored in 7.76s, with 26504 rules fired and 9447 states in the queue.
+	19000 states explored in 7.77s, with 27976 rules fired and 9955 states in the queue.
+	20000 states explored in 7.78s, with 29470 rules fired and 10504 states in the queue.
+	21000 states explored in 7.78s, with 31070 rules fired and 11106 states in the queue.
+	22000 states explored in 7.79s, with 32598 rules fired and 11536 states in the queue.
+	23000 states explored in 7.79s, with 34252 rules fired and 11942 states in the queue.
+	24000 states explored in 7.80s, with 35778 rules fired and 12433 states in the queue.
+	25000 states explored in 7.81s, with 37279 rules fired and 12749 states in the queue.
+	26000 states explored in 7.81s, with 38868 rules fired and 13258 states in the queue.
+	27000 states explored in 7.82s, with 40418 rules fired and 13814 states in the queue.
+	28000 states explored in 7.82s, with 42044 rules fired and 14338 states in the queue.
+	29000 states explored in 7.83s, with 43504 rules fired and 14727 states in the queue.
+	30000 states explored in 7.84s, with 44944 rules fired and 15082 states in the queue.
+
+The following is the error trace for the error:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+Startstate Init, d:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:Undefined
+lock[1].beUsed:false
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+lock[2].owner:Undefined
+lock[2].beUsed:false
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:false
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:2
+replace:NON
+repRule:NONE
+----------
+
+Rule Acquire, l:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+lock[2].owner:Undefined
+lock[2].beUsed:false
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:2
+replace:NON
+repRule:NONE
+----------
+
+Rule Acquire, l:2, i:2 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:2
+replace:NON
+repRule:NONE
+----------
+
+Rule LNCFRR, l:1, a:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:REQUIRE
+repRule:LNCFR
+----------
+
+Rule RI, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:RANDINV
+repRule:LNCFR
+----------
+
+Rule CRIC, j:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:Undefined
+lock[1].inCriticalRegion:false
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:DONE
+repRule:LNCFR
+----------
+
+Rule LNCFRD, l:1, a:1, j:1, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:1
+lock[1].inCriticalRegion:true
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+Rule LNCW, d:1, l:1, a:2, i:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:2
+lock[1].inCriticalRegion:true
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].criticalRegion:Undefined
+lock[2].inCriticalRegion:false
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+Rule LNCW, d:2, l:2, a:1, i:2 fired.
+The last state of the trace (in full) is:
+memory[1].data:2
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].criticalRegion:2
+lock[1].inCriticalRegion:true
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].criticalRegion:1
+lock[2].inCriticalRegion:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+End of the error trace.
+
+==========================================================================
+
+Result:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+State Space Explored:
+
+	30157 states, 45215 rules fired in 7.84s.
+
+Analysis of State Space:
+
+	There are rules that are never fired.
+	If you are running with symmetry, this may be why.  Otherwise,
+	please run this program with "-pr" for the rules information.
