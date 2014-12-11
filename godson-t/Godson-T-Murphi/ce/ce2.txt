@@ -1,0 +1,687 @@
+This program should be regarded as a DEBUGGING aid, not as a 
+certifier of correctness.
+Call with the -l flag or read the license file for terms
+and conditions of use.
+Run this program with "-h" for the list of options.
+
+Bugs, questions, and comments should be directed to
+"melatti@di.uniroma1.it".
+
+CMurphi compiler last modified date: Jun  2 2014
+Include files last modified date:    Jul 12 2011
+==========================================================================
+
+==========================================================================
+Caching Murphi Release 5.4.9
+Finite-state Concurrent System Verifier.
+
+Caching Murphi Release 5.4.9 is based on various versions of Murphi.
+Caching Murphi Release 5.4.9 :
+Copyright (C) 2009-2012 by Sapienza University of Rome.
+Murphi release 3.1 :
+Copyright (C) 1992 - 1999 by the Board of Trustees of
+Leland Stanford Junior University.
+
+==========================================================================
+
+Protocol: godson-t-ce-2-inProtection
+
+Algorithm:
+	Verification by breadth first search.
+	with symmetry algorithm 3 -- Heuristic Small Memory Normalization
+	with permutation trial limit 10.
+
+Memory usage:
+
+	* The size of each state is 232 bits (rounded up to 32 bytes).
+	* The memory allocated for the hash table and state queue is
+	  1073 Mbytes.
+	  With two words of overhead per state, the maximum size of
+	  the state space is 26317217 states.
+	   * Use option "-k" or "-m" to increase this, if necessary.
+	* Capacity in queue for breadth-first search: 2631721 states.
+	   * Change the constant gPercentActiveStates in mu_prolog.inc
+	     to increase this, if necessary.
+
+Progress Report:
+
+	1000 states explored in 0.86s, with 1317 rules fired and 718 states in the queue.
+	2000 states explored in 0.87s, with 2799 rules fired and 1261 states in the queue.
+	3000 states explored in 0.88s, with 4162 rules fired and 1769 states in the queue.
+	4000 states explored in 0.89s, with 5754 rules fired and 2291 states in the queue.
+	5000 states explored in 0.90s, with 7227 rules fired and 2716 states in the queue.
+	6000 states explored in 0.91s, with 8726 rules fired and 3078 states in the queue.
+	7000 states explored in 0.92s, with 10278 rules fired and 3532 states in the queue.
+	8000 states explored in 0.93s, with 11864 rules fired and 3930 states in the queue.
+	9000 states explored in 0.94s, with 13209 rules fired and 4320 states in the queue.
+	10000 states explored in 0.95s, with 14575 rules fired and 4700 states in the queue.
+	11000 states explored in 0.96s, with 16070 rules fired and 5272 states in the queue.
+	12000 states explored in 0.96s, with 17626 rules fired and 5894 states in the queue.
+	13000 states explored in 0.97s, with 19066 rules fired and 6297 states in the queue.
+	14000 states explored in 0.98s, with 20513 rules fired and 6680 states in the queue.
+	15000 states explored in 0.99s, with 22084 rules fired and 7263 states in the queue.
+	16000 states explored in 1.00s, with 23805 rules fired and 7873 states in the queue.
+	17000 states explored in 1.01s, with 25286 rules fired and 8312 states in the queue.
+	18000 states explored in 1.02s, with 26782 rules fired and 8835 states in the queue.
+	19000 states explored in 1.03s, with 28344 rules fired and 9401 states in the queue.
+	20000 states explored in 1.04s, with 29917 rules fired and 9921 states in the queue.
+	21000 states explored in 1.04s, with 31461 rules fired and 10494 states in the queue.
+	22000 states explored in 1.05s, with 32966 rules fired and 11179 states in the queue.
+	23000 states explored in 1.06s, with 34597 rules fired and 11767 states in the queue.
+	24000 states explored in 1.07s, with 36252 rules fired and 12349 states in the queue.
+	25000 states explored in 1.08s, with 37951 rules fired and 12679 states in the queue.
+	26000 states explored in 1.09s, with 39352 rules fired and 12996 states in the queue.
+	27000 states explored in 1.10s, with 41126 rules fired and 13494 states in the queue.
+	28000 states explored in 1.11s, with 42744 rules fired and 13948 states in the queue.
+	29000 states explored in 1.12s, with 44466 rules fired and 14447 states in the queue.
+	30000 states explored in 1.13s, with 46265 rules fired and 14996 states in the queue.
+	31000 states explored in 1.14s, with 48071 rules fired and 15501 states in the queue.
+	32000 states explored in 1.15s, with 49422 rules fired and 15665 states in the queue.
+	33000 states explored in 1.16s, with 51106 rules fired and 16298 states in the queue.
+	34000 states explored in 1.16s, with 52799 rules fired and 16841 states in the queue.
+	35000 states explored in 1.17s, with 54534 rules fired and 17439 states in the queue.
+	36000 states explored in 1.18s, with 56237 rules fired and 17999 states in the queue.
+	37000 states explored in 1.19s, with 57846 rules fired and 18575 states in the queue.
+	38000 states explored in 1.20s, with 59533 rules fired and 19153 states in the queue.
+	39000 states explored in 1.21s, with 61219 rules fired and 19705 states in the queue.
+	40000 states explored in 1.22s, with 63056 rules fired and 20307 states in the queue.
+	41000 states explored in 1.23s, with 64825 rules fired and 20864 states in the queue.
+	42000 states explored in 1.23s, with 66408 rules fired and 21335 states in the queue.
+	43000 states explored in 1.24s, with 67998 rules fired and 21906 states in the queue.
+	44000 states explored in 1.25s, with 69686 rules fired and 22402 states in the queue.
+	45000 states explored in 1.26s, with 71310 rules fired and 23004 states in the queue.
+	46000 states explored in 1.27s, with 72980 rules fired and 23494 states in the queue.
+	47000 states explored in 1.28s, with 74642 rules fired and 23976 states in the queue.
+	48000 states explored in 1.29s, with 76288 rules fired and 24483 states in the queue.
+	49000 states explored in 1.30s, with 77828 rules fired and 24854 states in the queue.
+	50000 states explored in 1.31s, with 79310 rules fired and 25122 states in the queue.
+	51000 states explored in 1.32s, with 81234 rules fired and 25639 states in the queue.
+	52000 states explored in 1.33s, with 83002 rules fired and 26141 states in the queue.
+	53000 states explored in 1.34s, with 84974 rules fired and 26595 states in the queue.
+	54000 states explored in 1.35s, with 86537 rules fired and 27052 states in the queue.
+	55000 states explored in 1.36s, with 88338 rules fired and 27631 states in the queue.
+	56000 states explored in 1.37s, with 90260 rules fired and 28152 states in the queue.
+	57000 states explored in 1.38s, with 92020 rules fired and 28500 states in the queue.
+	58000 states explored in 1.39s, with 93716 rules fired and 29040 states in the queue.
+	59000 states explored in 1.40s, with 95477 rules fired and 29551 states in the queue.
+	60000 states explored in 1.41s, with 97130 rules fired and 29984 states in the queue.
+	61000 states explored in 1.42s, with 98886 rules fired and 30413 states in the queue.
+	62000 states explored in 1.43s, with 100355 rules fired and 30693 states in the queue.
+	63000 states explored in 1.44s, with 102189 rules fired and 30911 states in the queue.
+	64000 states explored in 1.45s, with 103853 rules fired and 31484 states in the queue.
+	65000 states explored in 1.46s, with 105508 rules fired and 31922 states in the queue.
+	66000 states explored in 1.47s, with 107199 rules fired and 32307 states in the queue.
+	67000 states explored in 1.48s, with 109136 rules fired and 32779 states in the queue.
+	68000 states explored in 1.49s, with 110997 rules fired and 33098 states in the queue.
+	69000 states explored in 1.50s, with 112614 rules fired and 33482 states in the queue.
+	70000 states explored in 1.52s, with 114426 rules fired and 33846 states in the queue.
+	71000 states explored in 1.53s, with 116174 rules fired and 34322 states in the queue.
+	72000 states explored in 1.54s, with 117804 rules fired and 34609 states in the queue.
+	73000 states explored in 1.55s, with 119510 rules fired and 35136 states in the queue.
+	74000 states explored in 1.56s, with 121057 rules fired and 35433 states in the queue.
+	75000 states explored in 1.57s, with 122876 rules fired and 35884 states in the queue.
+	76000 states explored in 1.58s, with 124675 rules fired and 36270 states in the queue.
+	77000 states explored in 1.59s, with 126361 rules fired and 36550 states in the queue.
+	78000 states explored in 1.60s, with 127962 rules fired and 36804 states in the queue.
+	79000 states explored in 1.62s, with 129445 rules fired and 37117 states in the queue.
+	80000 states explored in 1.63s, with 131185 rules fired and 37601 states in the queue.
+	81000 states explored in 1.64s, with 132731 rules fired and 37841 states in the queue.
+	82000 states explored in 1.65s, with 134382 rules fired and 38186 states in the queue.
+	83000 states explored in 1.66s, with 135906 rules fired and 38512 states in the queue.
+	84000 states explored in 1.67s, with 137694 rules fired and 39006 states in the queue.
+	85000 states explored in 1.68s, with 139355 rules fired and 39305 states in the queue.
+	86000 states explored in 1.69s, with 140878 rules fired and 39555 states in the queue.
+	87000 states explored in 1.71s, with 142404 rules fired and 39826 states in the queue.
+	88000 states explored in 1.72s, with 143879 rules fired and 40115 states in the queue.
+	89000 states explored in 1.73s, with 145444 rules fired and 40374 states in the queue.
+	90000 states explored in 1.74s, with 147115 rules fired and 40888 states in the queue.
+	91000 states explored in 1.75s, with 148999 rules fired and 41319 states in the queue.
+	92000 states explored in 1.76s, with 151186 rules fired and 41783 states in the queue.
+	93000 states explored in 1.77s, with 153592 rules fired and 42180 states in the queue.
+	94000 states explored in 1.79s, with 155141 rules fired and 42405 states in the queue.
+	95000 states explored in 1.80s, with 156964 rules fired and 42807 states in the queue.
+	96000 states explored in 1.81s, with 159109 rules fired and 43257 states in the queue.
+	97000 states explored in 1.82s, with 161030 rules fired and 43624 states in the queue.
+	98000 states explored in 1.83s, with 162699 rules fired and 43957 states in the queue.
+	99000 states explored in 1.84s, with 164472 rules fired and 44312 states in the queue.
+	100000 states explored in 1.86s, with 166008 rules fired and 44555 states in the queue.
+	101000 states explored in 1.87s, with 167937 rules fired and 44997 states in the queue.
+	102000 states explored in 1.88s, with 169650 rules fired and 45327 states in the queue.
+	103000 states explored in 1.89s, with 171406 rules fired and 45568 states in the queue.
+	104000 states explored in 1.90s, with 172947 rules fired and 45807 states in the queue.
+	105000 states explored in 1.92s, with 174996 rules fired and 46217 states in the queue.
+	106000 states explored in 1.93s, with 176675 rules fired and 46546 states in the queue.
+	107000 states explored in 1.94s, with 178278 rules fired and 46796 states in the queue.
+	108000 states explored in 1.95s, with 179992 rules fired and 47080 states in the queue.
+	109000 states explored in 1.96s, with 181526 rules fired and 47393 states in the queue.
+	110000 states explored in 1.97s, with 183141 rules fired and 47958 states in the queue.
+	111000 states explored in 1.98s, with 185149 rules fired and 48446 states in the queue.
+	112000 states explored in 2.00s, with 187522 rules fired and 48822 states in the queue.
+	113000 states explored in 2.01s, with 188966 rules fired and 49046 states in the queue.
+	114000 states explored in 2.02s, with 190363 rules fired and 49383 states in the queue.
+	115000 states explored in 2.03s, with 192112 rules fired and 49649 states in the queue.
+	116000 states explored in 2.04s, with 193578 rules fired and 50082 states in the queue.
+	117000 states explored in 2.06s, with 195692 rules fired and 50394 states in the queue.
+	118000 states explored in 2.07s, with 197833 rules fired and 50570 states in the queue.
+	119000 states explored in 2.08s, with 199435 rules fired and 50697 states in the queue.
+	120000 states explored in 2.10s, with 201216 rules fired and 50993 states in the queue.
+	121000 states explored in 2.11s, with 202631 rules fired and 51162 states in the queue.
+	122000 states explored in 2.12s, with 204514 rules fired and 51518 states in the queue.
+	123000 states explored in 2.13s, with 206456 rules fired and 51898 states in the queue.
+	124000 states explored in 2.15s, with 208287 rules fired and 52037 states in the queue.
+	125000 states explored in 2.16s, with 209704 rules fired and 52291 states in the queue.
+	126000 states explored in 2.17s, with 211126 rules fired and 52692 states in the queue.
+	127000 states explored in 2.18s, with 212893 rules fired and 52961 states in the queue.
+	128000 states explored in 2.20s, with 214526 rules fired and 53243 states in the queue.
+	129000 states explored in 2.21s, with 216570 rules fired and 53474 states in the queue.
+	130000 states explored in 2.23s, with 218136 rules fired and 53511 states in the queue.
+	131000 states explored in 2.24s, with 219736 rules fired and 53663 states in the queue.
+	132000 states explored in 2.25s, with 221122 rules fired and 53780 states in the queue.
+	133000 states explored in 2.27s, with 222852 rules fired and 54048 states in the queue.
+	134000 states explored in 2.28s, with 224468 rules fired and 54188 states in the queue.
+	135000 states explored in 2.29s, with 225866 rules fired and 54482 states in the queue.
+	136000 states explored in 2.31s, with 227550 rules fired and 54536 states in the queue.
+	137000 states explored in 2.32s, with 229489 rules fired and 54916 states in the queue.
+	138000 states explored in 2.33s, with 231020 rules fired and 55127 states in the queue.
+	139000 states explored in 2.34s, with 232955 rules fired and 55440 states in the queue.
+	140000 states explored in 2.36s, with 234903 rules fired and 55725 states in the queue.
+	141000 states explored in 2.37s, with 236612 rules fired and 55942 states in the queue.
+	142000 states explored in 2.38s, with 238054 rules fired and 56202 states in the queue.
+	143000 states explored in 2.40s, with 239806 rules fired and 56317 states in the queue.
+	144000 states explored in 2.41s, with 241264 rules fired and 56439 states in the queue.
+	145000 states explored in 2.42s, with 242932 rules fired and 56736 states in the queue.
+	146000 states explored in 2.43s, with 244736 rules fired and 56951 states in the queue.
+	147000 states explored in 2.44s, with 246574 rules fired and 57487 states in the queue.
+	148000 states explored in 2.45s, with 248439 rules fired and 58101 states in the queue.
+	149000 states explored in 2.46s, with 250285 rules fired and 58609 states in the queue.
+	150000 states explored in 2.47s, with 252706 rules fired and 59172 states in the queue.
+	151000 states explored in 2.49s, with 255044 rules fired and 59674 states in the queue.
+	152000 states explored in 2.50s, with 257584 rules fired and 60136 states in the queue.
+	153000 states explored in 2.51s, with 262214 rules fired and 60552 states in the queue.
+	154000 states explored in 2.53s, with 263694 rules fired and 60757 states in the queue.
+	155000 states explored in 2.54s, with 265209 rules fired and 61066 states in the queue.
+	156000 states explored in 2.55s, with 267021 rules fired and 61433 states in the queue.
+	157000 states explored in 2.56s, with 269552 rules fired and 61670 states in the queue.
+	158000 states explored in 2.58s, with 271827 rules fired and 61988 states in the queue.
+	159000 states explored in 2.59s, with 274039 rules fired and 62270 states in the queue.
+	160000 states explored in 2.60s, with 276112 rules fired and 62640 states in the queue.
+	161000 states explored in 2.62s, with 278022 rules fired and 62864 states in the queue.
+	162000 states explored in 2.63s, with 279448 rules fired and 63181 states in the queue.
+	163000 states explored in 2.64s, with 281207 rules fired and 63452 states in the queue.
+	164000 states explored in 2.66s, with 283143 rules fired and 63692 states in the queue.
+	165000 states explored in 2.67s, with 285478 rules fired and 63912 states in the queue.
+	166000 states explored in 2.69s, with 287524 rules fired and 64094 states in the queue.
+	167000 states explored in 2.70s, with 289360 rules fired and 64308 states in the queue.
+	168000 states explored in 2.71s, with 290844 rules fired and 64570 states in the queue.
+	169000 states explored in 2.73s, with 293270 rules fired and 64879 states in the queue.
+	170000 states explored in 2.75s, with 295724 rules fired and 65144 states in the queue.
+	171000 states explored in 2.76s, with 297681 rules fired and 65497 states in the queue.
+	172000 states explored in 2.77s, with 299552 rules fired and 65704 states in the queue.
+	173000 states explored in 2.78s, with 301157 rules fired and 65978 states in the queue.
+	174000 states explored in 2.80s, with 303349 rules fired and 66171 states in the queue.
+	175000 states explored in 2.81s, with 305243 rules fired and 66423 states in the queue.
+	176000 states explored in 2.82s, with 307196 rules fired and 66912 states in the queue.
+	177000 states explored in 2.83s, with 309237 rules fired and 67498 states in the queue.
+	178000 states explored in 2.84s, with 311255 rules fired and 68106 states in the queue.
+	179000 states explored in 2.85s, with 313872 rules fired and 68630 states in the queue.
+	180000 states explored in 2.87s, with 316838 rules fired and 69160 states in the queue.
+	181000 states explored in 2.88s, with 320306 rules fired and 69682 states in the queue.
+	182000 states explored in 2.90s, with 323606 rules fired and 69900 states in the queue.
+	183000 states explored in 2.91s, with 325072 rules fired and 70058 states in the queue.
+	184000 states explored in 2.92s, with 326400 rules fired and 70336 states in the queue.
+	185000 states explored in 2.94s, with 328140 rules fired and 70708 states in the queue.
+	186000 states explored in 2.95s, with 330667 rules fired and 71075 states in the queue.
+	187000 states explored in 2.96s, with 332241 rules fired and 71498 states in the queue.
+	188000 states explored in 2.97s, with 333973 rules fired and 71701 states in the queue.
+	189000 states explored in 2.99s, with 335871 rules fired and 71792 states in the queue.
+	190000 states explored in 3.00s, with 337827 rules fired and 71907 states in the queue.
+	191000 states explored in 3.02s, with 339576 rules fired and 72162 states in the queue.
+	192000 states explored in 3.03s, with 341647 rules fired and 72532 states in the queue.
+	193000 states explored in 3.05s, with 343291 rules fired and 72630 states in the queue.
+	194000 states explored in 3.06s, with 345176 rules fired and 73018 states in the queue.
+	195000 states explored in 3.07s, with 347140 rules fired and 73344 states in the queue.
+	196000 states explored in 3.08s, with 348964 rules fired and 73766 states in the queue.
+	197000 states explored in 3.09s, with 350885 rules fired and 74175 states in the queue.
+	198000 states explored in 3.11s, with 353025 rules fired and 74552 states in the queue.
+	199000 states explored in 3.12s, with 354934 rules fired and 74872 states in the queue.
+	200000 states explored in 3.13s, with 356441 rules fired and 75049 states in the queue.
+	201000 states explored in 3.15s, with 357905 rules fired and 75423 states in the queue.
+	202000 states explored in 3.16s, with 359651 rules fired and 75781 states in the queue.
+	203000 states explored in 3.17s, with 361942 rules fired and 76182 states in the queue.
+	204000 states explored in 3.18s, with 363866 rules fired and 76448 states in the queue.
+	205000 states explored in 3.20s, with 365772 rules fired and 76548 states in the queue.
+	206000 states explored in 3.22s, with 367857 rules fired and 76717 states in the queue.
+	207000 states explored in 3.23s, with 369716 rules fired and 76936 states in the queue.
+	208000 states explored in 3.25s, with 371596 rules fired and 77100 states in the queue.
+	209000 states explored in 3.26s, with 373356 rules fired and 77422 states in the queue.
+	210000 states explored in 3.27s, with 375110 rules fired and 77764 states in the queue.
+	211000 states explored in 3.28s, with 377019 rules fired and 78185 states in the queue.
+	212000 states explored in 3.30s, with 379194 rules fired and 78356 states in the queue.
+	213000 states explored in 3.31s, with 380732 rules fired and 78587 states in the queue.
+	214000 states explored in 3.32s, with 382571 rules fired and 78945 states in the queue.
+	215000 states explored in 3.34s, with 385069 rules fired and 79247 states in the queue.
+	216000 states explored in 3.35s, with 387567 rules fired and 79582 states in the queue.
+	217000 states explored in 3.37s, with 389377 rules fired and 79778 states in the queue.
+	218000 states explored in 3.38s, with 391505 rules fired and 80215 states in the queue.
+	219000 states explored in 3.39s, with 393549 rules fired and 80473 states in the queue.
+	220000 states explored in 3.40s, with 395426 rules fired and 80913 states in the queue.
+	221000 states explored in 3.42s, with 397310 rules fired and 81333 states in the queue.
+	222000 states explored in 3.43s, with 399593 rules fired and 81631 states in the queue.
+	223000 states explored in 3.44s, with 401327 rules fired and 81933 states in the queue.
+	224000 states explored in 3.45s, with 403149 rules fired and 82309 states in the queue.
+	225000 states explored in 3.47s, with 405722 rules fired and 82588 states in the queue.
+	226000 states explored in 3.48s, with 407804 rules fired and 82933 states in the queue.
+	227000 states explored in 3.49s, with 409966 rules fired and 83174 states in the queue.
+	228000 states explored in 3.51s, with 411687 rules fired and 83472 states in the queue.
+	229000 states explored in 3.52s, with 413556 rules fired and 83976 states in the queue.
+	230000 states explored in 3.53s, with 415988 rules fired and 84235 states in the queue.
+	231000 states explored in 3.54s, with 418061 rules fired and 84803 states in the queue.
+	232000 states explored in 3.55s, with 420068 rules fired and 85175 states in the queue.
+	233000 states explored in 3.57s, with 422114 rules fired and 85574 states in the queue.
+	234000 states explored in 3.58s, with 424148 rules fired and 86102 states in the queue.
+	235000 states explored in 3.59s, with 426227 rules fired and 86502 states in the queue.
+	236000 states explored in 3.60s, with 428213 rules fired and 86972 states in the queue.
+	237000 states explored in 3.61s, with 430747 rules fired and 87365 states in the queue.
+	238000 states explored in 3.63s, with 433580 rules fired and 87765 states in the queue.
+	239000 states explored in 3.64s, with 436427 rules fired and 88159 states in the queue.
+	240000 states explored in 3.65s, with 439226 rules fired and 88557 states in the queue.
+	241000 states explored in 3.67s, with 442108 rules fired and 88941 states in the queue.
+	242000 states explored in 3.69s, with 448834 rules fired and 89084 states in the queue.
+	243000 states explored in 3.70s, with 450541 rules fired and 89257 states in the queue.
+	244000 states explored in 3.72s, with 452304 rules fired and 89613 states in the queue.
+	245000 states explored in 3.73s, with 454367 rules fired and 90060 states in the queue.
+	246000 states explored in 3.74s, with 456878 rules fired and 90468 states in the queue.
+	247000 states explored in 3.76s, with 458928 rules fired and 90662 states in the queue.
+	248000 states explored in 3.77s, with 461261 rules fired and 90815 states in the queue.
+	249000 states explored in 3.79s, with 463784 rules fired and 91072 states in the queue.
+	250000 states explored in 3.80s, with 466410 rules fired and 91267 states in the queue.
+	251000 states explored in 3.81s, with 468350 rules fired and 91677 states in the queue.
+	252000 states explored in 3.83s, with 470260 rules fired and 92046 states in the queue.
+	253000 states explored in 3.84s, with 472542 rules fired and 92543 states in the queue.
+	254000 states explored in 3.85s, with 474581 rules fired and 92862 states in the queue.
+	255000 states explored in 3.86s, with 476485 rules fired and 93160 states in the queue.
+	256000 states explored in 3.88s, with 478265 rules fired and 93567 states in the queue.
+	257000 states explored in 3.89s, with 480939 rules fired and 93995 states in the queue.
+	258000 states explored in 3.90s, with 483018 rules fired and 94164 states in the queue.
+	259000 states explored in 3.92s, with 485369 rules fired and 94268 states in the queue.
+	260000 states explored in 3.94s, with 487624 rules fired and 94423 states in the queue.
+	261000 states explored in 3.95s, with 489576 rules fired and 94782 states in the queue.
+	262000 states explored in 3.96s, with 491973 rules fired and 95183 states in the queue.
+	263000 states explored in 3.97s, with 493920 rules fired and 95448 states in the queue.
+	264000 states explored in 3.99s, with 495876 rules fired and 95864 states in the queue.
+	265000 states explored in 4.00s, with 498806 rules fired and 96191 states in the queue.
+	266000 states explored in 4.02s, with 501700 rules fired and 96394 states in the queue.
+	267000 states explored in 4.03s, with 503895 rules fired and 96663 states in the queue.
+	268000 states explored in 4.04s, with 505829 rules fired and 97084 states in the queue.
+	269000 states explored in 4.06s, with 507903 rules fired and 97579 states in the queue.
+	270000 states explored in 4.07s, with 510135 rules fired and 97909 states in the queue.
+	271000 states explored in 4.08s, with 511996 rules fired and 98318 states in the queue.
+	272000 states explored in 4.09s, with 514683 rules fired and 98652 states in the queue.
+	273000 states explored in 4.11s, with 516943 rules fired and 98771 states in the queue.
+	274000 states explored in 4.12s, with 518642 rules fired and 99342 states in the queue.
+	275000 states explored in 4.13s, with 521401 rules fired and 99680 states in the queue.
+	276000 states explored in 4.15s, with 523557 rules fired and 100042 states in the queue.
+	277000 states explored in 4.16s, with 525691 rules fired and 100441 states in the queue.
+	278000 states explored in 4.17s, with 527939 rules fired and 100830 states in the queue.
+	279000 states explored in 4.19s, with 530019 rules fired and 101175 states in the queue.
+	280000 states explored in 4.20s, with 532462 rules fired and 101506 states in the queue.
+	281000 states explored in 4.21s, with 535382 rules fired and 101864 states in the queue.
+	282000 states explored in 4.23s, with 538598 rules fired and 102216 states in the queue.
+	283000 states explored in 4.24s, with 541458 rules fired and 102556 states in the queue.
+	284000 states explored in 4.27s, with 547446 rules fired and 102701 states in the queue.
+	285000 states explored in 4.28s, with 550672 rules fired and 102908 states in the queue.
+	286000 states explored in 4.30s, with 552706 rules fired and 103192 states in the queue.
+	287000 states explored in 4.31s, with 554814 rules fired and 103392 states in the queue.
+	288000 states explored in 4.32s, with 556634 rules fired and 103653 states in the queue.
+	289000 states explored in 4.34s, with 558653 rules fired and 104144 states in the queue.
+	290000 states explored in 4.35s, with 561130 rules fired and 104592 states in the queue.
+	291000 states explored in 4.36s, with 564942 rules fired and 104913 states in the queue.
+	292000 states explored in 4.38s, with 566711 rules fired and 105212 states in the queue.
+	293000 states explored in 4.39s, with 568445 rules fired and 105407 states in the queue.
+	294000 states explored in 4.41s, with 570612 rules fired and 105473 states in the queue.
+	295000 states explored in 4.42s, with 572625 rules fired and 105586 states in the queue.
+	296000 states explored in 4.44s, with 574620 rules fired and 105741 states in the queue.
+	297000 states explored in 4.45s, with 577138 rules fired and 106342 states in the queue.
+	298000 states explored in 4.47s, with 580619 rules fired and 106723 states in the queue.
+	299000 states explored in 4.48s, with 582436 rules fired and 107144 states in the queue.
+	300000 states explored in 4.49s, with 584335 rules fired and 107550 states in the queue.
+	301000 states explored in 4.51s, with 586678 rules fired and 107884 states in the queue.
+	302000 states explored in 4.52s, with 590093 rules fired and 108415 states in the queue.
+	303000 states explored in 4.53s, with 591995 rules fired and 108865 states in the queue.
+	304000 states explored in 4.55s, with 594027 rules fired and 109280 states in the queue.
+	305000 states explored in 4.56s, with 596091 rules fired and 109689 states in the queue.
+	306000 states explored in 4.57s, with 597844 rules fired and 110181 states in the queue.
+	307000 states explored in 4.58s, with 599744 rules fired and 110623 states in the queue.
+	308000 states explored in 4.59s, with 601444 rules fired and 111043 states in the queue.
+	309000 states explored in 4.61s, with 603409 rules fired and 111569 states in the queue.
+	310000 states explored in 4.62s, with 606977 rules fired and 112037 states in the queue.
+	311000 states explored in 4.63s, with 609972 rules fired and 112486 states in the queue.
+	312000 states explored in 4.65s, with 612484 rules fired and 112730 states in the queue.
+	313000 states explored in 4.66s, with 614949 rules fired and 113043 states in the queue.
+	314000 states explored in 4.68s, with 616649 rules fired and 113307 states in the queue.
+	315000 states explored in 4.69s, with 618331 rules fired and 113565 states in the queue.
+	316000 states explored in 4.70s, with 620407 rules fired and 114011 states in the queue.
+	317000 states explored in 4.71s, with 622774 rules fired and 114470 states in the queue.
+	318000 states explored in 4.73s, with 626747 rules fired and 114764 states in the queue.
+	319000 states explored in 4.74s, with 628856 rules fired and 114977 states in the queue.
+	320000 states explored in 4.76s, with 631155 rules fired and 115079 states in the queue.
+	321000 states explored in 4.77s, with 633166 rules fired and 115301 states in the queue.
+	322000 states explored in 4.79s, with 635445 rules fired and 115565 states in the queue.
+	323000 states explored in 4.80s, with 638678 rules fired and 116082 states in the queue.
+	324000 states explored in 4.82s, with 641331 rules fired and 116427 states in the queue.
+	325000 states explored in 4.83s, with 643819 rules fired and 116781 states in the queue.
+	326000 states explored in 4.84s, with 646957 rules fired and 117321 states in the queue.
+	327000 states explored in 4.86s, with 649539 rules fired and 117801 states in the queue.
+	328000 states explored in 4.87s, with 651689 rules fired and 118219 states in the queue.
+	329000 states explored in 4.88s, with 653365 rules fired and 118688 states in the queue.
+	330000 states explored in 4.89s, with 655088 rules fired and 119224 states in the queue.
+	331000 states explored in 4.90s, with 658471 rules fired and 119542 states in the queue.
+	332000 states explored in 4.92s, with 661383 rules fired and 119973 states in the queue.
+	333000 states explored in 4.93s, with 663217 rules fired and 120141 states in the queue.
+	334000 states explored in 4.94s, with 665393 rules fired and 120555 states in the queue.
+	335000 states explored in 4.96s, with 667637 rules fired and 121037 states in the queue.
+	336000 states explored in 4.97s, with 670936 rules fired and 121420 states in the queue.
+	337000 states explored in 4.99s, with 674655 rules fired and 121742 states in the queue.
+	338000 states explored in 5.01s, with 677358 rules fired and 122008 states in the queue.
+	339000 states explored in 5.02s, with 679022 rules fired and 122488 states in the queue.
+	340000 states explored in 5.03s, with 681452 rules fired and 122862 states in the queue.
+	341000 states explored in 5.05s, with 684438 rules fired and 123218 states in the queue.
+	342000 states explored in 5.06s, with 686292 rules fired and 123714 states in the queue.
+	343000 states explored in 5.07s, with 688446 rules fired and 124057 states in the queue.
+	344000 states explored in 5.08s, with 690417 rules fired and 124526 states in the queue.
+	345000 states explored in 5.10s, with 692189 rules fired and 125006 states in the queue.
+	346000 states explored in 5.11s, with 694140 rules fired and 125398 states in the queue.
+	347000 states explored in 5.12s, with 695928 rules fired and 125940 states in the queue.
+	348000 states explored in 5.14s, with 699513 rules fired and 126401 states in the queue.
+	349000 states explored in 5.15s, with 702788 rules fired and 126818 states in the queue.
+	350000 states explored in 5.17s, with 705330 rules fired and 127082 states in the queue.
+	351000 states explored in 5.18s, with 707533 rules fired and 127479 states in the queue.
+	352000 states explored in 5.19s, with 709548 rules fired and 127960 states in the queue.
+	353000 states explored in 5.20s, with 712776 rules fired and 128374 states in the queue.
+	354000 states explored in 5.22s, with 716594 rules fired and 128673 states in the queue.
+	355000 states explored in 5.23s, with 719169 rules fired and 129017 states in the queue.
+	356000 states explored in 5.25s, with 721534 rules fired and 129436 states in the queue.
+	357000 states explored in 5.26s, with 724588 rules fired and 129884 states in the queue.
+	358000 states explored in 5.27s, with 726748 rules fired and 130320 states in the queue.
+	359000 states explored in 5.28s, with 728449 rules fired and 130810 states in the queue.
+	360000 states explored in 5.29s, with 730184 rules fired and 131320 states in the queue.
+	361000 states explored in 5.31s, with 732804 rules fired and 131705 states in the queue.
+	362000 states explored in 5.32s, with 735970 rules fired and 132100 states in the queue.
+	363000 states explored in 5.34s, with 738159 rules fired and 132447 states in the queue.
+	364000 states explored in 5.35s, with 740190 rules fired and 132710 states in the queue.
+	365000 states explored in 5.36s, with 742049 rules fired and 132999 states in the queue.
+	366000 states explored in 5.38s, with 744126 rules fired and 133354 states in the queue.
+	367000 states explored in 5.39s, with 745890 rules fired and 133558 states in the queue.
+	368000 states explored in 5.41s, with 748115 rules fired and 133902 states in the queue.
+	369000 states explored in 5.42s, with 749911 rules fired and 134103 states in the queue.
+	370000 states explored in 5.43s, with 751925 rules fired and 134457 states in the queue.
+	371000 states explored in 5.45s, with 753758 rules fired and 134690 states in the queue.
+	372000 states explored in 5.47s, with 757072 rules fired and 134894 states in the queue.
+	373000 states explored in 5.48s, with 759474 rules fired and 135146 states in the queue.
+	374000 states explored in 5.50s, with 761985 rules fired and 135429 states in the queue.
+	375000 states explored in 5.51s, with 765463 rules fired and 135616 states in the queue.
+	376000 states explored in 5.53s, with 767855 rules fired and 135860 states in the queue.
+	377000 states explored in 5.54s, with 770169 rules fired and 136145 states in the queue.
+	378000 states explored in 5.57s, with 776825 rules fired and 136048 states in the queue.
+	379000 states explored in 5.59s, with 780037 rules fired and 136349 states in the queue.
+	380000 states explored in 5.60s, with 782878 rules fired and 136648 states in the queue.
+	381000 states explored in 5.62s, with 784897 rules fired and 136953 states in the queue.
+	382000 states explored in 5.63s, with 787100 rules fired and 137422 states in the queue.
+	383000 states explored in 5.65s, with 791103 rules fired and 137761 states in the queue.
+	384000 states explored in 5.66s, with 793866 rules fired and 138007 states in the queue.
+	385000 states explored in 5.68s, with 796048 rules fired and 138199 states in the queue.
+	386000 states explored in 5.70s, with 798268 rules fired and 138331 states in the queue.
+	387000 states explored in 5.71s, with 800438 rules fired and 138660 states in the queue.
+	388000 states explored in 5.73s, with 802924 rules fired and 138920 states in the queue.
+	389000 states explored in 5.74s, with 805629 rules fired and 139186 states in the queue.
+	390000 states explored in 5.76s, with 807855 rules fired and 139523 states in the queue.
+	391000 states explored in 5.77s, with 809571 rules fired and 140020 states in the queue.
+	392000 states explored in 5.79s, with 811476 rules fired and 140432 states in the queue.
+	393000 states explored in 5.80s, with 813255 rules fired and 140860 states in the queue.
+	394000 states explored in 5.81s, with 815473 rules fired and 141374 states in the queue.
+	395000 states explored in 5.83s, with 819102 rules fired and 141797 states in the queue.
+	396000 states explored in 5.85s, with 822271 rules fired and 142195 states in the queue.
+	397000 states explored in 5.86s, with 825031 rules fired and 142541 states in the queue.
+	398000 states explored in 5.88s, with 826983 rules fired and 142761 states in the queue.
+	399000 states explored in 5.89s, with 829231 rules fired and 143132 states in the queue.
+	400000 states explored in 5.91s, with 832002 rules fired and 143570 states in the queue.
+	401000 states explored in 5.93s, with 836378 rules fired and 143758 states in the queue.
+	402000 states explored in 5.94s, with 838807 rules fired and 143968 states in the queue.
+	403000 states explored in 5.96s, with 840988 rules fired and 144188 states in the queue.
+	404000 states explored in 5.98s, with 843421 rules fired and 144439 states in the queue.
+	405000 states explored in 6.00s, with 846295 rules fired and 144657 states in the queue.
+	406000 states explored in 6.01s, with 848009 rules fired and 145129 states in the queue.
+	407000 states explored in 6.02s, with 849747 rules fired and 145646 states in the queue.
+	408000 states explored in 6.03s, with 852674 rules fired and 146030 states in the queue.
+	409000 states explored in 6.05s, with 855775 rules fired and 146481 states in the queue.
+	410000 states explored in 6.07s, with 858257 rules fired and 146740 states in the queue.
+	411000 states explored in 6.08s, with 860522 rules fired and 147196 states in the queue.
+	412000 states explored in 6.10s, with 864290 rules fired and 147561 states in the queue.
+	413000 states explored in 6.12s, with 867878 rules fired and 147742 states in the queue.
+	414000 states explored in 6.14s, with 870700 rules fired and 147972 states in the queue.
+	415000 states explored in 6.15s, with 872677 rules fired and 148215 states in the queue.
+	416000 states explored in 6.17s, with 874797 rules fired and 148806 states in the queue.
+	417000 states explored in 6.18s, with 876463 rules fired and 149114 states in the queue.
+	418000 states explored in 6.19s, with 878576 rules fired and 149668 states in the queue.
+	419000 states explored in 6.21s, with 881201 rules fired and 150124 states in the queue.
+	420000 states explored in 6.23s, with 884992 rules fired and 150564 states in the queue.
+	421000 states explored in 6.24s, with 887835 rules fired and 150846 states in the queue.
+	422000 states explored in 6.25s, with 890285 rules fired and 151273 states in the queue.
+	423000 states explored in 6.27s, with 893332 rules fired and 151678 states in the queue.
+	424000 states explored in 6.29s, with 897344 rules fired and 151897 states in the queue.
+	425000 states explored in 6.30s, with 900116 rules fired and 152116 states in the queue.
+	426000 states explored in 6.32s, with 901820 rules fired and 152608 states in the queue.
+	427000 states explored in 6.33s, with 903567 rules fired and 153114 states in the queue.
+	428000 states explored in 6.34s, with 906574 rules fired and 153490 states in the queue.
+	429000 states explored in 6.36s, with 909057 rules fired and 153789 states in the queue.
+	430000 states explored in 6.38s, with 911002 rules fired and 153912 states in the queue.
+	431000 states explored in 6.40s, with 912918 rules fired and 153990 states in the queue.
+	432000 states explored in 6.41s, with 914828 rules fired and 154119 states in the queue.
+	433000 states explored in 6.43s, with 916718 rules fired and 154228 states in the queue.
+	434000 states explored in 6.44s, with 918651 rules fired and 154325 states in the queue.
+	435000 states explored in 6.46s, with 921185 rules fired and 154468 states in the queue.
+	436000 states explored in 6.48s, with 923427 rules fired and 154583 states in the queue.
+	437000 states explored in 6.50s, with 925960 rules fired and 154726 states in the queue.
+	438000 states explored in 6.52s, with 928822 rules fired and 154788 states in the queue.
+	439000 states explored in 6.55s, with 935621 rules fired and 154572 states in the queue.
+	440000 states explored in 6.56s, with 938237 rules fired and 154974 states in the queue.
+	441000 states explored in 6.58s, with 940317 rules fired and 155356 states in the queue.
+	442000 states explored in 6.59s, with 943638 rules fired and 155669 states in the queue.
+	443000 states explored in 6.61s, with 946292 rules fired and 155936 states in the queue.
+	444000 states explored in 6.62s, with 947834 rules fired and 156260 states in the queue.
+	445000 states explored in 6.64s, with 950317 rules fired and 156656 states in the queue.
+	446000 states explored in 6.65s, with 952494 rules fired and 156882 states in the queue.
+	447000 states explored in 6.67s, with 955123 rules fired and 157068 states in the queue.
+	448000 states explored in 6.70s, with 959462 rules fired and 157054 states in the queue.
+	449000 states explored in 6.71s, with 961051 rules fired and 157293 states in the queue.
+	450000 states explored in 6.72s, with 962730 rules fired and 157641 states in the queue.
+	451000 states explored in 6.74s, with 964813 rules fired and 158069 states in the queue.
+	452000 states explored in 6.75s, with 966985 rules fired and 158340 states in the queue.
+	453000 states explored in 6.76s, with 969085 rules fired and 158647 states in the queue.
+	454000 states explored in 6.78s, with 971246 rules fired and 158953 states in the queue.
+	455000 states explored in 6.79s, with 973153 rules fired and 159421 states in the queue.
+	456000 states explored in 6.81s, with 975546 rules fired and 159645 states in the queue.
+	457000 states explored in 6.83s, with 978506 rules fired and 159833 states in the queue.
+	458000 states explored in 6.85s, with 982908 rules fired and 160022 states in the queue.
+	459000 states explored in 6.87s, with 984958 rules fired and 160377 states in the queue.
+	460000 states explored in 6.88s, with 986943 rules fired and 160797 states in the queue.
+	461000 states explored in 6.89s, with 989069 rules fired and 161287 states in the queue.
+	462000 states explored in 6.92s, with 992976 rules fired and 161585 states in the queue.
+	463000 states explored in 6.93s, with 995370 rules fired and 161794 states in the queue.
+	464000 states explored in 6.96s, with 1000307 rules fired and 161914 states in the queue.
+	465000 states explored in 6.98s, with 1002397 rules fired and 162322 states in the queue.
+	466000 states explored in 6.99s, with 1004173 rules fired and 162686 states in the queue.
+	467000 states explored in 7.00s, with 1006758 rules fired and 163160 states in the queue.
+	468000 states explored in 7.02s, with 1010220 rules fired and 163564 states in the queue.
+	469000 states explored in 7.04s, with 1013124 rules fired and 163978 states in the queue.
+	470000 states explored in 7.05s, with 1015015 rules fired and 164411 states in the queue.
+	471000 states explored in 7.07s, with 1017344 rules fired and 164894 states in the queue.
+	472000 states explored in 7.08s, with 1019204 rules fired and 165277 states in the queue.
+	473000 states explored in 7.10s, with 1022220 rules fired and 165674 states in the queue.
+	474000 states explored in 7.11s, with 1024014 rules fired and 166118 states in the queue.
+	475000 states explored in 7.12s, with 1026332 rules fired and 166596 states in the queue.
+	476000 states explored in 7.14s, with 1029186 rules fired and 166958 states in the queue.
+
+The following is the error trace for the error:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+Startstate Init, d:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:Undefined
+lock[1].beUsed:false
+lock[1].inProtection[1]:false
+lock[1].inProtection[2]:false
+lock[2].owner:Undefined
+lock[2].beUsed:false
+lock[2].inProtection[1]:false
+lock[2].inProtection[2]:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].hasLock:false
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:2
+curData:1
+curLock:2
+replace:NON
+repRule:NONE
+----------
+
+Rule Acquire, l:1, i:1 fired.
+lock[1].owner:1
+lock[1].beUsed:true
+node[1].hasLock:true
+----------
+
+Rule NLNCWR, d:2, a:1, i:2 fired.
+curMemory:1
+curData:2
+replace:REQUIRE
+repRule:NLNCW
+----------
+
+Rule RI, i:2 fired.
+replace:RANDINV
+----------
+
+Rule CRIC, j:1, i:2 fired.
+replace:DONE
+----------
+
+Rule NLNCWD, d:2, a:1, j:1, i:2 fired.
+node[2].cache[1].state:DIRTY
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+replace:NON
+repRule:NONE
+----------
+
+Rule Acquire, l:2, i:2 fired.
+lock[2].owner:2
+lock[2].beUsed:true
+node[2].hasLock:true
+----------
+
+Rule LNCFRR, l:1, a:1, i:1 fired.
+curNode:1
+curLock:1
+replace:REQUIRE
+repRule:LNCFR
+----------
+
+Rule RI, i:1 fired.
+replace:RANDINV
+----------
+
+Rule CRIC, j:1, i:1 fired.
+replace:DONE
+----------
+
+Rule LNCFRD, l:1, a:1, j:1, i:1 fired.
+lock[1].inProtection[1]:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].firstRead[1]:false
+replace:NON
+repRule:NONE
+----------
+
+Rule LCFRR, l:2, a:1, j:1, i:2 fired.
+curNode:2
+curLock:2
+replace:DESIGNATED
+repRule:LCFR
+----------
+
+Rule DCD, j:1, i:2 fired.
+replace:TOREP
+----------
+
+Rule Replace, m:1, j:1, i:2 fired.
+memory[1].data:2
+node[2].cache[1].state:INVALID
+replace:DONE
+----------
+
+Rule LCFRD, l:2, a:1, j:1, i:2 fired.
+The last state of the trace (in full) is:
+memory[1].data:2
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[1].inProtection[1]:true
+lock[1].inProtection[2]:false
+lock[2].owner:2
+lock[2].beUsed:true
+lock[2].inProtection[1]:true
+lock[2].inProtection[2]:false
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:VALID
+node[2].cache[1].addr:1
+node[2].cache[1].data:2
+node[2].hasLock:true
+node[2].firstRead[1]:false
+node[2].firstRead[2]:true
+curNode:2
+curCache:1
+curMemory:1
+curData:2
+curLock:2
+replace:NON
+repRule:NONE
+----------
+
+End of the error trace.
+
+==========================================================================
+
+Result:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+State Space Explored:
+
+	476441 states, 1031284 rules fired in 7.15s.
+
+Analysis of State Space:
+
+	There are rules that are never fired.
+	If you are running with symmetry, this may be why.  Otherwise,
+	please run this program with "-pr" for the rules information.
