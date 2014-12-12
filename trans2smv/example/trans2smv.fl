@@ -47,7 +47,7 @@ let toLowwer str =
     let delta = (ord "A") - (ord "a") in
     let isUpper c = ((ord c) >= (ord "A")) AND ((ord c) <= ord"Z") in
     let ch2Lowwer c = (isUpper c) => (chr ((ord c) - delta)) | c in
-    preEnum^(implode (map ch2Lowwer (explode str)));
+    implode (map ch2Lowwer (explode str));
 // toLowwer
 
 //********************************* Analysis Part *********************************
@@ -110,7 +110,7 @@ let instantiateRules ruleTab paraTypeTab funcMap =
         let rule = tbl_element ruleTab ruleName in
         let paraType = tbl_element paraTypeTab ruleName in
         let paras = combinationGen [] paraType in
-        map (\x. ((ruleName^(implode (map int2str x))), (funcMap rule x))) paras
+        map (\x. ((preEnum^ruleName^(implode (map int2str x))), (funcMap rule x))) paras
     in
     letrec doInstRules [name] ruleTab paraTypeTab funcMap =
             doInstRule name ruleTab paraTypeTab funcMap
@@ -229,15 +229,15 @@ let addNextForChooseRule indent var rules =
     in
     letrec cases indent var i names =
         (i = (length names)) => (
-            (aCase indent var (preEnum^(el i names)) (preEnum^(el 1 names)))^
-                (transIndent indent)^"TRUE : "^preEnum^(el 1 names)^";\n"
+            (aCase indent var (el i names) (el 1 names))^
+                (transIndent indent)^"TRUE : "^(el 1 names)^";\n"
         ) | (
-            (aCase indent var (preEnum^(el i names)) (preEnum^(el (i + 1) names)))^
+            (aCase indent var (el i names) (el (i + 1) names))^
                 (cases indent var (i + 1) names)
         )
     in
     let names = map (\x. (fst x)) rules in
-    (transIndent indent)^"init("^var^") := "^preEnum^(el 1 names)^";\n"^
+    (transIndent indent)^"init("^var^") := "^(el 1 names)^";\n"^
         (transIndent indent)^"next("^var^") :=\n"^
         (transIndent (indent + 1))^"case\n"^
         (cases (indent + 2) var 1 names)^
@@ -268,7 +268,7 @@ let transNext indent ruleTab paraTypeTab funcMap enumValTab dist =
         val (guard form assgn) = r in
         // in fact, the right value is not a global variable but an enumeration
         // However, we don't care about it because names of them are of same shape
-        let chooseForm = eqn (Var (Global chooseRuleVarName)) (Var (Global (preEnum^name))) in
+        let chooseForm = eqn (Var (Global chooseRuleVarName)) (Var (Global name)) in
         (name, guard (andList [chooseForm, form]) assgn)
     in
     let rules = map addChooseRuleForm rules in
@@ -301,8 +301,8 @@ let transVar indent typeTab ruleTab paraTypeTab funcMap enumValTab dist =
     let t = analysisNext rules (tbl_create 200) in
     let vars = tbl_keys t in
     let ruleCount = length rules in
-    let ruleNames = (implode (map (\x. (preEnum^(fst x)^", ")) (firstn (ruleCount - 1) rules)))^
-        preEnum^(fst (el ruleCount rules))
+    let ruleNames = (implode (map (\x. ((fst x)^", ")) (firstn (ruleCount - 1) rules)))^
+        (fst (el ruleCount rules))
     in
     (TV indent vars typeTab enumValTab dist)^
         // VAR for chooseRuleVarName
