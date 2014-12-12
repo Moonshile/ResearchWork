@@ -229,8 +229,7 @@ let addNextForChooseRule indent var rules =
     in
     letrec cases indent var i names =
         (i = (length names)) => (
-            (aCase indent var (el i names) (el 1 names))^
-                (transIndent indent)^"TRUE : "^(el 1 names)^";\n"
+            (aCase indent var (el i names) (el 1 names))
         ) | (
             (aCase indent var (el i names) (el (i + 1) names))^
                 (cases indent var (i + 1) names)
