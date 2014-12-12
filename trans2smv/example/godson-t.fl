@@ -799,8 +799,6 @@ let Coherence i j a dummy1 dummy2 =
 
 //************************************** generate SMV **********************************
 
-load "trans2smv.fl";
-
 let paraTypeTable = 
     let tab0 = tbl_create 20 in
     let tab0 = tbl_insert tab0 "RI" [NodeType, [], [], [], []] in
@@ -849,6 +847,8 @@ let invTypeTable =
 // invTypeTable
 
 let invFuncMap inv [a, b, c, d, e] = inv a b c d e;
+
+load "trans2smv.fl";
 
 trans2smv "godson-t" typeTable ruleTable paraTypeTable invTable invTypeTable 
     (iniStatement (hd DataType)) ruleFuncMap invFuncMap enumValTab dist;
