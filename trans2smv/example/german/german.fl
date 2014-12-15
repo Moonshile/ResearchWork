@@ -1,0 +1,440 @@
+load "creatIsaModel0125.fl";
+
+//******************************************************************************************************************************************
+//channel message command
+
+let dist=4;
+
+let emptyC=0+dist; let grant_shared=1+dist; let grant_exclusive=2+dist;
+
+let req_shared=3+dist; let req_exclusive=4+dist;
+
+let invalidate=8+dist; let  invalidate_ack=9+dist;
+
+//******************************************************************************************************************************************
+//cache state
+
+let invalid=5+dist; let shared=6+dist; let exclusive=7+dist;
+
+
+//******************************************************************************************************************************************
+//boolean
+
+let True=10+dist; let False=11+dist;
+
+//******************************************************************************************************************************************
+//channel type 
+
+let channel1Type=[emptyC, req_shared, req_exclusive,invalidate, grant_shared, grant_exclusive,  invalidate_ack];
+
+let channel2_4Type=channel1Type; 
+
+let channel3Type=channel1Type; 
+
+//******************************************************************************************************************************************
+//cache type
+
+let cacheType=[invalid, shared, exclusive];
+
+//******************************************************************************************************************************************
+//boolean type
+
+let BooleanType=[True,False];
+
+//******************************************************************************************************************************************
+//parameter type
+ 
+let paraType=[1,2,3];
+
+
+//******************************************************************************************************************************************
+//type table
+
+let typeTable=
+    let tab0=tbl_create 6 in
+    let tab0=tbl_insert tab0 "channel1"   channel1Type in
+    let tab0=tbl_insert tab0 "channel2_4"   channel2_4Type in
+    let tab0=tbl_insert tab0 "channel3"   channel3Type in
+    let tab0=tbl_insert tab0 "cache"   cacheType in
+    let tab0=tbl_insert tab0 "home_sharer_list"   BooleanType in
+    let tab0=tbl_insert tab0 "home_invalidate_list"   BooleanType in
+    let tab0=tbl_insert tab0 "home_exclusive_granted"   BooleanType in
+    let tab0=tbl_insert tab0 "home_current_command"   channel1Type in
+    let tab0=tbl_insert tab0 "home_current_client"   paraType in
+    tab0;
+
+//******************************************************************************************************************************************
+//arit table
+
+let aritTable=
+    let tab0=tbl_create 6 in
+    let tab0=tbl_insert tab0 "channel1"   1 in
+    let tab0=tbl_insert tab0 "channel2_4"   1 in
+    let tab0=tbl_insert tab0 "channel3"   1 in
+    let tab0=tbl_insert tab0 "cache"   1 in
+    let tab0=tbl_insert tab0 "home_sharer_list"   1 in
+    let tab0=tbl_insert tab0 "home_invalidate_list"   1 in
+    let tab0=tbl_insert tab0 "home_exclusive_granted"   0 in
+    let tab0=tbl_insert tab0 "home_current_command"   0 in
+    let tab0=tbl_insert tab0 "home_current_client"   0 in
+    tab0;   
+
+//******************************************************************************************************************************************
+//enum value table
+
+let enumValTab=
+    let tab0=tbl_create 10 in
+    let tab0=tbl_insert tab0   (invalid) "invalid" in
+    let tab0=tbl_insert tab0   (exclusive) "exclusive" in
+    let tab0=tbl_insert tab0   (shared) "shared" in
+    let tab0=tbl_insert tab0   (emptyC) "emptyC" in
+    let tab0=tbl_insert tab0   (grant_shared) "grant_shared" in
+    let tab0=tbl_insert tab0   (req_shared) "req_shared" in
+    let tab0=tbl_insert tab0   (req_exclusive) "req_exclusive" in
+    let tab0=tbl_insert tab0   (invalidate) "invalidate" in
+    let tab0=tbl_insert tab0   (invalidate_ack) "invalidate_ack" in
+    let tab0=tbl_insert tab0   (grant_exclusive) "grant_exclusive" in
+    let tab0=tbl_insert tab0   True  "true" in
+    let tab0=tbl_insert tab0   False  "false" in
+    tab0   ;
+
+//******************************************************************************************************************************************
+//type name table
+      
+let typeNameTab =
+    let tab0=tbl_create 6 in
+    let tab0=tbl_insert tab0 channel1Type   "channel1Type" in
+    let tab0=tbl_insert tab0 cacheType  "cacheType"    in
+    let tab0=tbl_insert tab0 BooleanType "Bool"  in   
+    let tab0=tbl_insert tab0 paraType "Int"  in
+    tab0;
+    
+//******************************************************************************************************************************************
+// german protocol rules
+
+//******************************************************************************************************************************************
+//Rule: client requests shared access
+
+let rule_client_requests_shared_access i dummy =
+    let form1= eqn (left ->(Var (Param "cache" i)))  (right ->(Const invalid)) in
+    let form2= eqn (left ->(Var (Param "channel1" i)))  (right ->(Const emptyC)) in
+    let form=andList [form1,form2] in
+    guard form (assign ( (Param "channel1" i)) ((Const req_shared )));
+
+//******************************************************************************************************************************************
+//Rule: client requests exlusive access 1
+
+let rule_client_requests_exclusive_access_1 i dummy =
+    let form1= eqn (left -> (Var(Param "cache" i)))  (right ->(Const invalid)) in
+    let form2= eqn (left -> (Var(Param "channel1" i)))  (right ->(Const emptyC)) in
+    let form=andList [form1,form2] in
+    guard form (assign (  (Param "channel1" i)) ( (Const req_exclusive)));
+
+//******************************************************************************************************************************************
+//Rule: client requests exlusive access 2
+
+let rule_client_requests_exclusive_access_2 i dummy =
+    let form1= eqn (left ->(Var (Param "cache" i)))  (right ->(Const shared)) in
+    let form2= eqn (left ->(Var (Param "channel1" i)))  (right ->(Const emptyC)) in
+    let form=andList [form1,form2] in
+    guard form (assign    (Param "channel1" i)  (Const req_exclusive));
+
+//******************************************************************************************************************************************
+//Rule: home picks new requests
+	
+let rule_home_picks_new_request  N i dummy =
+    let form1= eqn (left -> (Var (Global "home_current_command" )))  (right ->(Const emptyC)) in
+    let form2= neg (eqn (left -> (Var (Param "channel1" i)))  (right ->(Const emptyC))) in
+    let form=andList [form1,form2] in
+    let assgn1=assign  (  Global "home_current_command" )  (Var (Param "channel1" i)) in
+    let assgn2= assign   ( Global "home_current_client" )  (Const i) in
+    //let cond j=eqn (Var (Param "home_sharer_list" j)) (Const True) then
+    //let iteForm1 j=iteForm (cond j) (Const True) (Const False) then
+    //let assgn3 j=assign  (  (Param "home_invalidate_list" j)) (iteForm1 j) then
+    let assgn3 j=assign  (  (Param "home_invalidate_list" j)) (Var (Param "home_sharer_list" j)) then
+    let assgn3s=parallel (map  assgn3 (1 upto N))in
+    guard form ( parallel [assgn1, assgn2,assgn3s]);
+
+//******************************************************************************************************************************************
+//Rule: home sends invalidate message 1
+	
+let rule_home_sends_invalidate_message_1 i dummy =
+    let form1= eqn (left -> (Var (Global "home_current_command" )))  (right ->(Const req_shared)) in
+    let form2= (eqn (left -> (Var (Global "home_exclusive_granted")))  (right ->(Const True))) in
+    let form3= (eqn (left -> (Var (Param "home_invalidate_list" i)))  (right ->(Const True))) in
+    let form4= (eqn (left -> (Var (Param "channel2_4" i)))  (right ->(Const emptyC))) in
+    let form=andList [form1,form2,form3,form4] in
+    let assgn1=(assign (  (Param "channel2_4" i)) ( (Const invalidate))) in
+    let assgn2=(assign (  (Param "home_invalidate_list" i)) ( (Const False))) in
+    guard form ( parallel [assgn1, assgn2]);
+
+//******************************************************************************************************************************************
+//Rule: home sends invalidate message 2
+
+let rule_home_sends_invalidate_message_2 i dummy =
+    let form1= eqn (left -> (Var (Global "home_current_command" )))  (right ->(Const req_exclusive)) in
+    let form3= (eqn (left -> (Var (Param "home_invalidate_list" i)))  (right ->(Const True))) in
+    let form4= (eqn (left -> (Var (Param "channel2_4" i)))  (right ->(Const emptyC))) in
+    let form=andList [form1,form3,form4] in
+    let assgn1=(assign  (  (Param "channel2_4" i)) ( (Const invalidate))) in
+    let assgn2=(assign  (  (Param "home_invalidate_list" i)) ( (Const False))) in
+    guard form ( parallel [assgn1, assgn2]);
+
+//******************************************************************************************************************************************
+//Rule: home receives invalidate acknowledgement 1
+
+let home_receives_invalidate_acknowledgement1 i dummy =
+    let form1= neg (eqn (left -> (Var (Global "home_current_command" )))  (right ->(Const emptyC))) in
+    let form2= (eqn (left -> (Var (Param "channel3" i)))  (right ->(Const invalidate_ack))) in
+    let form3=(eqn (left -> (Var (Global "home_exclusive_granted" )))  (right ->(Const True))) then
+    let form=andList [form2,form1,form3] in
+    let assgn1=(assign  (  (Param "channel3" i)) ( (Const emptyC))) in
+    let assgn2=(assign  (  (Param "home_sharer_list" i)) ( (Const False))) in
+    let assgn3=(assign  (  (Global "home_exclusive_granted" )) ( (Const False))) in
+    guard form ( parallel [assgn1, assgn2,assgn3]);
+    
+//******************************************************************************************************************************************
+//Rule: home receives invalidate acknowledgement 2 
+    
+let home_receives_invalidate_acknowledgement2 i dummy =
+    let form1= neg (eqn (left -> (Var (Global "home_current_command" )))  (right ->(Const emptyC))) in
+    let form2= (eqn (left -> (Var (Param "channel3" i)))  (right ->(Const invalidate_ack))) in
+    let form3=(eqn (left -> (Var (Global "home_exclusive_granted" )))  (right ->(Const False)))  then
+    let form=andList [form2,form1,form3 ] in
+    let assgn1=(assign  (  (Param "channel3" i)) ( (Const emptyC))) in
+    let assgn2=(assign  (  (Param "home_sharer_list" i)) ( (Const False))) in
+    guard form ( parallel [assgn1, assgn2 ]);
+
+//******************************************************************************************************************************************
+//Rule: sharer invalidates cache 
+
+let sharer_invalidates_cache i dummy =
+    let form1= (eqn (left -> (Var (Param "channel2_4" i)))  (right ->(Const invalidate))) in
+    let form2= (eqn (left -> (Var (Param "channel3" i)))  (right ->(Const emptyC))) in
+    let form=andList [form1,form2] in
+    let assgn1=(assign (  (Param "channel2_4" i)) ( (Const emptyC))) in
+    let assgn2=(assign (  (Param "channel3" i)) ( (Const invalidate_ack))) in
+    let assgn3=(assign  (  (Param "cache" i)) ( (Const invalid))) in
+    guard form ( parallel [assgn1, assgn2, assgn3]);
+
+//******************************************************************************************************************************************
+//Rule: client receives shared grant
+
+let client_receives_shared_grant i dummy =
+    let form1= (eqn (left -> (Var (Param "channel2_4" i)))  (right ->(Const grant_shared))) in
+    let assgn1=(assign  (  (Param "channel2_4" i)) ( (Const emptyC))) in
+    let assgn2=(assign  (  (Param "cache" i)) ( (Const shared))) in
+    guard form1 ( parallel [assgn1, assgn2]);
+
+//******************************************************************************************************************************************
+//Rule: client receives exclusive grant 
+
+let client_receives_exclusive_grant i dummy =
+    let form1= (eqn (left -> (Var (Param "channel2_4" i)))  (right ->(Const grant_exclusive))) in
+    let assgn1=(assign  (  (Param "channel2_4" i)) ( (Const emptyC))) in
+    let assgn2=(assign  (  (Param "cache" i)) ( (Const exclusive))) in
+    guard form1 ( parallel [assgn1, assgn2]);
+
+//******************************************************************************************************************************************
+//Rule: home sends reply to client shared
+
+let home_sends_reply_to_client_shared i dummy =
+    let form1= (eqn (left -> (Var (Global "home_current_command" )))  (right ->(Const req_shared))) in
+    let form4= (eqn (left -> (Var (Global "home_exclusive_granted" )))  (right ->(Const False))) in
+    let form3= (eqn (left -> (Var (Param "channel2_4" i)))  (right ->(Const emptyC))) in
+    let form2=(eqn (left -> (Var (Global "home_current_client" ))) (right ->(Const i))) in
+    let form=andList [form4,form2,form3,form1] in
+    let assgn1=(assign (  (Param "channel2_4" i)) ( (Const grant_shared))) in
+    let assgn2=(assign  (  (Global "home_current_command" )) ( (Const emptyC))) in
+    let assgn3=(assign  (  (Param "home_sharer_list" i)) ( (Const True))) in
+    guard form ( parallel [assgn1, assgn2, assgn3]);
+
+//******************************************************************************************************************************************
+//Rule: home sends reply to client exclusive 
+
+let home_sends_reply_to_client_exclusive  N i dummy =
+    let form1= (eqn (left -> (Var (Global "home_current_command" )))  (right ->(Const req_exclusive))) in
+    let paraForm k=  (eqn (left -> (Var (Param "home_sharer_list" k)))  (right ->(Const False))) in  
+    let form2= forAllForm N paraForm in
+    let form3= (eqn (left -> (Var (Param "channel2_4" i)))  (right ->(Const emptyC))) in
+    let form4=(eqn (left -> (Var (Global "home_current_client" ))) (right ->(Const i))) in
+    let form=andList [form1,form2,form3,form4] in
+    let assgn1=(assign  (  (Param "channel2_4" i)) ( (Const grant_exclusive))) in
+    let assgn2= assign (  (Global "home_current_command" )) ( (Const emptyC)) in
+    let assgn3=(assign  (  (Param "home_sharer_list" i)) ( (Const True))) in
+    let assgn4=(assign  (  (Global "home_exclusive_granted" )) ( (Const True))) in
+    guard form ( parallel [assgn1, assgn2, assgn3,assgn4]);
+
+//******************************************************************************************************************************************
+//rule list
+
+let rules=[
+	home_sends_reply_to_client_exclusive 3,
+	home_sends_reply_to_client_shared ,
+    rule_client_requests_shared_access ,
+    rule_client_requests_exclusive_access_1 , 
+	rule_client_requests_exclusive_access_2 ,
+    rule_home_picks_new_request 3, 
+	rule_home_sends_invalidate_message_1 ,
+    rule_home_sends_invalidate_message_2 , 
+	home_receives_invalidate_acknowledgement1 ,
+	home_receives_invalidate_acknowledgement2,
+    sharer_invalidates_cache ,
+    client_receives_shared_grant ,
+    client_receives_exclusive_grant  ];
+
+//******************************************************************************************************************************************
+//rule table
+
+let ruleTable=    
+	let tab0=tbl_create 6 in
+	let tab0=tbl_insert tab0 "rule_client_requests_shared_access"   rule_client_requests_shared_access in  
+    let tab0=tbl_insert tab0 "rule_client_requests_exclusive_access_1"    rule_client_requests_exclusive_access_1  in
+    let tab0=tbl_insert tab0 "rule_client_requests_exclusive_access_2"    rule_client_requests_exclusive_access_2 in  
+    let tab0=tbl_insert tab0 "rule_home_picks_new_request_3"   (rule_home_picks_new_request 3) in
+    let tab0=tbl_insert tab0 "rule_home_sends_invalidate_message_1"   rule_home_sends_invalidate_message_1 in   
+    let tab0=tbl_insert tab0 "rule_home_sends_invalidate_message_2"   rule_home_sends_invalidate_message_2 in
+    let tab0=tbl_insert tab0 "rule_home_receives_invalidate_acknowledgement1"   home_receives_invalidate_acknowledgement1 in
+    let tab0=tbl_insert tab0 "rule_home_receives_invalidate_acknowledgement2"   home_receives_invalidate_acknowledgement2 in
+    let tab0=tbl_insert tab0 "rule_sharer_invalidates_cache"   sharer_invalidates_cache in
+    let tab0=tbl_insert tab0 "rule_client_receives_shared_grant"   client_receives_shared_grant in
+    let tab0=tbl_insert tab0 "rule_client_receives_exclusive_grant"    client_receives_exclusive_grant   in 
+    let tab0=tbl_insert tab0 "rule_home_sends_reply_to_client_exclusive"   (home_sends_reply_to_client_exclusive 3) in
+    let tab0=tbl_insert tab0 "rule_home_sends_reply_to_client_shared"   home_sends_reply_to_client_shared in
+    tab0;   
+
+
+//******************************************************************************************************************************************
+//parameter numbers table
+
+let paraNumTable=    
+	let tab0=tbl_create 6 in
+	let tab0=tbl_insert tab0 "rule_client_requests_shared_access"   1 in  
+    let tab0=tbl_insert tab0 "rule_client_requests_exclusive_access_1"    1  in
+    let tab0=tbl_insert tab0 "rule_client_requests_exclusive_access_2"    1 in  
+    let tab0=tbl_insert tab0 "rule_home_picks_new_request_3"   1 in
+    let tab0=tbl_insert tab0 "rule_home_sends_invalidate_message_1"   1 in   
+    let tab0=tbl_insert tab0 "rule_home_sends_invalidate_message_2"   1 in
+    let tab0=tbl_insert tab0 "rule_home_receives_invalidate_acknowledgement1"   1 in
+    let tab0=tbl_insert tab0 "rule_home_receives_invalidate_acknowledgement2"   1 in
+    let tab0=tbl_insert tab0 "rule_sharer_invalidates_cache"   1 in
+    let tab0=tbl_insert tab0 "rule_client_receives_shared_grant"   1 in
+    let tab0=tbl_insert tab0 "rule_client_receives_exclusive_grant"    1   in 
+    let tab0=tbl_insert tab0 "rule_home_sends_reply_to_client_exclusive"   1 in
+    let tab0=tbl_insert tab0 "rule_home_sends_reply_to_client_shared"   1 in
+    tab0;   
+
+    
+//******************************************************************************************************************************************
+//initial statements
+
+let iniStatement N=
+	let assgn1=assign  (  Global "home_current_command" )  (Const emptyC) then
+	let assgn2= assign   ( Global "home_exclusive_granted" )  (Const False) in  
+	let assgn3 j=assign  (  (Param "home_invalidate_list" j)) ( (Const False)) in
+	let assgn3s=parallel (map  assgn3 (1 upto N)) in 
+	let assgn4 j=assign  (  (Param "home_sharer_list" j)) ( (Const False)) in
+	let assgn4s=parallel (map  assgn4 (1 upto N))in    
+	let assgn5 j=assign  (  (Param "cache" j)) ( (Const invalid)) in
+	let assgn5s=parallel (map  assgn5 (1 upto N))in
+	let assgn6 j=assign  (  (Param "channel1" j)) ( (Const emptyC)) in
+	let assgn6s=parallel (map  assgn6 (1 upto N))in
+	let assgn7 j=assign  (  (Param "channel2_4" j)) ( (Const emptyC)) in
+	let assgn7s=parallel (map  assgn7 (1 upto N))in
+	let assgn8 j=assign  (  (Param "channel3" j)) ( (Const emptyC)) in
+	let assgn8s=parallel (map  assgn8 (1 upto N))in
+	( parallel [assgn1, assgn2,assgn3s, assgn4s,assgn5s,assgn6s,assgn7s,assgn8s ]);
+
+//******************************************************************************************************************************************
+
+let paraTypeTable=    
+	let tab0=tbl_create 6 in
+	let tab0=tbl_insert tab0 "rule_client_requests_shared_access"   [paraType, []] in  
+    let tab0=tbl_insert tab0 "rule_client_requests_exclusive_access_1"    [paraType, []]  in
+    let tab0=tbl_insert tab0 "rule_client_requests_exclusive_access_2"    [paraType, []] in  
+    let tab0=tbl_insert tab0 "rule_home_picks_new_request_3"   [paraType, []] in
+    let tab0=tbl_insert tab0 "rule_home_sends_invalidate_message_1"   [paraType, []] in   
+    let tab0=tbl_insert tab0 "rule_home_sends_invalidate_message_2"   [paraType, []] in
+    let tab0=tbl_insert tab0 "rule_home_receives_invalidate_acknowledgement1"   [paraType, []] in
+    let tab0=tbl_insert tab0 "rule_home_receives_invalidate_acknowledgement2"   [paraType, []] in
+    let tab0=tbl_insert tab0 "rule_sharer_invalidates_cache"   [paraType, []] in
+    let tab0=tbl_insert tab0 "rule_client_receives_shared_grant"   [paraType, []] in
+    let tab0=tbl_insert tab0 "rule_client_receives_exclusive_grant"    [paraType, []]   in 
+    let tab0=tbl_insert tab0 "rule_home_sends_reply_to_client_exclusive"   [paraType, []] in
+    let tab0=tbl_insert tab0 "rule_home_sends_reply_to_client_shared"   [paraType, []] in
+    tab0; 
+// paraTypeTable
+
+let ruleFuncMap rule [a, b] = rule a b;
+
+let contra i1 i2 =
+    let form1= (eqn (left -> (Var (Param "cache" i1)))  
+        (right->(Const exclusive))) in
+    let form2= (eqn (left -> (Var (Param "cache" i2)))  
+        (right->(Const exclusive))) in 
+    andList [form1, form2];
+// contra
+
+let invTable =
+    let tab0 = tbl_create 2 in
+    let tab0 = tbl_insert tab0 "contra" contra in
+    tab0;
+// invTable
+
+let invTypeTable =
+    let tab0 = tbl_create 2 in
+    let tab0 = tbl_insert tab0 "contra" [paraType, paraType] in
+    tab0;
+// invTypeTable
+
+let invFuncMap inv [a, b] = inv a b;
+
+load "trans2smv.fl";
+
+trans2smv "german" typeTable ruleTable paraTypeTable invTable invTypeTable 
+    (iniStatement (el (length paraType) paraType)) ruleFuncMap invFuncMap enumValTab dist;
+
+/*    
+//******************************************************************************************************************************************
+//create def
+
+createThyDef aritTable  typeTable typeNameTab enumValTab "german"	;
+
+//******************************************************************************************************************************************
+//create makefile
+
+createMakefile "cache";
+
+//******************************************************************************************************************************************
+
+let i1=  1 in
+let i2=  2 in
+let form1= (eqn (left -> (Var (Param "cache" i1)))  
+	(right->(Const exclusive))) then
+let form2= (eqn (left -> (Var (Param "cache" i2)))  
+	(right->(Const exclusive))) then 
+let contra = andList [form1, form2] then 
+
+// symIndcie = [0, 1, 2, 3]
+
+let symIndice = [1,2,3] then
+let newParasMethod = newParas  dist symIndice        then
+let parasOfInvMethod = parasOfInv  dist  symIndice then
+
+//******************************************************************************************************************************************
+
+let result=existResultFileAndDel "res_lock" then
+ let result=existResultFileAndDel "res_inv" then
+
+val (invs,relLib) = tabularFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice
+typeTable [0, 1,2,3] "cache" "german" enumValTab [contra] (tbl_keys ruleTable)  [] []  5 in
+
+//******************************************************************************************************************************************
+//show invariants
+
+printStrList (map (formula2str  enumValTab) invs) fseq
+
+fclose fdebug  fseq
+
+fclose fdebug2;
+*/

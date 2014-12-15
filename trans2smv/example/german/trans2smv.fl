@@ -1,0 +1,339 @@
+/*
+ * trans2smv
+ * Kaiqiang Duan, 2014-12-10
+ * This software is to translate forte version of a cache coherence
+ * protocol to its corresponding NuSMV version.
+ */
+
+#if (is_defined "findInvsFromParaRulesByInvs");
+    let createIsaModel = ();
+#else;
+    let createIsaModel = load "creatIsaModel0125.fl";
+#endif;
+createIsaModel;
+
+#if (NOT (is_defined "trans2smv"));
+
+// generate a list from n downto 1
+letrec genN 1 =
+        [1]
+    /\ genN n =
+        n:(genN (n - 1));
+// genN
+
+let genNegN n = map (\x. (0 - x)) (genN n);
+
+// generate all possible combinations for a specific choice list
+// for example, input [[1,2],[1,2],[]] gives [[1,1,0],[1,2,0],[2,1,0],[2,2,0]]
+// NOTE that [] will be generated as 0
+letrec combinationGen res [] =
+        res
+    /\ combinationGen [] ([]:choice) =
+        combinationGen [[0]] choice
+    /\ combinationGen res ([]:choice) =
+        combinationGen (map (\x. x@[0]) res) choice
+    /\ combinationGen [] (p:choice) =
+        combinationGen (map (\x. [x]) p) choice
+    /\ combinationGen res (p:choice) =
+        let incPara res i = map (\x. x@[i]) res in
+        combinationGen (itlist (\x.\r. (incPara res x)@r) p []) choice;
+// combinationGen
+
+// prefix of enumerations generated
+let preEnum = "c_";
+
+// convert a str to its lowwer case
+let toLowwer str =
+    let delta = (ord "A") - (ord "a") in
+    let isUpper c = ((ord c) >= (ord "A")) AND ((ord c) <= ord"Z") in
+    let ch2Lowwer c = (isUpper c) => (chr ((ord c) - delta)) | c in
+    implode (map ch2Lowwer (explode str));
+// toLowwer
+
+//********************************* Analysis Part *********************************
+
+// translate variable names from "a.b.c" to "a_b_c"
+let varName (Global name) =
+        let parts = str_split name "." in
+        let pre = firstn ((length parts) - 1) parts in
+        let last = el (length parts) parts in
+        itlist (\x.\y. x^"_"^y) pre last
+    /\ varName (Param name i) =
+        let parts = str_split name "." in
+        let pre = firstn ((length parts) - 1) parts in
+        let last = el (length parts) parts in
+        itlist (\x.\y. x^"_"^y) pre (last^"["^(int2str i)^"]");
+// in fact, it need not translate the variable names
+// because NuSMV support names as "a.b.c"
+let varName (Global name) =
+        name
+    /\ varName (Param name i) =
+        name^"["^(int2str i)^"]";
+// varName
+
+// translate variable names as "a.b.c[0]" to "a.b.c"
+let getNameAtom name = hd (str_split name "[");
+
+// add an associated record of a variable into the var table
+let addVarTuple var tuple t =
+    let name = varName var in
+    (tbl_member t name) => (
+        let old = tbl_element t name then
+        let t = tbl_delete t name then
+        tbl_insert t name (tuple:old)
+    ) | (
+        tbl_insert t name [tuple]
+    );
+// addVarTuple
+
+// do the analysis for initialization, and the associated expression
+// of each variable is stored in the table returned.
+// the last expression is put as the head of the list
+letrec analysisInit (assign var exp) t =
+        addVarTuple var exp t
+    /\ analysisInit (parallel []) t = 
+        t
+    /\ analysisInit (parallel assgns) t =
+        let t = analysisInit (hd assgns) t then
+        analysisInit (parallel (tl assgns)) t
+    /\ analysisInit (forallStatement 1 func) t =
+        analysisInit (func 1) t
+    /\ analysisInit (forallStatement n func) t =
+        let t  = analysisInit (func n) t then
+        analysisInit (forallStatement (n - 1) func) t;
+// analysisInit
+
+// instantiate rules with their paras, returns rule list
+// paraTypeTab is a table contains para types with rule names as keys
+let instantiateRules ruleTab paraTypeTab funcMap =
+    let doInstRule ruleName ruleTab paraTypeTab funcMap =
+        let rule = tbl_element ruleTab ruleName in
+        let paraType = tbl_element paraTypeTab ruleName in
+        let paras = combinationGen [] paraType in
+        map (\x. ((preEnum^ruleName^(implode (map int2str x))), (funcMap rule x))) paras
+    in
+    letrec doInstRules [name] ruleTab paraTypeTab funcMap =
+            doInstRule name ruleTab paraTypeTab funcMap
+        /\ doInstRules (name:names) ruleTab paraTypeTab funcMap =
+            (doInstRule name ruleTab paraTypeTab funcMap)@(doInstRules names ruleTab paraTypeTab funcMap)
+    in
+    let names = tbl_keys ruleTab in
+    doInstRules names ruleTab paraTypeTab funcMap;
+// instantiateRules
+
+let instantiateInvs = instantiateRules;
+
+// do the analysis
+/*
+ * The result of Analysis Part is a tuple for each variable, which has a structure
+ * (associatedGuards, associatedExpressions)
+ * and all these tuples is stored as a list in a table, attached the variable's name
+ * as key
+ */
+letrec analysisNext [] t = 
+        t
+    /\ analysisNext ((name, r):rules) t =
+        letrec analysis (guard form (assign var exp)) t =
+                addVarTuple var (form, exp) t
+            /\ analysis (guard form (parallel [])) t = 
+                t
+            /\ analysis (guard form (parallel assgns)) t =
+                let t = analysis (guard form (hd assgns)) t then
+                analysis (guard form (parallel (tl assgns))) t
+            /\ analysis (guard form (forallStatement 1 func)) t =
+                analysis (guard form (func 1)) t
+            /\ analysis (guard form (forallStatement n func)) t =
+                let t  = analysis (guard form (func n)) t then
+                analysis (guard form (forallStatement (n - 1) func)) t
+        in
+        let t = analysis r t then
+        analysisNext rules t;
+// analysisNext
+
+//********************************* Translation Part *********************************
+
+// for indentation
+letrec transIndent 0 =
+        ""
+    /\ transIndent indent =
+        (transIndent (indent - 1))^"    ";
+// transIndent
+
+// translate expression
+// WARNING: iteForm is omitted
+letrec transExp (Var var) enumValTab dist =
+        varName var
+    /\ transExp (Const i) enumValTab dist =
+        (i < dist) => (int2str i) | (toLowwer(tbl_element enumValTab i));
+// transExp
+
+// translate formulae
+letrec transFormula (chaos) enumValTab dist =
+        "1"
+    /\ transFormula (miracle) enumValTab dist =
+        "0"
+    /\ transFormula (eqn e1 e2) enumValTab dist =
+        "("^(transExp e1 enumValTab dist)^" = "^(transExp e2 enumValTab dist)^")"
+    /\ transFormula (neg form) enumValTab dist =
+        "(!"^(transFormula form enumValTab dist)^")"
+    /\ transFormula (andList ands) enumValTab dist =
+        letrec transAndList ands enumValTab dist =
+            ((length ands) = 1) => (
+                transFormula (hd ands) enumValTab dist
+            ) | (
+                (transFormula (hd ands) enumValTab dist)^"&"^(transAndList (tl ands) enumValTab dist)
+            )
+        in
+        "("^(transAndList ands enumValTab dist)^")"
+    /\ transFormula (orList ors) enumValTab dist =
+        letrec transOrList ors enumValTab dist =
+            ((length ors) = 1) => (
+                transFormula (hd ors) enumValTab dist
+            ) | (
+                (transFormula (hd ors) enumValTab dist)^"|"^(transOrList (tl ors) enumValTab dist)
+            )
+        in
+        "("^(transOrList ors enumValTab dist)^")"
+    /\ transFormula (implyForm f1 f2) enumValTab dist =
+        "("^(transFormula f1 enumValTab dist)^" -> "^(transFormula f2 enumValTab dist)^")"
+    /\ transFormula (forallForm n func) enumValTab dist =
+        transFormula (andList (map func (genN n))) enumValTab dist;
+// transFormula
+
+// this variable is for randomly choose a rule in smv
+// all instantiated rules are encoded as a number,
+// and only when this variable is equal to the rule's code,
+// the rule could be chosen to execute
+let chooseRuleVarName = "cur_rule";
+
+// translate initialization statements
+let transInit indent init enumValTab dist =
+    letrec TI indent t [] enumValTab dist = 
+            ""
+        /\ TI indent t (v:vars) enumValTab dist =
+            let exp = hd (tbl_element t v) in
+            (transIndent indent)^"init("^v^") := "^(transExp exp enumValTab dist)^";\n"^
+                (TI indent t vars enumValTab dist)
+    in
+    let t = analysisInit init (tbl_create 200) in
+    let vars = tbl_keys t in
+    TI indent t vars enumValTab dist;
+    // needn't init chooseRuleVarName because 
+    // it has been generated in function addNextForChooseRule
+// transInit
+
+// generate the next clause in smv for chooseRuleVarName
+let addNextForChooseRule indent var rules =
+    let aCase indent var v1 v2 =
+        (transIndent indent)^"("^var^" = "^v1^") : "^v2^";\n"
+    in
+    letrec cases indent var i names =
+        (i = (length names)) => (
+            (aCase indent var (el i names) (el 1 names))
+        ) | (
+            (aCase indent var (el i names) (el (i + 1) names))^
+                (cases indent var (i + 1) names)
+        )
+    in
+    let names = map (\x. (fst x)) rules in
+    (transIndent indent)^"init("^var^") := "^(el 1 names)^";\n"^
+        (transIndent indent)^"next("^var^") :=\n"^
+        (transIndent (indent + 1))^"case\n"^
+        (cases (indent + 2) var 1 names)^
+        (transIndent (indent + 1))^"esac;\n";
+// addNextForChooseRule
+
+// translate transitions of rules to next statements of SMV
+let transNext indent ruleTab paraTypeTab funcMap enumValTab dist = 
+    letrec TN indent t [] enumValTab dist =
+            ""
+        /\ TN indent t (v:vars) enumValTab dist =
+            let cases = tbl_element t v in
+            letrec transCases v indent [] enumValTab dist =
+                    (transIndent indent)^"TRUE : "^v^";\n"
+                /\ transCases v indent ((g, exp):cases) enumValTab dist =
+                    (transIndent indent)^(transFormula g enumValTab dist)^" : "^
+                        (transExp exp enumValTab dist)^";\n"^(transCases v indent cases enumValTab dist)
+            in
+            (transIndent indent)^"next("^v^") := \n"^
+                (transIndent (indent + 1))^"case\n"^
+                (transCases v (indent + 2) cases enumValTab dist)^
+                (transIndent (indent + 1))^"esac;\n"^
+                (TN indent t vars enumValTab dist)
+    in
+    let rules = instantiateRules ruleTab paraTypeTab funcMap in
+    // in smv, a rule is triggered only when it is chosen and its guard is satisfied
+    let addChooseRuleForm (name, r) =
+        val (guard form assgn) = r in
+        // in fact, the right value is not a global variable but an enumeration
+        // However, we don't care about it because names of them are of same shape
+        let chooseForm = eqn (Var (Global chooseRuleVarName)) (Var (Global name)) in
+        (name, guard (andList [chooseForm, form]) assgn)
+    in
+    let rules = map addChooseRuleForm rules in
+    let t = analysisNext rules (tbl_create 200) in
+    let vars = tbl_keys t in
+    (TN indent t vars enumValTab dist)^
+        // next clause for chooseRuleVarName
+        (addNextForChooseRule indent chooseRuleVarName rules);
+// transNext
+
+// translate variables
+let transVar indent typeTab ruleTab paraTypeTab funcMap enumValTab dist =
+    letrec TV indent vars typeTab enumValTab dist =
+        let processVar indent varName typeTab enumValTab dist =
+            let typeNum = tbl_element typeTab (getNameAtom varName) in
+            let type = map (\x. (transExp (Const x) enumValTab dist)) typeNum in
+            let fstn = firstn ((length type) - 1) type in
+            let last = el (length type) type in
+            let typeStr = "{"^(itlist (\x.\r. (x^", "^r)) fstn last)^"}" in
+            (transIndent indent)^varName^" : "^typeStr^";\n"
+        in
+        ((length vars) = 1) => (
+            processVar indent (hd vars) typeTab enumValTab dist
+        ) | (
+            (processVar indent (hd vars) typeTab enumValTab dist)^
+                (TV indent (tl vars) typeTab enumValTab dist)
+        )
+    in
+    let rules = instantiateRules ruleTab paraTypeTab funcMap in
+    let t = analysisNext rules (tbl_create 200) in
+    let vars = tbl_keys t in
+    let ruleCount = length rules in
+    let ruleNames = (implode (map (\x. ((fst x)^", ")) (firstn (ruleCount - 1) rules)))^
+        (fst (el ruleCount rules))
+    in
+    (TV indent vars typeTab enumValTab dist)^
+        // VAR for chooseRuleVarName
+        (transIndent indent)^chooseRuleVarName^" : {"^ruleNames^"};\n";
+// transVar
+
+// translate invariants to CTLs
+let transInv indent invTab invTypeTab funcMap enumValTab dist =
+    letrec TI indent [] enumValTab dist =
+            ""
+        /\ TI indent ((name, i):invs) enumValTab dist =
+            "\n"^(transIndent indent)^"-- "^name^" --\n"^
+                (transIndent indent)^"SPEC\n"^
+                (transIndent (indent + 1))^"AG "^(transFormula i enumValTab dist)^"\n"^
+                (TI indent invs enumValTab dist)
+    in
+    let invs = instantiateInvs invTab invTypeTab funcMap in
+    TI indent invs enumValTab dist;
+// transInv
+
+// do translation
+let trans2smv fileName typeTab ruleTab paraTypeTab invTab invTypeTab init ruleFuncMap invFuncMap enumValTab dist =
+    let file = fopen (fileName^".smv") "w" in
+    fputs file "\n-- This program is generated by trans2smv from its forte version. --\n" fseq
+    fputs file "\nMODULE main\n" fseq
+    fputs file "\nVAR\n" fseq
+    fputs file (transVar 1 typeTab ruleTab paraTypeTab ruleFuncMap enumValTab dist) fseq
+    fputs file "\nASSIGN\n" fseq
+    fputs file (transInit 1 init enumValTab dist) fseq
+    fputs file (transNext 1 ruleTab paraTypeTab ruleFuncMap enumValTab dist) fseq
+    fputs file (transInv 0 invTab invTypeTab invFuncMap enumValTab dist) fseq
+    fclose file;
+// trans2smv
+
+#endif;
