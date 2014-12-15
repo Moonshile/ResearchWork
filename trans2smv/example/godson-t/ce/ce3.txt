@@ -1,0 +1,218 @@
+This program should be regarded as a DEBUGGING aid, not as a 
+certifier of correctness.
+Call with the -l flag or read the license file for terms
+and conditions of use.
+Run this program with "-h" for the list of options.
+
+Bugs, questions, and comments should be directed to
+"melatti@di.uniroma1.it".
+
+CMurphi compiler last modified date: Jun  2 2014
+Include files last modified date:    Jul 12 2011
+==========================================================================
+
+==========================================================================
+Caching Murphi Release 5.4.9
+Finite-state Concurrent System Verifier.
+
+Caching Murphi Release 5.4.9 is based on various versions of Murphi.
+Caching Murphi Release 5.4.9 :
+Copyright (C) 2009-2012 by Sapienza University of Rome.
+Murphi release 3.1 :
+Copyright (C) 1992 - 1999 by the Board of Trustees of
+Leland Stanford Junior University.
+
+==========================================================================
+
+Protocol: godson-t-ce-3-replaceAll
+
+Algorithm:
+	Verification by breadth first search.
+	with symmetry algorithm 3 -- Heuristic Small Memory Normalization
+	with permutation trial limit 10.
+
+Memory usage:
+
+	* The size of each state is 248 bits (rounded up to 32 bytes).
+	* The memory allocated for the hash table and state queue is
+	  1073 Mbytes.
+	  With two words of overhead per state, the maximum size of
+	  the state space is 26317217 states.
+	   * Use option "-k" or "-m" to increase this, if necessary.
+	* Capacity in queue for breadth-first search: 2631721 states.
+	   * Change the constant gPercentActiveStates in mu_prolog.inc
+	     to increase this, if necessary.
+
+Progress Report:
+
+	1000 states explored in 0.86s, with 1350 rules fired and 627 states in the queue.
+	2000 states explored in 0.88s, with 2681 rules fired and 1082 states in the queue.
+	3000 states explored in 0.89s, with 4058 rules fired and 1729 states in the queue.
+	4000 states explored in 0.90s, with 5374 rules fired and 2184 states in the queue.
+	5000 states explored in 0.91s, with 6802 rules fired and 2788 states in the queue.
+	6000 states explored in 0.93s, with 8301 rules fired and 3269 states in the queue.
+	7000 states explored in 0.94s, with 9718 rules fired and 3860 states in the queue.
+	8000 states explored in 0.95s, with 11237 rules fired and 4496 states in the queue.
+	9000 states explored in 0.96s, with 12782 rules fired and 5103 states in the queue.
+	10000 states explored in 0.97s, with 14530 rules fired and 5768 states in the queue.
+	11000 states explored in 0.98s, with 16214 rules fired and 6315 states in the queue.
+	12000 states explored in 1.00s, with 17606 rules fired and 6874 states in the queue.
+	13000 states explored in 1.01s, with 19302 rules fired and 7404 states in the queue.
+	14000 states explored in 1.02s, with 21039 rules fired and 8089 states in the queue.
+	15000 states explored in 1.04s, with 22758 rules fired and 8600 states in the queue.
+	16000 states explored in 1.05s, with 24176 rules fired and 9020 states in the queue.
+	17000 states explored in 1.06s, with 25846 rules fired and 9667 states in the queue.
+	18000 states explored in 1.08s, with 27606 rules fired and 10180 states in the queue.
+	19000 states explored in 1.09s, with 29294 rules fired and 10792 states in the queue.
+	20000 states explored in 1.10s, with 31013 rules fired and 11336 states in the queue.
+	21000 states explored in 1.11s, with 32692 rules fired and 12004 states in the queue.
+	22000 states explored in 1.13s, with 34479 rules fired and 12510 states in the queue.
+	23000 states explored in 1.14s, with 36288 rules fired and 13175 states in the queue.
+	24000 states explored in 1.16s, with 37830 rules fired and 13432 states in the queue.
+	25000 states explored in 1.17s, with 39246 rules fired and 13642 states in the queue.
+	26000 states explored in 1.19s, with 40698 rules fired and 14048 states in the queue.
+	27000 states explored in 1.20s, with 42563 rules fired and 14543 states in the queue.
+	28000 states explored in 1.22s, with 44361 rules fired and 15000 states in the queue.
+	29000 states explored in 1.23s, with 46202 rules fired and 15476 states in the queue.
+	30000 states explored in 1.25s, with 48070 rules fired and 15968 states in the queue.
+	31000 states explored in 1.27s, with 49482 rules fired and 16170 states in the queue.
+	32000 states explored in 1.28s, with 50774 rules fired and 16560 states in the queue.
+	33000 states explored in 1.29s, with 52533 rules fired and 17164 states in the queue.
+	34000 states explored in 1.31s, with 54081 rules fired and 17684 states in the queue.
+
+The following is the error trace for the error:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+Startstate Init, d:1 fired.
+memory[1].data:1
+memory[2].data:1
+lock[1].owner:Undefined
+lock[1].beUsed:false
+lock[2].owner:Undefined
+lock[2].beUsed:false
+node[1].cache[1].state:INVALID
+node[1].cache[1].addr:Undefined
+node[1].cache[1].data:Undefined
+node[1].cache[2].state:INVALID
+node[1].cache[2].addr:Undefined
+node[1].cache[2].data:Undefined
+node[1].hasLock:false
+node[1].firstRead[1]:true
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].cache[2].state:INVALID
+node[2].cache[2].addr:Undefined
+node[2].cache[2].data:Undefined
+node[2].hasLock:false
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:2
+curCache:2
+curMemory:2
+curData:1
+curLock:2
+replace:NON
+repRule:NONE
+----------
+
+Rule Acquire, l:1, i:1 fired.
+lock[1].owner:1
+lock[1].beUsed:true
+node[1].hasLock:true
+----------
+
+Rule Acquire, l:2, i:2 fired.
+lock[2].owner:2
+lock[2].beUsed:true
+node[2].hasLock:true
+----------
+
+Rule LNCFRRA, l:1, a:1, i:1 fired.
+curNode:1
+curMemory:1
+curLock:1
+replace:REQREPALL
+repRule:LNCFR
+----------
+
+Rule RepAllDone fired.
+replace:REPALLDONE
+----------
+
+Rule LNCFRAD fired.
+replace:REQUIRE
+----------
+
+Rule RI, i:1 fired.
+replace:RANDINV
+----------
+
+Rule CRIC, j:1, i:1 fired.
+curCache:1
+replace:DONE
+----------
+
+Rule LNCFRD, l:1, a:1, j:1, i:1 fired.
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].firstRead[1]:false
+replace:NON
+repRule:NONE
+----------
+
+Rule LNCW, d:2, l:2, a:1, i:2 fired.
+The last state of the trace (in full) is:
+memory[1].data:2
+memory[2].data:1
+lock[1].owner:1
+lock[1].beUsed:true
+lock[2].owner:2
+lock[2].beUsed:true
+node[1].cache[1].state:VALID
+node[1].cache[1].addr:1
+node[1].cache[1].data:1
+node[1].cache[2].state:INVALID
+node[1].cache[2].addr:Undefined
+node[1].cache[2].data:Undefined
+node[1].hasLock:true
+node[1].firstRead[1]:false
+node[1].firstRead[2]:true
+node[2].cache[1].state:INVALID
+node[2].cache[1].addr:Undefined
+node[2].cache[1].data:Undefined
+node[2].cache[2].state:INVALID
+node[2].cache[2].addr:Undefined
+node[2].cache[2].data:Undefined
+node[2].hasLock:true
+node[2].firstRead[1]:true
+node[2].firstRead[2]:true
+curNode:1
+curCache:1
+curMemory:1
+curData:1
+curLock:1
+replace:NON
+repRule:NONE
+----------
+
+End of the error trace.
+
+==========================================================================
+
+Result:
+
+	Invariant "Coherence, a:1, j:1, i:1" failed.
+
+State Space Explored:
+
+	34166 states, 54388 rules fired in 1.31s.
+
+Analysis of State Space:
+
+	There are rules that are never fired.
+	If you are running with symmetry, this may be why.  Otherwise,
+	please run this program with "-pr" for the rules information.

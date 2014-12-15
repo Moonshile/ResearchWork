@@ -1,0 +1,51 @@
+
+let fdebugGCR = fopen "fdebugGCR.html" "w";
+let printRelParts inv invParas paraRuleName paras =
+    fputs fdebugGCR ("<td>"^(formula2str enumValTab inv)^"</td>\n") fseq
+    fputs fdebugGCR ("<td>"^(itlist (\x.\y. x^","^y) (map int2str invParas) "")^"</td>\n") fseq
+    fputs fdebugGCR ("<td>"^paraRuleName^"</td>\n") fseq
+    fputs fdebugGCR ("<td>"^(itlist (\x.\y. x^","^y) (map int2str paras) "")^"</td>\n");
+
+let printInvHolds (invHoldForRule1 _) = 
+        fputs fdebugGCR "<td>invHoldForRule1</td>\n" fseq
+        fputs fdebugGCR "<td></td>\n" fseq
+        fputs fdebugGCR "<td></td>\n" fseq
+        fputs fdebugGCR "<td></td>\n"
+    /\ printInvHolds (invHoldForRule2) =
+        fputs fdebugGCR "<td>invHoldForRule2</td>\n" fseq 
+        fputs fdebugGCR "<td></td>\n" fseq
+        fputs fdebugGCR "<td></td>\n" fseq
+        fputs fdebugGCR "<td></td>\n"
+    /\ printInvHolds (invHoldForRule3 inv pre) =
+        fputs fdebugGCR "<td>invHoldForRule3</td>\n" fseq 
+        fputs fdebugGCR ("<td>"^(formula2str enumValTab inv)^"</td>\n") fseq
+        fputs fdebugGCR ("<td>"^(formula2str enumValTab pre)^"</td>\n") fseq
+        fputs fdebugGCR "<td></td>\n"
+    /\ printInvHolds (invHoldForRule4 inv pre pre' b1 b2) =
+        fputs fdebugGCR "<td>invHoldForRule4</td>\n" fseq 
+        fputs fdebugGCR ("<td>"^(formula2str enumValTab inv)^"</td>\n") fseq
+        fputs fdebugGCR ("<td>"^(formula2str enumValTab pre)^"</td>\n") fseq
+        fputs fdebugGCR ("<td>"^(formula2str enumValTab pre')^"</td>\n")
+    /\ printInvHolds (invHoldForRule5 inv) = 
+        fputs fdebugGCR "<td>invHoldForRule5</td>\n" fseq 
+        fputs fdebugGCR ("<td>"^(formula2str enumValTab inv)^"</td>\n") fseq
+        fputs fdebugGCR "<td></td>\n" fseq
+        fputs fdebugGCR "<td></td>\n";
+    
+let printRel (paraRuleName, paras, g, inv0, invParas, invHold) = 
+    fputs fdebugGCR "<tr>\n" fseq
+    printRelParts inv0 invParas paraRuleName paras fseq
+    printInvHolds invHold fseq
+    fputs fdebugGCR "</tr>\n";
+
+letrec printRels relLib =
+    relLib = [] => () | printRel (hd relLib) fseq printRels (tl relLib);
+    
+let printTable invs relLib = 
+    fputs fdebugGCR "<table>\n" fseq
+    fputs fdebugGCR (itlist (\x.\res. "<tr>\n<td>\n"^x^"\n</td>\n</tr>\n"^res) (map (formula2str enumValTab) invs) "") fseq
+    fputs fdebugGCR "</table>\n" fseq
+
+    fputs fdebugGCR "<table>\n" fseq
+    printRels relLib fseq
+    fputs fdebugGCR "</table>\n";

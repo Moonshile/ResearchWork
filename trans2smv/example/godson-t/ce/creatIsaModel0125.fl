@@ -1,0 +1,1384 @@
+load "newAnalzSimpl0423.fl";
+//load "newAnalzSimpl0125.fl";
+
+
+let var2IsabelleStrForProofKind34  tab  (Global v)="( Global ''"^v^"'')"
+/\   var2IsabelleStrForProofKind34  tab (Param v i)="( Para ''"^v^ "'' " ^(tbl_element tab i)^ ")" ;
+
+let exp2IsabelleStrForProofKind34  typeval2StrTab  tab (Var var) ="( IVar "^(var2IsabelleStrForProofKind34  tab var )^" )"
+/\ exp2IsabelleStrForProofKind34  typeval2StrTab  tab (Const i)=
+let str=(enum2Str  typeval2StrTab i) then
+"( Const "^str^" )";
+         
+
+
+
+
+
+letrec formula2IsabelleStrForProofKind34  typeval2StrTab  tab (eqn l r)
+   = 
+    "( eqn "^(exp2IsabelleStrForProofKind34 typeval2StrTab tab  l)^ "  " ^ (exp2IsabelleStrForProofKind34  typeval2StrTab tab r)^") "
+     
+/\ formula2IsabelleStrForProofKind34  typeval2StrTab tab (andList [])=  "False" 
+   
+/\ formula2IsabelleStrForProofKind34  typeval2StrTab tab (andList (frms))=
+   length frms=1=>val [frm]=frms in
+     formula2IsabelleStrForProofKind34  typeval2StrTab  tab frm |
+   let str1=itlist (\e.\str.  "( andForm "^str ^"   "^(formula2IsabelleStrForProofKind34  typeval2StrTab  tab e)^" ) ") (tl frms) 
+      ( formula2IsabelleStrForProofKind34  typeval2StrTab   tab (hd frms))  in str1
+
+/\ formula2IsabelleStrForProofKind34  typeval2StrTab  tab (neg frm)=
+     " (neg "^(formula2IsabelleStrForProofKind34  typeval2StrTab   tab frm)^") "
+    
+ 
+    
+/\ formula2IsabelleStrForProofKind34  typeval2StrTab  tab (orList frms)=
+   length frms=1=>val [frm]=frms in formula2IsabelleStrForProofKind34  typeval2StrTab  tab frm |
+   let str1=itlist (\e.\str. "( orForm "^str ^"   "^(formula2IsabelleStrForProofKind34  typeval2StrTab  tab e)^" ) ") (tl frms) 
+      ( formula2IsabelleStrForProofKind34  typeval2StrTab  tab (hd frms)) in str1
+
+
+/\  formula2IsabelleStrForProofKind34  typeval2StrTab  tab (implyForm  f1 f2)
+   ="(implyForm "^(formula2IsabelleStrForProofKind34  typeval2StrTab  tab f1)^"  "^(formula2IsabelleStrForProofKind34  typeval2StrTab  tab f2)^") ";
+
+
+    
+  
+	
+    
+let createSpecOnAVarAtIni   result specOnVarTab=
+  val (_,SOME env)=result in  
+  val [v]=tbl_keys env in
+  let equiv v v'= (var2CharacterStr   v)=(var2CharacterStr   v') then
+  let equivMem v vs= NOT (empty (filter (equiv v) vs)) then
+  
+  equivMem v (tbl_keys specOnVarTab) => 
+  specOnVarTab | 
+  tbl_insert specOnVarTab v (tbl_element env v);
+  
+letrec createSpecsOnAVarsAtIni   [] specOnVarTab=  specOnVarTab
+/\   createSpecsOnAVarsAtIni   (result:results) specOnVarTab= 
+  let Tab1=createSpecOnAVarAtIni   result specOnVarTab then
+  createSpecsOnAVarsAtIni   (results)  Tab1;
+
+let writeLocaleOnParaRuleInstValidateExLessInvInst fout=
+let temp="
+locale paraRuleInstValidateExLessInvInst=\n
+  fixes paraRule ::\"nat \\<Rightarrow> rule\"  and paraInv::\"nat \\<Rightarrow> formula \"  \n
+  and iRule::\"nat\" and iInv1::\"nat\"  and N::\"nat\"\n
+  assumes a:\" \\<exists>  ant0 cons0. paraInv iInv1= implyForm ant0 cons0\" and \n
+  b:\"iRule \\<le> N \\<longrightarrow>iInv1 \\<le> N\\<longrightarrow> iRule = iInv1 \\<longrightarrow> \n
+  (invHoldForRule (paraInv iInv1) (paraRule iRule)  (invariants N) )\"  and \n
+  c:\"iRule \\<le> N \\<longrightarrow>iInv1 \\<le> N\\<longrightarrow>  iRule \\<noteq> iInv1 \\<longrightarrow> \n
+  (invHoldForRule (paraInv iInv1) (paraRule iRule)  (invariants N)  )\" \n
+begin\n
+theorem paraRuleInstValidateExLessInvInst:\n
+  assumes a1:\"iRule \\<le> N\"  and a2:\" iInv1 \\<le> N \"\n
+  shows \"(invHoldForRule (paraInv iInv1) (paraRule iRule)  (invariants N)  )\"\n
+    (is \"?P paraInv iInv1 paraRule iRule  (invariants N)\")\n
+  proof -\n
+   have e2:\"iRule=iInv1  \\<or> iRule \\<noteq> iInv1 \"  by auto\n
+     \n     
+   moreover\n
+   {assume e3:\" iRule=iInv1 \"\n
+            \n
+     have \"?P paraInv iInv1 paraRule iRule  (invariants N)\"\n
+       by (metis a1 a2 b e3)\n
+   }     \n
+   moreover\n
+   {assume e3:\"iRule\\<noteq>iInv1 \"\n
+     have \"?P paraInv iInv1 paraRule iRule  (invariants N) \"\n
+       by (metis a1 a2 c e3)\n
+   }\n
+   ultimately show \"?P paraInv iInv1 paraRule iRule  (invariants N) \"\n
+     by blast\n
+ qed\n
+\n
+end\n\n" then
+fputs fout temp;
+
+
+let writeLocaleOnparaRuleInstValidateExTwoLessInvInst fout=
+let temp="  
+locale paraRuleInstValidateExTwoLessInvInst=\n
+  fixes paraRule ::\"nat \\<Rightarrow> rule\"  and paraInv::\"nat \\<Rightarrow> nat\\<Rightarrow>formula \"  \n
+  and iRule::\"nat\" and iInv1::\"nat\" and iInv2::\"nat\" and N::\"nat\"\n
+  assumes a:\" \\<exists>  ant0 cons0. paraInv iInv1 iInv2= implyForm ant0 cons0\" and \n
+  b:\"iInv1 \\<noteq> iInv2\\<longrightarrow>iRule \\<le> N \\<longrightarrow>iInv1 \\<le> N\\<longrightarrow>iInv2 \\<le> N\\<longrightarrow>iRule = iInv1 \\<longrightarrow> \n
+  invHoldForRule (paraInv iInv1 iInv2) (paraRule iRule)  (invariants N) \"  and \n
+  c:\"iInv1 \\<noteq> iInv2\\<longrightarrow>iRule \\<le> N \\<longrightarrow>iInv1 \\<le> N\\<longrightarrow>iInv2 \\<le> N\\<longrightarrow>iRule = iInv2 \\<longrightarrow> \n
+  invHoldForRule (paraInv iInv1 iInv2) (paraRule iRule) (invariants N)\"  and\n
+  d:\"iInv1 \\<noteq> iInv2\\<longrightarrow>iRule \\<le> N \\<longrightarrow>iInv1 \\<le> N\\<longrightarrow>iInv2 \\<le> N\\<longrightarrow>iRule \\<noteq> iInv1 \\<longrightarrow>iRule \\<noteq> iInv2 \\<longrightarrow> \n
+  invHoldForRule (paraInv iInv1 iInv2) (paraRule iRule)  (invariants N)\"\n
+begin\n
+theorem paraRuleInstValidateExTwoLessInvInst:\n
+  assumes a1:\"iRule \\<le> N\"  and a2:\" iInv1 \\<le> N \" and a3:\"iInv2 \\<le> N \"\n  and a4:\"iInv1 \\<noteq> iInv2\"
+  shows \"invHoldForRule (paraInv iInv1 iInv2) (paraRule iRule)   (invariants N) \"  (is \"?P paraInv iInv paraRule iRule  invs\")\n
+  proof -\n\n
+
+   have d2:\"iRule=iInv1 \\<or> iRule=iInv2 \\<or> ((iRule \\<noteq> iInv1) \\<and> (iRule\\<noteq>iInv2))\"  by auto\n
+   moreover\n
+   {assume e1:\"iRule=iInv1\"\n
+     have \"?P paraInv iInv paraRule iRule  invs \"\n
+       by (metis  a2 a3 a4 b e1)\n\n\n
+              
+           
+   }     \n
+   moreover\n
+   {assume e1:\"iRule = iInv2\"            \n
+     have \"?P paraInv iInv paraRule iRule  invs\"\n
+       by (metis  a2 a3 a4 c e1)\n
+   }\n
+   \n       
+   moreover\n\n
+   {assume e1:\"iRule\\<noteq>iInv1 \\<and> iRule\\<noteq>iInv2\"\n
+     have \"?P paraInv iInv paraRule iRule  invs\"\n
+       by (metis  a1 a2 a3 a4 d e1)\n
+            \n
+   }\n
+   ultimately show \"?P paraInv iInv paraRule iRule  invs\"\n
+     by blast\n
+ qed\n
+end\n" then
+
+fputs fout temp;
+
+let invHoldType2Int (invHoldForRule1 _) =1
+/\ invHoldType2Int (invHoldForRule2) =2
+/\invHoldType2Int (invHoldForRule3 inv' pre ) =3
+/\invHoldType2Int (invHoldForRule4 inv' pre ant'' isTaut isImpliedByOther) =4
+/\invHoldType2Int (invHoldForRule5 inv' ) =5;
+
+
+let createProofOfKind1ParaRuleInstValidateExLessInv invHoldType=
+val (invHoldForRule1 enOrDisable)=invHoldType in
+let enStr=(enOrDisable=Enable)=>"En" | "Dis" then
+let disjIStr=(enOrDisable=Enable) =>1 | 2 then
+//let c4Str=exOneOrTwo =1 =>"" |"c4" then
+let str=
+ sprintf 
+ 
+ "
+      have \"?P21\"
+        apply -\n
+        apply(auto)\n
+        (*apply(rule disjI%d)\n
+        apply( auto simp add:statement%sableForm_def)*)\n
+        done\n
+     then  show \"?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24 \\<or> ?P25\"\n
+       by blast\n
+    qed\n\n"
+    
+  (disjIStr,  enStr) then
+  str;
+  
+
+let createProofOfKind2ParaRuleInstValidateExLessInv invHoldType=
+ (invHoldType=invHoldForRule2)=>
+(
+
+let str=
+ "have \"?P22\"\n
+  apply -\n 
+  apply(auto intro!:forallVars1 simp  add :invHoldForRule2_def varsOfVar_def)\n       
+  done\n
+  then show  \"?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24 \\<or> ?P25\"\n
+        by blast\n
+  qed\n "  then    
+   str)
+| error "not invHoldforRule2 case";   
+ 
+ 
+ 
+ 
+ 
+let paras2Itab paras=
+  let tab=tbl_create 3 then
+  paras=[1]=> let tab =tbl_insert tab 1 "iInv1" then
+              let tab=tbl_insert tab 2 "iRule" then
+              tab
+              
+ | let tab =tbl_insert tab 1 "iInv1" then
+              let tab=tbl_insert tab 2 "iInv2" then
+              let tab=tbl_insert tab 3 "iRule" then
+              tab;
+  
+   
+
+let createProofOfKind3ParaRuleInstValidateExLessInv dist symIndice  enumaVal2Str invHoldType invTabInverse paras =
+val (invHoldForRule3 inv form)=invHoldType in
+let parasOfInv=paraIndexsOfForm dist inv then
+let paramStr=itlist (defix ^) (map (\i.(mem i paras)=>(" iInv"^(int2str i)^" ")|"iRule") parasOfInv) "" then
+let paraTab=paras2Itab paras then
+let formStr=formula2IsabelleStrForProofKind34 enumaVal2Str paraTab form then
+let invStr=formula2IsabelleStrForProofKind34 enumaVal2Str paraTab inv then
+let oneOrTwo=(length parasOfInv=1)=>""|"Two" then
+let str=
+//(invIndex !=0)=> 
+sprintf 
+ "
+      have \"?P23\"\n
+        
+        apply -\n
+        apply(cut_tac c3, simp)\n
+        apply(rule_tac x=\"%s\" in exI)\n
+        apply(rule conjI)\n
+        apply(cut_tac c1 c2,unfold  ex%sLessP_def, simp)\n
+        apply(rule_tac x=\" %s     \" in exI)\n
+        apply(unfold logicImply_def, auto)\n
+        done\n
+      then show  \"?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24 \\<or> ?P25\"\n
+        by blast\n
+        qed\n"
+ (invStr, oneOrTwo, formStr )  
+ //| "have \"?P23\"\n
+ //   by blast" 
+ then     str;  
+   
+
+let createProofOfKind4ParaRuleInstValidateExLessInv dist  symIndice  enumaVal2Str  invHoldType  invTabInverse paras=
+val (invHoldForRule4 inv form ant'' isTaut isImpliedByOther)=invHoldType in
+
+let parasOfInv=paraIndexsOfForm dist inv then
+let paramStr=itlist (defix ^) (map (\i.(mem i paras)=>(" iInv"^(int2str i)^" ")|"iRule") parasOfInv) "" then
+let paraTab=paras2Itab paras then
+let formStr=formula2IsabelleStrForProofKind34 enumaVal2Str paraTab form then
+let invStr=formula2IsabelleStrForProofKind34 enumaVal2Str paraTab inv then
+//val (implyForm pre cons0)=inv in
+let cons0Str=formula2IsabelleStrForProofKind34 enumaVal2Str paraTab ant'' then
+let oneOrTwo=(length parasOfInv=1)=>""|"Two"  then
+
+let str=
+//(invIndex !=0)=> 
+sprintf 
+ "
+      have \"?P24\"\n
+        
+        apply -\n
+        (*apply(cut_tac c3,simp,rule conjI, force intro!: forallVars1 simp add :varsOfVar_def)*)\n
+        apply(cut_tac c3,simp)\n
+        apply(rule_tac x=\"%s\" in exI)\n
+        apply(rule conjI)\n
+        apply(cut_tac c1 c2,unfold  ex%sLessP_def, simp)\n
+        apply(rule_tac x=\" %s    \" in exI)\n
+        apply(rule_tac x=\" %s    \" in exI)\n
+        apply(unfold logicImply_def, auto)\n
+        done\n
+      then show  \"?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24 \\<or> ?P25\"\n
+        by blast\n
+        qed\n"
+ (invStr, oneOrTwo,formStr,cons0Str ) // | 
+ //"have \"?P24\"\n
+ // by blast" 
+ then       str;    
+ 
+ 
+ 
+let createProofOfKind5ParaRuleInstValidateExLessInv dist enumaVal2Str invHoldType invTabInverse paras =
+val (invHoldForRule5 inv)=invHoldType in
+
+let parasOfInv=paraIndexsOfForm dist inv then
+let paramStr=itlist (defix ^) (map (\i.(mem i paras)=>(" iInv"^(int2str i)^" ")|"iRule") parasOfInv) "" then
+let paraTab=paras2Itab paras then
+let invStr=formula2IsabelleStrForProofKind34 enumaVal2Str paraTab inv then
+let oneOrTwo=(length parasOfInv=1)=>""|"Two" then
+let str=
+sprintf 
+ "
+      have \"?P25\"\n
+        
+        apply -\n
+        apply(cut_tac c3, simp)\n
+        apply(rule_tac x=\"%s\" in exI)\n
+        apply(rule conjI)\n
+        apply(cut_tac c1 c2,unfold  ex%sLessP_def, simp)\n
+        apply(unfold logicImply_def, auto)\n
+        done\n"
+      
+ (invStr, oneOrTwo  )  
+ then     str;  
+ 
+ 
+ 
+
+   
+let createProof  dist  symIndice  typeval2CharacterStrTab   invHoldType  invTabInverse paras=
+(val (invHoldForRule1 enOrDisable) =  invHoldType in 
+ createProofOfKind1ParaRuleInstValidateExLessInv invHoldType  ) catch
+(val invHoldForRule2 =  invHoldType in
+ createProofOfKind2ParaRuleInstValidateExLessInv invHoldType) catch
+ (val (invHoldForRule3 inv form) =  invHoldType in 
+ createProofOfKind3ParaRuleInstValidateExLessInv dist  symIndice typeval2CharacterStrTab invHoldType  invTabInverse paras ) catch
+ (val (invHoldForRule4 inv form ant'' isTaut isImpliedByOther) =  invHoldType in 
+ createProofOfKind4ParaRuleInstValidateExLessInv dist  symIndice  typeval2CharacterStrTab invHoldType  invTabInverse paras)  catch
+ (createProofOfKind5ParaRuleInstValidateExLessInv dist typeval2CharacterStrTab invHoldType  invTabInverse paras);
+ 
+ 
+       
+
+  
+let fiveTuple2Str dist  symIndice  invTabInverse   typeval2CharacterStrTab ruleNameTable fiveTuple=
+   	  val (paraRuleName, paras, g,inv, invParas, invHoldType) =fiveTuple in
+	  let start="------tupleItem begin\n" then
+	  let end="------\n tupleItem end\n" then
+	  let parasStr=itlist (defix ^) (map int2str paras) "\n" then
+    let paraRule=tbl_element ruleNameTable paraRuleName then 
+    start^paraRuleName^"-----"^"(paras="^parasStr^")\n"
+    ^(formula2str typeval2CharacterStrTab g)^"\n;"^	  
+	  (formula2str typeval2CharacterStrTab inv)^";"
+	  ^(rule2Str typeval2CharacterStrTab (paraRule (el 1 paras) (el 2 paras)))^";"^
+	  (sprintf "invHoldType2Int%d" (invHoldType2Int invHoldType))^end;
+	  
+let keyWithfiveTuple2Strs dist  symIndice  invTabInverse outf	typeval2CharacterStrTab  ruleNameTable  (key,fiveTuples) =
+   //print "####################\n" fseq
+  // print (key^"--->\n") fseq
+   //printStrList (map (fiveTuple2Str  typeval2CharacterStrTab) fiveTuples) fseq
+   //print "####################\n\n";
+    let str="####################\n" ^
+    (key^"--->\n") ^
+    (itlist (defix ^) (map (fiveTuple2Str dist  symIndice  invTabInverse  typeval2CharacterStrTab  ruleNameTable ) fiveTuples) "")^
+    "####################\n\n" then
+    fputs outf str;
+
+//rule2CharacterStr
+let fiveTuple2TripleTab dist  symIndice    invTabInverse outf dist typeval2CharacterStrTab  ruleNameTable  
+ fiveTuples (paraRuleName,inv)  fiveTuplesTab=
+ 
+let getFormCharStr form0= 
+// val (form1,symRel)=( paraNormlize dist  symIndice  (impInvNorm form0)) in
+ (formula2CharacterStr   typeval2CharacterStrTab form0)^(int2str (length (paraIndexsOfForm dist form0))) then
+let invIndex=tbl_element invTabInverse (getFormCharStr  inv) then
+
+fputs outf 
+
+(sprintf 
+"interpretation paraRuleInstValidateExTwoLessInvInst_%s_inv%d:paraRuleInstValidateExTwoLessInvInst---->\n" (paraRuleName,invIndex))  fseq
+
+ 
+ 
+ //print thisKey fseq
+let sels=filter (\(paraRuleName1, paras, g,inv1, invParas, invHoldType). 
+                 (paraRuleName=paraRuleName1) AND (inv=inv1)) fiveTuples then
+                 
+keyWithfiveTuple2Strs  dist symIndice invTabInverse outf	typeval2CharacterStrTab  ruleNameTable  (paraRuleName,sels)      fseq            
+ print ("\nsel="^(int2str (length sels))^"\n") fseq
+((length sels =2) OR (length sels =3) ) =>               
+   ( let tab0=tbl_insert  fiveTuplesTab paraRuleName sels  then
+   tab0)
+   | error "thiskey";
+   
+ 
+
+let fiveTuples2fiveTuplesTab   dist symIndice  invTabInverse outf dist typeval2CharacterStrTab  name2RuleTable  fiveTuples paraRuleInvPairs =
+  itlist (\pair. \tab. fiveTuple2TripleTab  dist symIndice    invTabInverse outf dist  typeval2CharacterStrTab 
+           name2RuleTable  fiveTuples  pair tab) 
+  paraRuleInvPairs (tbl_create 450); 
+  
+   
+let printfiveTuplesTab  dist symIndice  rule2NameTab invTabInverse outf typeval2CharacterStrTab   ruleNameTable   fiveTuplesTab=
+  foreach [item | tbl_values fiveTuplesTab]. 
+    (//print 
+    
+    (keyWithfiveTuple2Strs  dist symIndice invTabInverse 	outf typeval2CharacterStrTab  ruleNameTable  item)) ;
+   
+	   
+let ruleNameItemTabInverse typeval2CharacterStrTab (key, paraRule) inverseRuleTab  =
+	tbl_insert inverseRuleTab (rule2CharacterStr typeval2CharacterStrTab (paraRule 1 2)) key;
+	
+let ruleNameTab2TabInverse typeval2CharacterStrTab ruleTab	 =
+let pairs=tbl_values ruleTab then
+itlist (\pair. \tab. ruleNameItemTabInverse typeval2CharacterStrTab pair tab  )   pairs (tbl_create 50);
+
+
+  
+let fiveTupleCmp t1 t2=
+    val (paraRule1, paras1, g1,inv1, invParas1, invHoldType1) =t1 in
+    val (paraRule2, paras2, g2,inv2, invParas2, invHoldType2) =t2 in 
+        (el 1 paras1 ) - (el 1 paras2 );
+        
+let selByParas fiveTuples paras=
+  filter (\tuple.  val  (paraRuleName, paras',g, inv0, invParas, invHold1)= tuple in 
+          paras=paras') fiveTuples ;       
+          
+          
+let obligation2Proof  dist symIndice typeval2CharacterStrTab  invTabInverse  obl=
+   val (paraRule1, paras1, g1,inv1, invParas1, invHold1) =obl in
+   let moreOverStr="moreover
+                   {assume e1:\""^(formula2IsabelleStrForProofKind34  typeval2CharacterStrTab  invTabInverse g1)^"\"\n" then
+   let haveStr1="have \"?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24\\<or> ?P25\"" then
+   let proofStr= createProof   dist symIndice typeval2CharacterStrTab  invHold1  invTabInverse invParas1 then
+   let endStr="}\n" then
+   moreOverStr^haveStr1^proofStr^endStr;
+   
+   
+          
+let obligations2Proof dist symIndice typeval2CharacterStrTab invTabInverse obligations=
+	 (length obligations) =1=>
+	    let obligation=(el 1 obligations ) then
+	    val (paraRule1, paras1, g1,inv1, invParas1, invHold1) =obligation in
+	    createProof   dist symIndice typeval2CharacterStrTab  invHold1  invTabInverse invParas1
+	|  
+	   let guards=map (\(_, _, g1,_, _, _). g1) obligations then
+	   let guardStrs=map (formula2IsabelleStrForProofKind34  typeval2CharacterStrTab  invTabInverse) guards then
+	   
+	   let haveStrBody=itlist (\str.\a.a^"\\<or>"^str) guardStrs "" then
+	   let haveStrBody=(int2str (length obligations))^(str_substr haveStrBody 1 ((strlen haveStrBody) )) then
+	   let haveStr="have \"d:"^  haveStrBody ^"\"  
+	                 by blast \n"  then
+	   let havePatMathStrsBody=itlist (\i.\a."?GP"^(int2str i)^"\\<or>"^a) (1 upto (length guardStrs)) "" then
+	   let havePatMathStr="(is "^havePatMathStrsBody^")" then
+	   
+	   let branchProofs=itlist (defix ^) (map (obligation2Proof  dist symIndice typeval2CharacterStrTab invTabInverse) obligations) "" then
+	   let ultimateStr="ultimately show \"?obligation\" 
+	                         by blast\n"  then  
+	    haveStr ^havePatMathStr^branchProofs^ultimateStr ;
+	    
+
+
+let constructInterpThmInParaRuleInstValidateExLessInvInst  dist symIndice typeval2CharacterStrTab 
+(paraRuleName,inv)  fiveTuples ruleNameTab invTabInverse smtTemp=
+
+let enableCheckCons0 g=  (tautlogy  typeval2CharacterStrTab  smtTemp  (implyForm chaos g))   then  
+let paraRule=tbl_element ruleNameTab paraRuleName then
+let twoFiveTuples=filter (\(paraName1,_,_,inv1,_,_). paraName1=paraRuleName AND inv=inv1) fiveTuples then
+fputs fdebug2 ("\n proofCases="^(int2str (length twoFiveTuples))^"\n") fseq
+let obligations1 = selByParas twoFiveTuples [1,1] then
+let obligations1=filter (\(_, _, g1,_, _, _). enableCheckCons0 g1) obligations1 then
+
+fputs fdebug2 ("\n obligations1="^(int2str (length obligations1))^"\n") fseq
+let obligations2 = selByParas twoFiveTuples [2,1] then
+let obligations2=filter (\(_, _, g1,_, _, _). enableCheckCons0 g1) obligations2 then
+fputs fdebug2 ("\n obligations2="^(int2str (length obligations2))^"\n") fseq
+//let ( paraNormlize dist  symIndice   (impInvNorm form0))
+let getFormCharStr form0= (formula2CharacterStr  typeval2CharacterStrTab form0)^(int2str (length (paraIndexsOfForm dist form0))) then
+let invIndex=tbl_element invTabInverse (getFormCharStr  inv) then
+
+let paraTab1=paras2Itab [1,1]  then
+let proof1=obligations2Proof dist symIndice typeval2CharacterStrTab paraTab1 obligations1 then
+let paraTab2=paras2Itab [2,1]  then
+let proof2=obligations2Proof dist symIndice typeval2CharacterStrTab paraTab2 obligations2 then 
+
+let str=
+sprintf 
+
+"interpretation paraRuleInstValidateExLessInvInst_%s_inv%d:paraRuleInstValidateExLessInvInst\n
+ \"%s::nat \\<Rightarrow> rule \"  \"inv%d::nat \\<Rightarrow> formula\"  \"iRule::nat\" \"iInv1::nat\"\n
+proof(unfold paraRuleInstValidateExLessInvInst_def)\n
+  show \"(\\<exists>ant0 cons0. inv%d iInv1 = implyForm ant0 cons0) \\<and>\n
+    (iRule \\<le> N \\<longrightarrow>iInv1 \\<le> N\\<longrightarrow>iRule = iInv1 \\<longrightarrow> invHoldForRule (inv%d iInv1) (%s iRule) (invariants N)) \\<and>\n
+    (iRule \\<le> N \\<longrightarrow>iInv1 \\<le> N\\<longrightarrow>iRule \\<noteq> iInv1 \\<longrightarrow> invHoldForRule (inv%d iInv1) (%s iRule) (invariants N))\"\n
+    (is \"?P1 \\<and> ?P2 \\<and>?P3\") \n
+  proof -\n
+    have b1:\"?P1\"\n
+      by auto\n\n
+  
+    have b2:\"?P2\"  (is \"?ANT1 \\<longrightarrow> ?ANT2 \\<longrightarrow> ?ANT3 \\<longrightarrow> ?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24\\<or> ?P25\")\n
+    proof(rule impI)+\n
+      assume c1:\"?ANT1\" and c2:\"?ANT2\" and c3:\"?ANT3\"\n
+      from c1 c2 c3 
+    %s\n
+ 
+    have b3:\"?P3\"  (is \"?ANT1 \\<longrightarrow> ?ANT2 \\<longrightarrow> ?ANT3 \\<longrightarrow> ?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24\\<or> ?P25\")\n
+    proof(rule impI)+\n
+      assume c1:\"?ANT1\" and c2:\"?ANT2\" and c3:\"?ANT3\"\n
+      from c1 c2 c3
+    %s\n
+    
+    with b1 b2 show \"?P1 \\<and> ?P2 \\<and>?P3\"\n
+      by blast\n
+  qed\n
+qed\n" 
+
+ (paraRuleName, invIndex, paraRuleName, invIndex, invIndex, invIndex, paraRuleName,invIndex,paraRuleName, proof1,proof2) then
+ str;
+   
+
+let constructInterpThmInParaRuleInstValidateTwoExLessInvInst dist  symIndice typeval2CharacterStrTab 
+(paraRuleName,inv)  fiveTuples ruleNameTab invTabInverse smtTemp=
+
+let enableCheckCons0 g= (tautlogy  typeval2CharacterStrTab  smtTemp (implyForm chaos g)) then  
+let paraRule=tbl_element ruleNameTab paraRuleName then 
+let twoFiveTuples=filter (\(paraName1,_,_,inv1,_,_). paraName1=paraRuleName AND inv=inv1) fiveTuples then
+fputs fdebug2 ("\n proofCases="^(int2str (length twoFiveTuples))^"\n") fseq
+let obligations1 = selByParas twoFiveTuples [1,1] then
+let obligations1=filter (\(_, _, g1,_, _, _). enableCheckCons0 g1) obligations1 then
+fputs fdebug2 ("\n obligations1="^(int2str (length obligations1))^"\n") fseq
+let obligations2 = selByParas twoFiveTuples [2,1] then
+let obligations2=filter (\(_, _, g1,_, _, _). enableCheckCons0 g1) obligations2 then
+fputs fdebug2 ("\n obligations2="^(int2str (length obligations2))^"\n") fseq
+let obligations3 = selByParas twoFiveTuples [3,1] then
+let obligations3=filter (\(_, _, g1,_, _, _). enableCheckCons0 g1) obligations3 then
+fputs fdebug2 ("\n obligations3="^(int2str (length obligations3))^"\n") fseq
+
+//( paraNormlize dist  symIndice   (impInvNorm form0))
+let getFormCharStr form0= (formula2CharacterStr  typeval2CharacterStrTab form0)^(int2str (length (paraIndexsOfForm dist form0))) then
+let invIndex=tbl_element invTabInverse (getFormCharStr  inv) then
+
+let paraTab1=paras2Itab [1,1]  then
+let proof1=obligations2Proof dist symIndice typeval2CharacterStrTab paraTab1 obligations1 then
+let paraTab2=paras2Itab [2,1]  then
+let proof2=obligations2Proof dist symIndice typeval2CharacterStrTab paraTab2 obligations2 then 
+let paraTab3=paras2Itab [3,1]  then
+let proof3=obligations2Proof dist symIndice typeval2CharacterStrTab paraTab3 obligations3 then 
+
+
+
+let str=
+sprintf 
+
+"interpretation paraRuleInstValidateExTwoLessInvInst_%s_inv%d:paraRuleInstValidateExTwoLessInvInst\n      
+ \"%s::nat \\<Rightarrow> rule \"  \"inv%d::nat \\<Rightarrow> nat\\<Rightarrow>formula\"  \"iRule::nat\" \"iInv1::nat\" \"iInv2::nat\" \n  
+proof(unfold paraRuleInstValidateExTwoLessInvInst_def)\n
+  show \"((\\<exists>ant0 cons0. inv%d iInv1 iInv2 = implyForm ant0 cons0) \\<and>\n    
+     (iInv1 \\<noteq> iInv2\\<longrightarrow>iRule \\<le> N \\<longrightarrow>\n
+      iInv1 \\<le> N \\<longrightarrow>\n
+      iInv2 \\<le> N \\<longrightarrow>\n
+      iRule = iInv1 \\<longrightarrow> invHoldForRule (inv%d iInv1 iInv2) (%s iRule) (invariants N))) \\<and>\n    
+    (iInv1 \\<noteq> iInv2\\<longrightarrow>iRule \\<le> N \\<longrightarrow>\n
+     iInv1 \\<le> N \\<longrightarrow>\n
+     iInv2 \\<le> N \\<longrightarrow> iRule = iInv2 \\<longrightarrow> invHoldForRule (inv%d  iInv1 iInv2) (%s iRule) (invariants N)) \\<and>\n   
+    (iInv1 \\<noteq> iInv2\\<longrightarrow>iRule \\<le> N \\<longrightarrow>\n
+     iInv1 \\<le> N \\<longrightarrow>\n
+     iInv2 \\<le> N \\<longrightarrow>\n
+     iRule \\<noteq> iInv1 \\<longrightarrow>\n
+     iRule \\<noteq> iInv2 \\<longrightarrow> invHoldForRule (inv%d  iInv1 iInv2) (%s iRule) (invariants N))\"\n  
+    (is \"(?P1 \\<and> ?P2) \\<and> ?P3 \\<and> ?P4\")\n
+  proof -\n
+    have b1:\"?P1\"\n
+      by auto\n
+  \n
+    have b2:\"?P2\"  (is \"?ANT1 \\<longrightarrow> ?ANT2 \\<longrightarrow> ?ANT3 \\<longrightarrow>  ?ANT4\\<longrightarrow> ?ANT5 \\<longrightarrow> ?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24\\<or> ?P25\")\n
+    proof(rule impI)+\n
+      assume c1:\"?ANT1\" and c2:\"?ANT2\" and c3:\"?ANT3\" and c4:\"?ANT4\" and c5:\"?ANT5\"\n
+      from c1 c2 c3 c4 c5
+    %s\n      
+\n
+    have b3:\"?P3\"  (is \"?ANT1 \\<longrightarrow> ?ANT2 \\<longrightarrow> ?ANT3 \\<longrightarrow>  ?ANT4\\<longrightarrow> ?ANT5 \\<longrightarrow> ?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24\\<or> ?P25\")\n
+    proof(rule impI)+\n
+      assume c1:\"?ANT1\" and c2:\"?ANT2\" and c3:\"?ANT3\" and c4:\"?ANT4\" and c5:\"?ANT5\"\n
+      from c1 c2 c3 c4 c5\n
+    %s\n      
+\n
+    have b4:\"?P4\"  (is \"?ANT1 \\<longrightarrow> ?ANT2 \\<longrightarrow> ?ANT3 \\<longrightarrow>  ?ANT4 \\<longrightarrow> ?ANT5\\<longrightarrow>  ?ANT6 \\<longrightarrow>?P21 \\<or> ?P22 \\<or> ?P23 \\<or> ?P24\\<or> ?P25\")\n
+    proof(rule impI)+\n
+      assume c1:\"?ANT1\" and c2:\"?ANT2\" and c3:\"?ANT3\" and c4:\"?ANT4\" and c5:\"?ANT5\" and c6:\"?ANT6\"\n
+      from c1 c2 c3 c4 c5 c6\n
+    %s\n      
+    
+  with b1 b2 b3 b4 show  \"(?P1 \\<and> ?P2) \\<and>  ?P3 \\<and>  ?P4\"
+      by blast
+   qed\n
+ qed\n"
+
+ (paraRuleName, invIndex, paraRuleName, invIndex, invIndex, invIndex, paraRuleName,invIndex, paraRuleName,invIndex, paraRuleName, proof1,proof2,proof3) then
+ str;
+ 
+ 
+let constructInterpThmInParaRuleInstValidateInvInsts dist symIndice typeval2CharacterStrTab   fiveTuplesTab rule2NameTab invTabInverse smtTemp (paraRule,inv) =
+	let paraN=paraIndexsOfForm dist inv then  
+  length paraN=1=> 
+  constructInterpThmInParaRuleInstValidateExLessInvInst dist symIndice  typeval2CharacterStrTab (paraRule,inv)  fiveTuplesTab rule2NameTab invTabInverse smtTemp|
+  constructInterpThmInParaRuleInstValidateTwoExLessInvInst dist symIndice  typeval2CharacterStrTab (paraRule,inv)  fiveTuplesTab rule2NameTab invTabInverse smtTemp;  
+
+
+//create definition for one enumerating values as follows:
+//definition TRUE::"nat"  where [simp]: "TRUE\<equiv>  1"
+
+let createOneEnumVal paraType  enumValTab  val0=
+  mem val0 paraType =>""|
+	let valName=tbl_element enumValTab val0 in
+	sprintf "definition %s::\"nat\"  where [simp]: \"%s\\<equiv>  %d\"   \n\n" (valName, valName,val0);
+
+//create all defs of this type
+//definition xDomain::"nat set" where [simp]: "Bool \<equiv> {TRUE, FALSE}"
+//definition xDomain::"nat set" where [simp]: "Bool \<equiv> {TRUE, FALSE}"
+
+let createOneEnumType paraType  oneType typeName enumValTab=
+	let defs=map (createOneEnumVal paraType  enumValTab) oneType in
+	let enumValDefStr=itlist (defix ^)  defs "" in
+	let allVluesInStr=itlist (\a. \b. a^","^b)  (map (\val0. (tbl_element enumValTab val0) catch "" ) oneType) ""  in
+        let Str=str_substr allVluesInStr 1 (strlen allVluesInStr - 1) in
+        let domainDef=sprintf "definition %s::\"nat set\" where [simp]: \"%s \\<equiv> {%s}\"\n\n" (typeName, typeName,Str) in
+	enumValDefStr^domainDef;
+	
+//generating all definitions for all the enumerating values 
+//then define the type
+//typeNameTable from type to their name;
+//type :the type itself
+
+let creatOneType paraType  typeNameTable enumValTab type=   
+	let typeName=tbl_element typeNameTable type in
+	createOneEnumType  paraType type typeName enumValTab;
+
+let createTypes paraType   typeNameTable enumValTab = 
+   	let types=tbl_keys typeNameTable in
+	itlist (defix ^) (map (creatOneType paraType  typeNameTable enumValTab) types) ""; 	
+
+//axiomatization axiomOnX::bool where [simp]:" axiomOnX\<equiv>  s (IVar (Global ''x'')) \<in> xDomain "
+//axiomatization axiomOnState::bool where [simp]:" axiomOnState\<equiv> 
+//  s (IVar (Para  ''n'' i)) \<in> nDomain"
+
+//let createIsabelleModel fileName 
+//typeTable:define types for variables
+
+let createOnAxiom    typeNameTable typeTable aritTable varName =
+        let arit=tbl_element aritTable varName in
+        let type=tbl_element typeTable varName in
+        let typeName=tbl_element typeNameTable type in
+	let actualVarName=arit=0=>("Global ''"^varName^"''") | ("Para ''"^varName^"'' i") then
+	let varDef=sprintf "axiomatization where axiomOn_%s  [simp]:\"   s (IVar (%s )) \\<in> %s \"\n\n" 
+	          (varName,  actualVarName, typeName) in
+             varDef ;
+
+let createAxiomsOnVariables typeNameTable  typeTable aritable =
+	let vars=tbl_keys typeTable in
+        itlist (defix ^) (map (createOnAxiom typeNameTable typeTable aritable ) vars)  ""; 	  
+        
+        
+ 
+let createIsabelleRule  enumValTab  ruleTable ruleName=
+   let temp1=sprintf "definition %s::\" nat \\<Rightarrow> rule\" where [simp]:\n"  ruleName then
+   let temp2=sprintf  "\" %s  i \\<equiv>   \n"  ruleName then
+   let rule=(tbl_element ruleTable ruleName)  then
+   let temp3=rule2ParamIsabelleStr  enumValTab (rule 1 2) then 
+    (temp1^temp2^temp3^"\"\n\n");
+   
+   
+let createIsabelleRules  enumValTab ruleTable =
+   let ruleNames=tbl_keys ruleTable then
+   let defList=itlist (defix ^) (map (createIsabelleRule enumValTab ruleTable) ruleNames) "" then
+   let ruleItemList=itlist (defix ^) (map (\str. "exLessP N (%i.  r="^ str^" i)  \\<or>\n" ) ruleNames) "" in
+   let ruleItemList=str_substr ruleItemList 1 (strlen ruleItemList -6) then
+   let defOfAllRules=sprintf "definition rules::\"nat \\<Rightarrow> rule set\"  where [simp] :\n\"rules N\\<equiv> {r. %s}\"\n\n" ruleItemList then
+   defList ^ defOfAllRules ;   
+   
+   
+let createIsabelleInv enumValTab (i,inv)=
+   let paras= paraIndexsOfForm dist inv in
+   //let 
+   val (implyForm ant cons)=inv in
+   let temp=
+        (length paras)=2 =>
+       sprintf "definition inv%d::\"nat \\<Rightarrow> nat \\<Rightarrow>formula \"  where [simp]:\n
+       \"inv%d iInv1 iInv2 \\<equiv> \n   
+       let ant= %s  in\n   
+       let cons= %s  in \n   
+       (implyForm ant cons)  \"\n "  
+       (i, i,formula2ParamIsabellestr enumValTab  ant, formula2ParamIsabellestr enumValTab  cons)  |
+       sprintf "definition inv%d::\"nat \\<Rightarrow> formula \"  where [simp]:\n
+       \"inv%d iInv1 \\<equiv> \n   
+       let ant= %s  in\n   
+       let cons= %s  in \n   
+       (implyForm ant cons)  \" \n\n"  
+       (i, i,formula2ParamIsabellestr enumValTab  ant, formula2ParamIsabellestr enumValTab  cons)
+       in
+   temp catch (//(print ("rule="^(rule2Str enumValTab rule)^"*****\n")) fseq
+          print ("inv="^(formula2str enumValTab inv)^"*****\n") fseq
+        // (printStrList (map (formula2str  enumTab) invsLib)) fseq 
+          error "branch 4");
+   
+//definition invariants::"nat \<Rightarrow> formula set"  where [simp]: 
+//  "invariants N\<equiv> {f.   exLessP N (%i.  f= invOnX1 i) \<or>
+///                       exLessP N (%i.  f= invOnX2 i) \<or> 
+//                       exTwoLessP N (%i j. f=mutualInv i j)\<or> 
+ //                      exTwoLessP N (%i j. f=mutualInv1 i j)\<or>
+//                       exTwoLessP N (%i j. f=mutualInv2 i j)\<or> 
+ //                      exTwoLessP N (%i j. f=mutualInv3 i j)}"   
+ 
+let invInstDef x=
+       val (i,inv)=x in
+       ( length (paraIndexsOfForm dist inv)=1)
+       => sprintf "exLessP N (%% i.  f= inv%s i)  \\<or>\n" (int2str i)
+      | sprintf  "exTwoLessP N (%% i j.  f = inv%s i j)  \\<or>\n" (int2str i) ;
+  
+let createIsabelleInvs enumValTab invs=
+  let indexs=1 upto (length invs) then   
+  let strs=map  (createIsabelleInv enumValTab) (zip indexs invs) then
+  
+  let defList=itlist (defix ^) strs ""  then
+  
+  
+      
+  let invItemList=itlist (defix ^) (map (\p. invInstDef p ) (zip indexs invs)) "" then
+  
+  let invItemList=str_substr invItemList 1 (strlen invItemList -6) then
+  
+  let defOfAllInvs=sprintf "definition invariants::\"nat \\<Rightarrow> formula set\"  where [simp] :\n\"invariants N\\<equiv> {f. %s }\"\n" invItemList then
+   defList ^ defOfAllInvs^"\n" ; 
+
+let writeLocaleOniniImplyOneInvInExLessPByDisableAnt outf=
+let temp="
+locale iniImplyOneInvInExLessPByDisableAnt=\n
+  fixes paraInv ::\"nat \\<Rightarrow> formula\"  and iniStateSpecOfAVar::\" nat \\<Rightarrow> formula\"\n
+  assumes  a:\"\\<forall> i s. formEval (antOf (paraInv i)) s \\<longrightarrow> \\<not>  formEval (iniStateSpecOfAVar  i) s \"  and\n
+  b:\"\\<forall> N ini i s. i\\<le>N \\<longrightarrow>ini \\<in> { mutualIni  N}\\<longrightarrow>formEval ini s \\<longrightarrow>  formEval (iniStateSpecOfAVar  i) s\" and\n
+  c:\"\\<exists>  ant0 cons0. (paraInv i)= implyForm ant0 cons0\"\n
+begin\n
+theorem iniImplyInv:\n
+  assumes a1: \" exLessP N (\%i.  invariant = paraInv i)\" \n 
+  and a2:\" ini \\<in> { mutualIni  N}\"\n
+  and a3:\"formEval ini s\"\n
+  shows \"formEval invariant s\"\n
+proof -\n
+  from a1 obtain i where b1:\"i \\<le> N \\<and> invariant =paraInv  i\" \n
+    apply -\n
+    apply(simp add:exLessP_def)\n
+    apply auto\n
+    done\n
+\n
+  have b2:\"formEval (iniStateSpecOfAVar  i) s\"\n    
+    apply(cut_tac b b1 a2 a3)\n
+    by blast\n\n
+
+  have b3:\"\\<exists>  ant0 cons0. (paraInv i)= implyForm ant0 cons0\"\n
+    by(cut_tac c,auto)\n
+
+  then obtain ant0 cons0  where b4:\"paraInv  i=implyForm ant0 cons0\"\n
+    by blast\n
+     
+  show  \"formEval invariant s\"   \n
+    apply(cut_tac a)\n
+    apply(cut_tac b1 b2 b4,simp)\n
+    apply auto\n
+    done\n
+qed\n
+end\n"  then
+fprintf outf "%s"  temp;
+
+
+let writeLocaleOniniImplyOneInvInExLessPByEnableCons outf=
+let temp="
+locale iniImplyOneInvInExLessPByEnableCons=\n
+  fixes paraInv ::\"nat \\<Rightarrow> formula\"  and iniStateSpecOfAVar::\" nat \\<Rightarrow> formula\"\n
+  assumes  a:\"\\<forall> i s. formEval (iniStateSpecOfAVar  i) s \n
+    \\<longrightarrow>formEval (consOf (paraInv i)) s \"  and\n
+
+  b:\"\\<forall> N ini i s. i\\<le>N \\<longrightarrow>ini \\<in> { mutualIni  N}\\<longrightarrow>formEval ini s \n
+ \ \\<longrightarrow>  formEval (iniStateSpecOfAVar  i) s\" and\n
+
+  c:\"\\<exists>  ant0 cons0. (paraInv i)= implyForm ant0 cons0\"\n
+begin\n
+theorem iniImplyInv:\n
+  assumes a1: \" exLessP N (%i.  invariant = paraInv i)\"  \n
+  and a2:\" ini \\<in> { mutualIni  N}\"\n
+  and a3:\"formEval ini s\"\n
+  shows \"formEval invariant s \"\n
+proof -
+  from a1 obtain i where b1:\"i \\<le> N \\<and> invariant =paraInv  i\" \n
+    apply -\n
+    apply(simp add:exLessP_def)\n
+    apply auto\n
+    done\n
+
+  have b2:\"formEval (iniStateSpecOfAVar  i) s\"    \n
+    apply(cut_tac b b1 a2 a3)\n
+    by blast\n
+
+  have b3:\"\\<exists>  ant0 cons0. (paraInv i)= implyForm ant0 cons0\"\n
+    by(cut_tac c,auto)\n
+
+  then obtain ant0 cons0  where b4:\"paraInv  i=implyForm ant0 cons0\"\n
+    by blast\n
+     
+  then have b5:\"formEval cons0  s\"\n
+    apply -   \n
+    apply(cut_tac a b2)     \n
+    apply(drule_tac x=\"i\" in spec)\n
+    apply(drule_tac x=\"s\" in spec)\n
+    by auto\n
+
+  show  \"formEval invariant s \"   \n
+    apply(cut_tac a)\n
+    apply(cut_tac b1 b2 b4 b5,simp)\n
+    done\n
+qed\n
+end\n" then
+
+fprintf outf "%s"  temp;
+
+   
+let writeLocaleOniniImplyOneInvInExTwoLessPByDisableAnt outf=
+let temp="
+locale iniImplyOneInvInExTwoLessPByDisableAnt=
+  fixes paraInv ::\" nat \\<Rightarrow>nat \\<Rightarrow> formula\"  and iniStateSpecOfAVar::\" nat \\<Rightarrow> formula\"\n
+  assumes  a:\"\\<forall> i j s. formEval (antOf (paraInv i j)) s \\<longrightarrow> \\<not>  formEval (iniStateSpecOfAVar  i) s \"  and\n
+  b:\"\\<forall> N ini i s. i\\<le>N \\<longrightarrow>ini \\<in> { mutualIni  N}\\<longrightarrow>formEval ini s \\<longrightarrow>  formEval (iniStateSpecOfAVar  i) s\" and\n
+  c:\"\\<exists>  ant0 cons0. (paraInv i j)= implyForm ant0 cons0\"\n
+begin\n
+theorem iniImplyInv:\n
+  assumes a1: \" exTwoLessP N (\%i j.  invariant = paraInv i j)\"  \n
+  and a2:\" ini \\<in> { mutualIni  N}\"\n
+  and a3:\"formEval ini s\"\n
+  shows \"formEval invariant s \"\n
+proof -\n
+  from a1 obtain i j where b1:\"i\ \\<le> N \\<and> j\\<le>N \\<and> invariant =paraInv  i j\"\n 
+    apply -\n
+    apply(simp add:exTwoLessP_def)\n
+    apply auto\n
+    done\n
+\n
+  have b2:\"formEval (iniStateSpecOfAVar  i) s\"    \n
+    apply(cut_tac b b1 a2 a3)\n
+    by blast\n\n
+
+  have b3:\"\\<exists>  ant0 cons0. (paraInv i j)= implyForm ant0 cons0\"\n
+    by(cut_tac c,auto)\n
+\n
+  then obtain ant0 cons0  where b4:\"paraInv  i j=implyForm ant0 cons0\"\n
+    by blast\n
+     \n
+  show  \"formEval invariant s \"   \n
+    \n
+    apply(cut_tac a)\n
+    apply(cut_tac b1 b2 b4,simp)\n
+    by (metis (lifting) antOf.simps)\n
+qed\n
+end   \n" then
+
+fprintf outf "%s"  temp;  
+
+
+
+let writeLocaleOniniImplyOneInvInExTwoLessPByEnableCons outf=
+let temp ="
+locale iniImplyOneInvInExTwoLessPByEnableCons= \n
+  fixes paraInv ::\" nat \\<Rightarrow>nat \\<Rightarrow> formula\"  and iniStateSpecOfAVar::\" nat \\<Rightarrow> formula\" \n
+  assumes  a:\" \\<forall> i j s.   formEval (iniStateSpecOfAVar  j) s  \\<longrightarrow> \n
+  formEval (consOf (paraInv i j)) s \"  and \n
+  b:\"\\<forall> N ini i s. i\\<le>N \\<longrightarrow>ini \\<in> { mutualIni  N}\\<longrightarrow>formEval ini s \\<longrightarrow>  formEval (iniStateSpecOfAVar  i) s\" and \n
+  c:\"\\<exists>  ant0 cons0. (paraInv i j)= implyForm ant0 cons0\" \n
+begin \n
+theorem iniImplyInv: \n
+  assumes a1: \" exTwoLessP N (%i j.  invariant = paraInv i j)\"   \n
+  and a2:\" ini \\<in> { mutualIni  N}\" \n
+  and a3:\"formEval ini s\" \n
+  shows \"formEval invariant s \" \n
+proof - \n
+  from a1 obtain i j where b1:\"i \\<le> N \\<and> j\\<le>N \\<and> invariant =paraInv  i j\"  \n
+    apply - \n
+    apply(simp add:exTwoLessP_def) \n
+    apply auto \n
+    done \n \n
+
+  have b2:\"formEval (iniStateSpecOfAVar  j) s\"     \n
+    apply(cut_tac b b1 a2 a3) \n
+    by blast \n \n
+
+  have b3:\"\\<exists>  ant0 cons0. (paraInv i j)= implyForm ant0 cons0\" \n
+    by(cut_tac c,auto) \n \n
+
+  then obtain ant0 cons0  where b4:\"paraInv  i j=implyForm ant0 cons0\" \n
+    by blast \n \n
+
+  then have b5:\"formEval cons0  s\" \n \n
+    apply -    \n
+    apply(cut_tac a b2)      \n
+    apply(drule_tac x=\"i\" in spec) \n
+    apply(drule_tac x=\"j\" in spec) \n
+    apply(drule_tac x=\"s\" in spec) \n
+    by auto \n
+     
+  show  \"formEval invariant s \"    \n
+    
+    apply(cut_tac a) \n
+    apply(cut_tac b1 b2 b4 b5,simp) \n
+    done \n
+qed \n
+end \n
+" then
+
+fprintf outf "%s"  temp;
+
+
+//definition iniStateSpecOfN::" nat \\<Rightarrow> formula" where [simp] :
+//  " iniStateSpecOfN  i\<equiv>  eqn (IVar (Para ''n'' i)) (Const I)"
+
+let createIsabelleDefForIniSpecOnAVar enumValTab  (v0,val0)=
+  
+  let val0InIsabelle= exp2IsabelleStr enumValTab   val0 then
+  let v0InIsabelle= (val (Global vname) =v0 in "(Global ''"^vname^"'')") catch (val (Param vname i)=v0 in "(Para ''"^vname^"'' i"^")") then 
+  let v0Name=getVarName v0 then
+  let str=
+  (val (Global vname) =v0 in
+  sprintf " definition iniStateSpecOf%s::\"  formula\" where [simp] :\n
+  \" iniStateSpecOf%s \\<equiv>  eqn (IVar %s) %s\"\n\n\n"
+   (v0Name,v0Name,v0InIsabelle,val0InIsabelle)) catch
+  (val (Param vname i) =v0 in
+  sprintf " definition iniStateSpecOf%s::\" nat \\<Rightarrow> formula\" where [simp] :\n
+  \" iniStateSpecOf%s  i\\<equiv>  eqn (IVar %s) %s\"\n\n\n"
+   (v0Name,v0Name,v0InIsabelle,val0InIsabelle)) then   
+  str;
+  
+let createLemmaOnAVarAtIni   (v0,val0)=
+
+let v0Name=getVarName v0 then
+let temp= 
+
+(val (Global vname) =v0 in
+
+ sprintf
+"lemma lemmaOnIni_iniStateSpecOf%s:\n
+  assumes   a2:\" ini \\<in> { mutualIni  N}\"\n
+  and a3:\"formEval ini s\"  
+  shows \" formEval (iniStateSpecOf%s ) s\"\n 
+  apply(unfold iniStateSpecOf%s_def)\n
+  apply(cut_tac a2 a3,simp)\n
+  done\n\n"  (vname,vname,vname) ) 
+  
+ catch 
+ 
+ (val (Param vname i)=v0    in
+ sprintf
+"lemma lemmaOnIni_iniStateSpecOf%s:\n
+  assumes   a2:\" ini \\<in> { mutualIni  N}\"\n
+  and a3:\"formEval ini s\" and a4:\"i \\<le> N\"\n
+  shows \" formEval (iniStateSpecOf%s i) s\"\n
+  apply(rule_tac i=\"i\" and N=\"N\" in forallLemma)\n
+  apply(cut_tac a4,simp)\n
+  apply(cut_tac a2 a3,simp)\n
+  done\n\n"  (vname,vname) ) then
+temp;
+
+
+  
+  
+  
+let createIsabelleDefsForIniSpecOnAVars enumValTab  env=
+   let pairs=tbl_values env then
+   itlist (defix ^) 
+   (map (\p. (createIsabelleDefForIniSpecOnAVar enumValTab p) ) 
+     pairs) "";
+     
+     
+let createIsabelleLemmasForIniSpecOnAVars   env=
+  let pairs=tbl_values env then
+   itlist (defix ^) 
+   (map (\p.  (createLemmaOnAVarAtIni p)) 
+     pairs) "";       
+     
+
+//definition mutualIni ::"nat\<Rightarrow>formula" where [simp]:
+// "mutualIni  N \\<equiv> andForm (eqn (IVar (Global ''x'')) (Const TRUE)) 
+//             ( forallForm (down N) (%x. eqn (IVar (Para ''n'' x)) (Const I)))        
+     
+     
+let createOneSpecOnAVarForOneItemInMutualIni (v0,val0)=
+	 
+let v0Name=getVarName v0 then
+let temp= 
+
+(val (Global vname) =v0 in
+
+ sprintf
+"(iniStateSpecOf%s ) \n"
+ (vname ) )
+  
+ catch 
+ 
+ (val (Param vname i)=v0    in
+ sprintf
+" ( forallForm (down N) (%%x. iniStateSpecOf%s x))\n"  (vname))  then
+temp;   
+
+let createOneSpecOnAVarForInMutualIni env=
+	 let pairs=tbl_values env then
+   let str=itlist (\a.\b. "( andForm" ^ a ^ b^")") 
+   (map (\p. createOneSpecOnAVarForOneItemInMutualIni  p) 
+     (tl pairs)) (createOneSpecOnAVarForOneItemInMutualIni (hd pairs)) then
+  let str0= "definition mutualIni ::\"nat\\<Rightarrow>formula\" where [simp]:\n
+   \"mutualIni  N \\<equiv>" then
+   str0^str^"\"\n\n";
+     
+     
+     
+   
+let createInterpOniniImplyInv  specOnInvMethodTab (i,inv0)=
+ val (enableOrDisable, SOME assign0)= tbl_element specOnInvMethodTab inv0 in
+ 
+ let enableStr=((enableOrDisable=Enable)=>"ByEnableCons" | "ByDisableAnt") then
+ 
+ val [v0]=tbl_keys assign0 in 
+ 
+  let v0Name=getVarName v0 then
+  
+  let typeStrOffun=(length (paraIndexsOfForm dist inv0 ) =2)=>
+    sprintf "inv%d::nat\\<Rightarrow>nat\\<Rightarrow>formula" i|
+    sprintf "inv%d::nat\\<Rightarrow>formula" i  then
+    
+  let oneOrTwo=
+  (length (paraIndexsOfForm dist inv0 ) =2)=> "Two"|""  then
+  
+  let temp= sprintf 
+  "
+  interpretation iniImply_Inv%d:iniImplyOneInvInEx%sLessP%s \"%s\"  \"iniStateSpecOf%s::nat \\<Rightarrow> formula\"
+   proof(unfold iniImplyOneInvInEx%sLessP%s_def inv%d_def,
+      rule conjI, force,rule conjI, 
+     blast intro:lemmaOnIni_iniStateSpecOf%s,
+      force)
+    qed"  
+    
+   (i,oneOrTwo,enableStr,typeStrOffun,v0Name,oneOrTwo,enableStr,i,v0Name) then
+   
+    temp;
+    
+
+
+    
+let createInterpOniniImplyInvs  specOnInvMethodTab invs=
+  let pairs=zip (1 upto (length invs) ) invs  then
+  itlist (defix ^) (map   (createInterpOniniImplyInv  specOnInvMethodTab)  pairs) "";
+  
+//for printing the invs-proof method-ini
+let printinv_ini_proofTabItem dist symIndice  enumValTab invTabInverse (form, (disOrEn, SOME mapTab))=
+    let enableStr=((disOrEn=Enable)=>"enCons" | "disAnt") then 
+    let formStr=formula2ParamIsabellestr enumValTab form then
+    val [assignment]= tbl_values mapTab in
+    val (v,e)=assignment in
+    let assignStr="("^(var2ParamIsabelleStr   v)^","^(exp2ParamIsabelleStr  enumValTab e)^")" then    
+    
+    let getFormCharStr form0= (formula2CharacterStr  enumValTab form0)^(int2str (length (paraIndexsOfForm dist form0))) then
+    let invIndex=tbl_element invTabInverse (getFormCharStr  form) then
+    
+    //let invIndex= (tbl_element invTabInverse (formula2CharacterStr  enumValTab  form0)) catch 0 then
+    let indexStr=int2str invIndex then
+    itlist (\a.\b. a^"---"^b) [enableStr,indexStr,formStr,assignStr] "\n" ;
+    
+let  printinv_ini_proofTab dist symIndice  enumValTab invTabInverse inv_ini_proofTab fileName  =
+		let outf=fopen fileName "w" then
+		let str=itlist (defix ^) (map (printinv_ini_proofTabItem dist symIndice enumValTab invTabInverse) (tbl_values   inv_ini_proofTab)) "\n\n"  then
+     fputs outf str fseq
+     fclose outf;
+  
+   
+//create Isabelle files for one protocol model
+//1. create types
+//2. create axioms
+
+let duplicate x N=map (\i. x) (1 upto N) ;
+
+let   dupThenZip ys x=zip (duplicate x (length ys)) ys;
+
+let productFun xs ys=
+  
+	  
+	flat (map (dupThenZip ys) xs);
+	
+	
+
+let  ithInvDisj invs i = 
+   let paras=el i invs then
+   let paras=paraIndexsOfForm dist (el i invs) then
+   let oneOrTwo=(length paras=1)=>""|"Two" then
+   let paraStr=(length paras=1)=> " i " |" i j " then
+   sprintf
+   " ex%sLessP N (%%%s.  inv= inv%d %s)  "  (oneOrTwo, paraStr, i, paraStr);
+   
+let allInvDisjs invs=
+  itlist (\i. \str. (ithInvDisj invs i)^"\\<or>"^str )
+  
+   (1 upto ((length invs ) - 1))  
+   
+   (ithInvDisj invs (length invs ));
+  
+
+let  ithDisjProof invs i=
+sprintf 
+ "       moreover
+        {assume d1: \"%s\"\n
+          have \"formEval inv s\"\n
+            by (metis b2 b3 d1 iniImply_Inv%d.iniImplyInv)}\n" (ithInvDisj invs i,i);         
+            
+       
+            
+let ithRuleDisj   rule2NameTab i =
+	  let ruleName=el i (map fst (tbl_values rule2NameTab ))   then
+	  sprintf  "exLessP N (%%i.  r=%s i )"      (ruleName); 
+	  
+let allRuleDisjs   rule2NameTab  =
+	  let rules=map (fst) (tbl_values rule2NameTab )  then
+	  let len =length rules then
+	  let firstNs=firstn (len - 1) (1 upto len) then
+	  let lastOne=hd (butfirstn (len - 1) rules) then
+	   itlist 
+	   
+	   (\r. \str. (ithRuleDisj  rule2NameTab r)^"\\<or>"^str ) 
+	   
+	   firstNs  (ithRuleDisj   rule2NameTab len);           
+	     
+        
+  
+let  ithRuleDisjProof rule2NameTab invs  i =	  
+	let  ruleName=el i (map fst (tbl_values rule2NameTab ))  then 
+	
+	let allInvCasesStr= allInvDisjs invs then
+	
+	let proofOfCaseIStr j=
+		let caseStr= ithInvDisj invs j then
+		let	proofStr2=sprintf
+		
+		 "moreover
+        {assume d1:\" exTwoLessP N (%%i j.  inv= inv%d i j)\"
+            from d1 obtain iInv1 and iInv2 
+            where d2:\"iInv1 \\<le> N \\<and> iInv2 \\<le>N \\<and> iInv1 \\<noteq>iInv2\\<and> inv= inv%d iInv1 iInv2\" 
+            by (-,unfold exTwoLessP_def,auto)
+          have \"invHoldForRule (inv%d iInv1 iInv2) (%s iRule) (invariants N) \"
+            apply(cut_tac  c2 d2)
+            by (metis paraRuleInstValidateExTwoLessInvInst_%s_inv%d.paraRuleInstValidateExTwoLessInvInst)
+          then have \"invHoldForRule inv r (invariants N) \"
+            by(cut_tac c2 d2, simp) 
+        }"
+       
+  	(j,j,j,ruleName,ruleName,j)  then
+  	
+  let	proofStr1=sprintf
+		
+		 "moreover
+        {assume d1:\" exLessP N (%%i .  inv= inv%d i )\"
+            from d1 obtain iInv1  
+            where d2:\"iInv1 \\<le> N  \\<and> inv= inv%d iInv1  \" 
+            by (-,unfold exLessP_def,auto)
+          have \"invHoldForRule (inv%d iInv1  ) (%s iRule) (invariants N) \"
+            apply(cut_tac  c2 d2)
+            by (metis paraRuleInstValidateExLessInvInst_%s_inv%d.paraRuleInstValidateExLessInvInst)
+          then have \"invHoldForRule inv r (invariants N) \"
+            by(cut_tac c2 d2, simp) 
+        }"	
+        
+        (j,j,j,ruleName,ruleName,j)  then
+  	length (paraIndexsOfForm dist (el j invs))=1=>proofStr1 |
+  	proofStr2  then
+  	
+	let allProofs=itlist (defix ^) (map proofOfCaseIStr (1 upto (length invs))) "" then
+	let ultimateStr="ultimately have \"invHoldForRule inv r (invariants N) \"
+          by blast
+      }"  then
+	
+	  	
+  sprintf 
+  "      moreover
+        {assume c1: \"exLessP N (%%i.  r= %s i)\n\"
+         
+         from c1 obtain iRule where c2:\"iRule \\<le> N \\<and> r= %s iRule\" 
+         by (auto simp add: exLessP_def)
+         
+         have c3:\" %s   \"
+          by (cut_tac b1, simp )
+          
+         %s
+					
+					%s
+	"
+		
+  (ruleName,  ruleName, allInvCasesStr,allProofs, ultimateStr );		   
+ 
+ 
+let createProofForMainLemma invs   rule2NameTab=          
+
+let temp1=	               
+"lemma main:
+  assumes   a1:\"s ∈ reachableSet { mutualIni  N} (rules N)\"  and a2:\"0<N\"
+
+  shows \"\\<forall>inv. inv \\<in>(invariants N)\\<longrightarrow>formEval inv s\"
+proof(rule consistentLemma)
+  show \"consistent (invariants N) {mutualIni  N} (rules N)\"
+  proof(cut_tac a1, unfold consistent_def,rule conjI)
+    show \" \\<forall>inv ini s. inv \\<in>(invariants N)\\<longrightarrow> ini \\<in>{ mutualIni  N}\\<longrightarrow> formEval ini s\\<longrightarrow> formEval inv s\"
+    proof((rule allI)+,(rule impI)+)
+      fix inv ini s 
+      assume b1:\"inv \\<in>(invariants N) \" and b2:\"ini \\<in> { mutualIni  N} \" and b3:\"formEval ini s\"
+      show \"formEval inv s\"
+      proof -"   then
+ 
+let temp2="     
+        
+        have c1:\""^ allInvDisjs invs  ^" \"
+          by (cut_tac b1, simp )"   then
+
+let tempOfProof=itlist (defix ^) (map (ithDisjProof invs) (1 upto (length invs))) "" then
+
+let temp3="
+      ultimately show \"formEval inv s\"
+      by blast
+      qed
+    qed
+next
+   show  \"\\<forall>inv r. inv \\<in> invariants N\\<longrightarrow> r \\<in>rules N\\<longrightarrow> invHoldForRule inv r (invariants N) \"
+   
+
+   proof((rule allI)+,(rule impI)+)
+      fix inv r
+      assume b1:\"inv ∈ invariants N\" and b2:\"r ∈ rules N\"
+      have c1:\""^
+      (allRuleDisjs rule2NameTab  )^ "\" 
+
+        apply(cut_tac  b2)
+        apply auto
+        done"   then    
+        
+        
+let proofStr=itlist (defix ^) (map (ithRuleDisjProof rule2NameTab invs) (1 upto (length (tbl_values rule2NameTab))))   
+      "ultimately show \"invHoldForRule inv r (invariants N) \"
+          by blast 
+     qed
+qed
+next
+  show \"s ∈ reachableSet {mutualIni N} (rules N)\"
+by (metis a1)
+ 
+next  
+  show \" \\<forall>inv. inv \\<in>invariants N\\<longrightarrow> ofImplyForm inv\"
+  apply(rule allI,rule impI)
+  apply(simp,unfold exLessP_def exTwoLessP_def ofImplyForm_def, auto)
+  done
+qed
+end  "  then 
+temp1^temp2^tempOfProof^temp3^proofStr;
+      	
+	
+let createIsabelleModel dist symIndice  invs iniStatement ruleTable paraType typeNameTab enumValTab typeTable aritTable   rulePraNumsTab fiveTuples fileName smtTemp=
+  let outf=fopen (fileName^".thy") "w" then
+
+  let beginStr="theory "^fileName^" imports cache\n"^ 
+  "begin\n"^ "section{*Main defintions*}\n" then
+  fprintf outf "%s"  beginStr fseq
+  
+	
+	fprintf outf "%s" "(***************definitions for the enumvalues types****************************************)\n" fseq
+	let strOnTypes=createTypes paraType  typeNameTab enumValTab then
+	fputs outf strOnTypes fseq
+	
+	fprintf outf "%s" "(***************definitions for the axioms ****************************************)\n" fseq
+	let strOnAxioms=createAxiomsOnVariables  typeNameTab typeTable aritTable then
+  fputs outf strOnAxioms fseq
+  
+  let strOnRules=createIsabelleRules  enumValTab   ruleTable then
+  fputs outf strOnRules fseq
+  
+  
+  let strOnInvs=createIsabelleInvs  enumValTab  invs then
+  fputs outf strOnInvs  fseq
+  
+   
+   
+   let resultTab=(iniValidateInvs  typeTable enumValTab (iniStatement) invs (tbl_create 20))  then
+
+  let envs=map (snd) (tbl_values resultTab) then
+  let tblOnIniSpecOfVars=createSpecsOnAVarsAtIni   envs (tbl_create 20)  then
+  
+  
+   
+   let defOnIniSpecOnVars=createIsabelleDefsForIniSpecOnAVars  enumValTab  tblOnIniSpecOfVars then
+   
+   fputs outf defOnIniSpecOnVars  fseq
+   
+   let strOnMutualIni=createOneSpecOnAVarForInMutualIni    tblOnIniSpecOfVars then   
+   
+   fputs outf strOnMutualIni fseq
+   
+   let strOnMutualIniLemmas=createIsabelleLemmasForIniSpecOnAVars tblOnIniSpecOfVars then
+   
+   fputs outf strOnMutualIniLemmas fseq
+   
+   writeLocaleOniniImplyOneInvInExLessPByDisableAnt outf fseq
+   
+   writeLocaleOniniImplyOneInvInExTwoLessPByDisableAnt outf fseq
+   
+   writeLocaleOniniImplyOneInvInExLessPByEnableCons outf fseq
+   
+   writeLocaleOniniImplyOneInvInExTwoLessPByEnableCons outf fseq
+   
+   let interpsOnInisImplyInvs=createInterpOniniImplyInvs  resultTab  invs then
+   
+  fputs outf interpsOnInisImplyInvs  fseq
+  
+  writeLocaleOnParaRuleInstValidateExLessInvInst outf fseq
+  
+  writeLocaleOnparaRuleInstValidateExTwoLessInvInst outf fseq
+  
+  let rules= (map fst (tbl_values ruleTable)) then
+  
+  let prod=productFun rules invs then
+  
+  //fputs fdebug ("prod length="^(int2str (length prod))^"\n") fseq
+  
+  //let rule2NameTab=ruleNameTab2TabInverse enumValTab ruleTable then
+  
+  
+  //( paraNormlize dist  symIndice  (impInvNorm form))
+  let getFormCharStr form= (formula2CharacterStr  enumValTab  form)^(int2str (length (paraIndexsOfForm dist form))) then
+  
+  let invTabInverse  =itlist 
+  (\pair.\tab.(tbl_insert tab (getFormCharStr (fst pair)) (snd pair)) catch tab)
+  (zip invs (1 upto (length invs))) 
+  (tbl_create 50) then
+  
+  let outf1=fopen "fdebg1" "w" then
+  
+ // let rules'= (map snd  (tbl_values ruleTable)) then
+  
+ // let prod'=productFun rules' invs then
+  
+  
+  //name2RuleTab
+ // let fiveTuplesTab=fiveTuples2fiveTuplesTab dist symIndice   invTabInverse outf1 dist enumValTab ruleTable  fiveTuples prod then
+  
+  
+  //printfiveTuplesTab dist symIndice ruleTable  invTabInverse outf1 enumValTab ruleTable fiveTuplesTab fseq
+  //fclose outf1 fseq
+  
+  
+   //name2RuleTab
+  let StrOnInterpParaRuleInstValidateInvInst=itlist 
+   (defix ^)
+   (map (constructInterpThmInParaRuleInstValidateInvInsts dist symIndice   enumValTab fiveTuples ruleTable  invTabInverse smtTemp)  prod)
+   "" then
+   
+   
+  (fputs outf StrOnInterpParaRuleInstValidateInvInst) catch (fclose outf) fseq
+  
+  
+  
+  
+  let strOnMainLemma=createProofForMainLemma invs    ruleTable then
+  
+  (fputs outf strOnMainLemma) fseq
+   
+   printinv_ini_proofTab dist symIndice enumValTab invTabInverse  resultTab "inv_ini_proofTab" fseq
+  fputs fdebug2 (itlist (defix ^) (map (fiveTuple2Str  dist  symIndice  invTabInverse    enumValTab ruleTable ) fiveTuples) "") fseq    
+  
+  fclose outf;  
+  
+ 
+   
+  
+let createMakefile fileName=
+let str=sprintf 
+"INCLUDEPATH = ~/Tools/cmurphi5.4.9/include
+SRCPATH = ~/Tools/cmurphi5.4.9/src/
+
+CXX = g++
+
+CFLAGS = 
+
+# optimization
+OFLAGS = -ggdb
+#OFLAGS = -O2
+
+#Murphi options
+MURPHIOPTS = -b -c
+
+#all: down lin pingpong sets sort5 down.cache lin.cache pingpong.cache sets.cache sort5.cache down.disk lin.disk pingpong.disk sets.disk sort5.disk 
+#splitfile: lin.cache.splitfile pingpong.cache.splitfile sets.cache.splitfile sort5.cache.splitfile lin.disk.splitfile pingpong.disk.splitfile sets.disk.splitfile sort5.disk.splitfile
+
+# rules for compiling
+	
+norm: %s.tmp.cpp
+	${CXX} ${CFLAGS} ${OFLAGS} -o  %s  %s.tmp.cpp -I ${INCLUDEPATH} -lm"
+	(fileName,fileName,fileName) then
+let fout=fopen "Makefile" "w" then
+fputs fout str fseq fclose fout;
+
+
+
+ 
+ 
