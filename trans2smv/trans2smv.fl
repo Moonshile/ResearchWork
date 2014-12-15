@@ -28,10 +28,10 @@ let genNegN n = map (\x. (0 - x)) (genN n);
 // NOTE that [] will be generated as 0
 letrec combinationGen res [] =
         res
-    /\ combinationGen res ([]:choice) =
-        combinationGen (map (\x. x@[0]) res) choice
     /\ combinationGen [] ([]:choice) =
         combinationGen [[0]] choice
+    /\ combinationGen res ([]:choice) =
+        combinationGen (map (\x. x@[0]) res) choice
     /\ combinationGen [] (p:choice) =
         combinationGen (map (\x. [x]) p) choice
     /\ combinationGen res (p:choice) =
