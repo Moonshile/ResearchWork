@@ -227,27 +227,6 @@ let transInit indent init enumValTab dist =
     // it has been generated in function addNextForChooseRule
 // transInit
 
-// generate the next clause in smv for chooseRuleVarName
-let addNextForChooseRule indent var rules =
-    let aCase indent var v1 v2 =
-        (transIndent indent)^"("^var^" = "^v1^") : "^v2^";\n"
-    in
-    letrec cases indent var i names =
-        (i = (length names)) => (
-            (aCase indent var (el i names) (el 1 names))
-        ) | (
-            (aCase indent var (el i names) (el (i + 1) names))^
-                (cases indent var (i + 1) names)
-        )
-    in
-    let names = map (\x. (fst x)) rules in
-    (transIndent indent)^"init("^var^") := "^(el 1 names)^";\n"^
-        (transIndent indent)^"next("^var^") :=\n"^
-        (transIndent (indent + 1))^"case\n"^
-        (cases (indent + 2) var 1 names)^
-        (transIndent (indent + 1))^"esac;\n";
-// addNextForChooseRule
-
 // translate transitions of rules to next statements of SMV
 let transNext indent ruleTab paraTypeTab funcMap enumValTab dist = 
     letrec TN indent t [] enumValTab dist =
@@ -278,9 +257,14 @@ let transNext indent ruleTab paraTypeTab funcMap enumValTab dist =
     let rules = map addChooseRuleForm rules in
     let t = analysisNext rules (tbl_create 200) in
     let vars = tbl_keys t in
+    let ruleCount = length rules in
+    let ruleNames = "{"^(implode (map (\x. ((fst x)^", ")) (firstn (ruleCount - 1) rules)))^
+        (fst (el ruleCount rules))^"}"
+    in
     (TN indent t vars enumValTab dist)^
-        // next clause for chooseRuleVarName
-        (addNextForChooseRule indent chooseRuleVarName rules);
+        // init and next clause for chooseRuleVarName
+        (transIndent indent)^"init("^chooseRuleVarName^") := "^ruleNames^";\n"^
+        (transIndent indent)^"next("^chooseRuleVarName^") := "^ruleNames^";\n";
 // transNext
 
 // translate variables
@@ -305,12 +289,12 @@ let transVar indent typeTab ruleTab paraTypeTab funcMap enumValTab dist =
     let t = analysisNext rules (tbl_create 200) in
     let vars = tbl_keys t in
     let ruleCount = length rules in
-    let ruleNames = (implode (map (\x. ((fst x)^", ")) (firstn (ruleCount - 1) rules)))^
-        (fst (el ruleCount rules))
+    let ruleNames = "{"^(implode (map (\x. ((fst x)^", ")) (firstn (ruleCount - 1) rules)))^
+        (fst (el ruleCount rules))^"}"
     in
     (TV indent vars typeTab enumValTab dist)^
         // VAR for chooseRuleVarName
-        (transIndent indent)^chooseRuleVarName^" : {"^ruleNames^"};\n";
+        (transIndent indent)^chooseRuleVarName^" : "^ruleNames^";\n";
 // transVar
 
 // translate invariants to CTLs
