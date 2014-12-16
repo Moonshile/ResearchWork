@@ -366,12 +366,17 @@ let paraTypeTable=
 
 let ruleFuncMap rule [a, b] = rule a b;
 
-let contra i1 i2 =
-    let form1= (eqn (left -> (Var (Param "cache" i1)))  
-        (right->(Const exclusive))) in
-    let form2= (eqn (left -> (Var (Param "cache" i2)))  
-        (right->(Const exclusive))) in 
-    andList [form1, form2];
+let contra i =
+    let isE = eqn (Var (Param "cache" i)) (Const exclusive) in
+    let allOthersI =
+        let isI j =
+            let notSame = neg (eqn (Const i) (Const j)) in
+            let state = eqn (Var (Param "cache" j)) (Const invalid) in
+            implyForm notSame state
+        in
+        forallForm (length paraType) isI
+    in
+    implyForm isE allOthersI;
 // contra
 
 let invTable =
@@ -382,11 +387,11 @@ let invTable =
 
 let invTypeTable =
     let tab0 = tbl_create 2 in
-    let tab0 = tbl_insert tab0 "contra" [paraType, paraType] in
+    let tab0 = tbl_insert tab0 "contra" [paraType] in
     tab0;
 // invTypeTable
 
-let invFuncMap inv [a, b] = inv a b;
+let invFuncMap inv [a] = inv a;
 
 load "trans2smv.fl";
 

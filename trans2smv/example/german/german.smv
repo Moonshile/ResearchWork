@@ -269,38 +269,14 @@ ASSIGN
             (cur_rule = c_rule_sharer_invalidates_cache30) : c_rule_client_receives_exclusive_grant10;
         esac;
 
--- c_contra11 --
+-- c_contra1 --
 SPEC
-    AG ((cache[1] = exclusive)&(cache[1] = exclusive))
+    AG ((cache[1] = exclusive) -> (((!(1 = 3)) -> (cache[3] = invalid))&((!(1 = 2)) -> (cache[2] = invalid))&((!(1 = 1)) -> (cache[1] = invalid))))
 
--- c_contra21 --
+-- c_contra2 --
 SPEC
-    AG ((cache[2] = exclusive)&(cache[1] = exclusive))
+    AG ((cache[2] = exclusive) -> (((!(2 = 3)) -> (cache[3] = invalid))&((!(2 = 2)) -> (cache[2] = invalid))&((!(2 = 1)) -> (cache[1] = invalid))))
 
--- c_contra31 --
+-- c_contra3 --
 SPEC
-    AG ((cache[3] = exclusive)&(cache[1] = exclusive))
-
--- c_contra12 --
-SPEC
-    AG ((cache[1] = exclusive)&(cache[2] = exclusive))
-
--- c_contra22 --
-SPEC
-    AG ((cache[2] = exclusive)&(cache[2] = exclusive))
-
--- c_contra32 --
-SPEC
-    AG ((cache[3] = exclusive)&(cache[2] = exclusive))
-
--- c_contra13 --
-SPEC
-    AG ((cache[1] = exclusive)&(cache[3] = exclusive))
-
--- c_contra23 --
-SPEC
-    AG ((cache[2] = exclusive)&(cache[3] = exclusive))
-
--- c_contra33 --
-SPEC
-    AG ((cache[3] = exclusive)&(cache[3] = exclusive))
+    AG ((cache[3] = exclusive) -> (((!(3 = 3)) -> (cache[3] = invalid))&((!(3 = 2)) -> (cache[2] = invalid))&((!(3 = 1)) -> (cache[1] = invalid))))
