@@ -225,58 +225,17 @@ ASSIGN
             ((cur_rule = c_rule_home_receives_invalidate_acknowledgement130)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : false;
             TRUE : home_sharer_list[3];
         esac;
-    init(cur_rule) := c_rule_client_receives_exclusive_grant10;
-    next(cur_rule) :=
-        case
-            (cur_rule = c_rule_client_receives_exclusive_grant10) : c_rule_client_receives_exclusive_grant20;
-            (cur_rule = c_rule_client_receives_exclusive_grant20) : c_rule_client_receives_exclusive_grant30;
-            (cur_rule = c_rule_client_receives_exclusive_grant30) : c_rule_client_receives_shared_grant10;
-            (cur_rule = c_rule_client_receives_shared_grant10) : c_rule_client_receives_shared_grant20;
-            (cur_rule = c_rule_client_receives_shared_grant20) : c_rule_client_receives_shared_grant30;
-            (cur_rule = c_rule_client_receives_shared_grant30) : c_rule_client_requests_exclusive_access_110;
-            (cur_rule = c_rule_client_requests_exclusive_access_110) : c_rule_client_requests_exclusive_access_120;
-            (cur_rule = c_rule_client_requests_exclusive_access_120) : c_rule_client_requests_exclusive_access_130;
-            (cur_rule = c_rule_client_requests_exclusive_access_130) : c_rule_client_requests_exclusive_access_210;
-            (cur_rule = c_rule_client_requests_exclusive_access_210) : c_rule_client_requests_exclusive_access_220;
-            (cur_rule = c_rule_client_requests_exclusive_access_220) : c_rule_client_requests_exclusive_access_230;
-            (cur_rule = c_rule_client_requests_exclusive_access_230) : c_rule_client_requests_shared_access10;
-            (cur_rule = c_rule_client_requests_shared_access10) : c_rule_client_requests_shared_access20;
-            (cur_rule = c_rule_client_requests_shared_access20) : c_rule_client_requests_shared_access30;
-            (cur_rule = c_rule_client_requests_shared_access30) : c_rule_home_picks_new_request_310;
-            (cur_rule = c_rule_home_picks_new_request_310) : c_rule_home_picks_new_request_320;
-            (cur_rule = c_rule_home_picks_new_request_320) : c_rule_home_picks_new_request_330;
-            (cur_rule = c_rule_home_picks_new_request_330) : c_rule_home_receives_invalidate_acknowledgement110;
-            (cur_rule = c_rule_home_receives_invalidate_acknowledgement110) : c_rule_home_receives_invalidate_acknowledgement120;
-            (cur_rule = c_rule_home_receives_invalidate_acknowledgement120) : c_rule_home_receives_invalidate_acknowledgement130;
-            (cur_rule = c_rule_home_receives_invalidate_acknowledgement130) : c_rule_home_receives_invalidate_acknowledgement210;
-            (cur_rule = c_rule_home_receives_invalidate_acknowledgement210) : c_rule_home_receives_invalidate_acknowledgement220;
-            (cur_rule = c_rule_home_receives_invalidate_acknowledgement220) : c_rule_home_receives_invalidate_acknowledgement230;
-            (cur_rule = c_rule_home_receives_invalidate_acknowledgement230) : c_rule_home_sends_invalidate_message_110;
-            (cur_rule = c_rule_home_sends_invalidate_message_110) : c_rule_home_sends_invalidate_message_120;
-            (cur_rule = c_rule_home_sends_invalidate_message_120) : c_rule_home_sends_invalidate_message_130;
-            (cur_rule = c_rule_home_sends_invalidate_message_130) : c_rule_home_sends_invalidate_message_210;
-            (cur_rule = c_rule_home_sends_invalidate_message_210) : c_rule_home_sends_invalidate_message_220;
-            (cur_rule = c_rule_home_sends_invalidate_message_220) : c_rule_home_sends_invalidate_message_230;
-            (cur_rule = c_rule_home_sends_invalidate_message_230) : c_rule_home_sends_reply_to_client_exclusive10;
-            (cur_rule = c_rule_home_sends_reply_to_client_exclusive10) : c_rule_home_sends_reply_to_client_exclusive20;
-            (cur_rule = c_rule_home_sends_reply_to_client_exclusive20) : c_rule_home_sends_reply_to_client_exclusive30;
-            (cur_rule = c_rule_home_sends_reply_to_client_exclusive30) : c_rule_home_sends_reply_to_client_shared10;
-            (cur_rule = c_rule_home_sends_reply_to_client_shared10) : c_rule_home_sends_reply_to_client_shared20;
-            (cur_rule = c_rule_home_sends_reply_to_client_shared20) : c_rule_home_sends_reply_to_client_shared30;
-            (cur_rule = c_rule_home_sends_reply_to_client_shared30) : c_rule_sharer_invalidates_cache10;
-            (cur_rule = c_rule_sharer_invalidates_cache10) : c_rule_sharer_invalidates_cache20;
-            (cur_rule = c_rule_sharer_invalidates_cache20) : c_rule_sharer_invalidates_cache30;
-            (cur_rule = c_rule_sharer_invalidates_cache30) : c_rule_client_receives_exclusive_grant10;
-        esac;
+    init(cur_rule) := {c_rule_client_receives_exclusive_grant10, c_rule_client_receives_exclusive_grant20, c_rule_client_receives_exclusive_grant30, c_rule_client_receives_shared_grant10, c_rule_client_receives_shared_grant20, c_rule_client_receives_shared_grant30, c_rule_client_requests_exclusive_access_110, c_rule_client_requests_exclusive_access_120, c_rule_client_requests_exclusive_access_130, c_rule_client_requests_exclusive_access_210, c_rule_client_requests_exclusive_access_220, c_rule_client_requests_exclusive_access_230, c_rule_client_requests_shared_access10, c_rule_client_requests_shared_access20, c_rule_client_requests_shared_access30, c_rule_home_picks_new_request_310, c_rule_home_picks_new_request_320, c_rule_home_picks_new_request_330, c_rule_home_receives_invalidate_acknowledgement110, c_rule_home_receives_invalidate_acknowledgement120, c_rule_home_receives_invalidate_acknowledgement130, c_rule_home_receives_invalidate_acknowledgement210, c_rule_home_receives_invalidate_acknowledgement220, c_rule_home_receives_invalidate_acknowledgement230, c_rule_home_sends_invalidate_message_110, c_rule_home_sends_invalidate_message_120, c_rule_home_sends_invalidate_message_130, c_rule_home_sends_invalidate_message_210, c_rule_home_sends_invalidate_message_220, c_rule_home_sends_invalidate_message_230, c_rule_home_sends_reply_to_client_exclusive10, c_rule_home_sends_reply_to_client_exclusive20, c_rule_home_sends_reply_to_client_exclusive30, c_rule_home_sends_reply_to_client_shared10, c_rule_home_sends_reply_to_client_shared20, c_rule_home_sends_reply_to_client_shared30, c_rule_sharer_invalidates_cache10, c_rule_sharer_invalidates_cache20, c_rule_sharer_invalidates_cache30};
+    next(cur_rule) := {c_rule_client_receives_exclusive_grant10, c_rule_client_receives_exclusive_grant20, c_rule_client_receives_exclusive_grant30, c_rule_client_receives_shared_grant10, c_rule_client_receives_shared_grant20, c_rule_client_receives_shared_grant30, c_rule_client_requests_exclusive_access_110, c_rule_client_requests_exclusive_access_120, c_rule_client_requests_exclusive_access_130, c_rule_client_requests_exclusive_access_210, c_rule_client_requests_exclusive_access_220, c_rule_client_requests_exclusive_access_230, c_rule_client_requests_shared_access10, c_rule_client_requests_shared_access20, c_rule_client_requests_shared_access30, c_rule_home_picks_new_request_310, c_rule_home_picks_new_request_320, c_rule_home_picks_new_request_330, c_rule_home_receives_invalidate_acknowledgement110, c_rule_home_receives_invalidate_acknowledgement120, c_rule_home_receives_invalidate_acknowledgement130, c_rule_home_receives_invalidate_acknowledgement210, c_rule_home_receives_invalidate_acknowledgement220, c_rule_home_receives_invalidate_acknowledgement230, c_rule_home_sends_invalidate_message_110, c_rule_home_sends_invalidate_message_120, c_rule_home_sends_invalidate_message_130, c_rule_home_sends_invalidate_message_210, c_rule_home_sends_invalidate_message_220, c_rule_home_sends_invalidate_message_230, c_rule_home_sends_reply_to_client_exclusive10, c_rule_home_sends_reply_to_client_exclusive20, c_rule_home_sends_reply_to_client_exclusive30, c_rule_home_sends_reply_to_client_shared10, c_rule_home_sends_reply_to_client_shared20, c_rule_home_sends_reply_to_client_shared30, c_rule_sharer_invalidates_cache10, c_rule_sharer_invalidates_cache20, c_rule_sharer_invalidates_cache30};
 
--- c_contra1 --
+-- c_mutualEx1 --
 SPEC
     AG ((cache[1] = exclusive) -> (((!(1 = 3)) -> (cache[3] = invalid))&((!(1 = 2)) -> (cache[2] = invalid))&((!(1 = 1)) -> (cache[1] = invalid))))
 
--- c_contra2 --
+-- c_mutualEx2 --
 SPEC
     AG ((cache[2] = exclusive) -> (((!(2 = 3)) -> (cache[3] = invalid))&((!(2 = 2)) -> (cache[2] = invalid))&((!(2 = 1)) -> (cache[1] = invalid))))
 
--- c_contra3 --
+-- c_mutualEx3 --
 SPEC
     AG ((cache[3] = exclusive) -> (((!(3 = 3)) -> (cache[3] = invalid))&((!(3 = 2)) -> (cache[2] = invalid))&((!(3 = 1)) -> (cache[1] = invalid))))

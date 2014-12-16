@@ -366,7 +366,7 @@ let paraTypeTable=
 
 let ruleFuncMap rule [a, b] = rule a b;
 
-let contra i =
+let mutualEx i =
     let isE = eqn (Var (Param "cache" i)) (Const exclusive) in
     let allOthersI =
         let isI j =
@@ -377,17 +377,17 @@ let contra i =
         forallForm (length paraType) isI
     in
     implyForm isE allOthersI;
-// contra
+// mutualEx
 
 let invTable =
     let tab0 = tbl_create 2 in
-    let tab0 = tbl_insert tab0 "contra" contra in
+    let tab0 = tbl_insert tab0 "mutualEx" mutualEx in
     tab0;
 // invTable
 
 let invTypeTable =
     let tab0 = tbl_create 2 in
-    let tab0 = tbl_insert tab0 "contra" [paraType] in
+    let tab0 = tbl_insert tab0 "mutualEx" [paraType] in
     tab0;
 // invTypeTable
 
