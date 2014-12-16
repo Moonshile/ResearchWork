@@ -178,27 +178,27 @@ ASSIGN
         case
             ((cur_rule = c_rule_home_sends_invalidate_message_210)&((home_current_command = req_exclusive)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyc))) : false;
             ((cur_rule = c_rule_home_sends_invalidate_message_110)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyc))) : false;
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : home_sharer_list[1];
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : home_sharer_list[1];
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : home_sharer_list[1];
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
             TRUE : home_invalidate_list[1];
         esac;
     next(home_invalidate_list[2]) := 
         case
             ((cur_rule = c_rule_home_sends_invalidate_message_220)&((home_current_command = req_exclusive)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyc))) : false;
             ((cur_rule = c_rule_home_sends_invalidate_message_120)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyc))) : false;
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : home_sharer_list[2];
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : home_sharer_list[2];
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : home_sharer_list[2];
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
             TRUE : home_invalidate_list[2];
         esac;
     next(home_invalidate_list[3]) := 
         case
             ((cur_rule = c_rule_home_sends_invalidate_message_230)&((home_current_command = req_exclusive)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyc))) : false;
             ((cur_rule = c_rule_home_sends_invalidate_message_130)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyc))) : false;
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : home_sharer_list[3];
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : home_sharer_list[3];
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : home_sharer_list[3];
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
             TRUE : home_invalidate_list[3];
         esac;
     next(home_sharer_list[1]) := 
