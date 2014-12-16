@@ -2964,7 +2964,7 @@ let iniStatement N=
   //let assgn12s=parallel (map  assgn12 (1 upto N))  in    
    let assgn12s=forallStatement N assgn12  in
 
-  let assgn13 j=assign  (  (Param "Dir-InvSet" j))  (Const CACHE_I) in
+  let assgn13 j=assign  (  (Param "Dir-InvSet" j))  (Const False) in
   //let assgn13s=parallel (map  assgn13 (1 upto N))  in
      let assgn13s=forallStatement N assgn13  in
 
