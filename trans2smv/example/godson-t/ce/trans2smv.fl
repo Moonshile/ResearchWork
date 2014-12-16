@@ -159,12 +159,17 @@ letrec transIndent 0 =
         (transIndent (indent - 1))^"    ";
 // transIndent
 
+forward_declare {transFormula :: formula -> (int, string) htbl -> int -> string};
+
 // translate expression
-// WARNING: iteForm is omitted
 letrec transExp (Var var) enumValTab dist =
         varName var
     /\ transExp (Const i) enumValTab dist =
-        (i < dist) => (int2str i) | (toLowwer(tbl_element enumValTab i));
+        (i < dist) => (int2str i) | (toLowwer(tbl_element enumValTab i))
+    /\ transExp (iteForm f e1 e2) enumValTab dist =
+        "(case "^
+            (transFormula f enumValTab dist)^":"^(transExp e1 enumValTab dist)^
+            "; TRUE:"^(transExp e2 enumValTab dist)^"; esac)";
 // transExp
 
 // translate formulae
