@@ -1,0 +1,260 @@
+//******************************************************************************************************************************************
+//Mutual
+//******************************************************************************************************************************************
+
+load "creatIsaModel0125.fl";
+
+let dist = 4;
+
+
+//******************************************************************************************************************************************
+// enum tpye
+
+let I = 0 + dist;
+
+let T = 1 + dist;
+
+let C = 2 + dist;
+
+let E = 3 + dist; 
+
+
+//******************************************************************************************************************************************
+// boolean
+
+let True = 4 + dist;
+
+let False = 5 + dist;
+
+
+//******************************************************************************************************************************************
+// state type
+
+let nStateType = [I, T, C, E];
+
+
+//******************************************************************************************************************************************
+// boolean type 
+
+let BooleanType = [True, False];
+
+
+//******************************************************************************************************************************************
+// parameter type
+
+let paraType = [1, 2, 3];
+
+
+//******************************************************************************************************************************************
+// variables
+
+let typeTable =
+    let tab0 = tbl_create 6 in
+    let tab0 = tbl_insert tab0 "n" nStateType in  
+    let tab0 = tbl_insert tab0 "x" BooleanType in 
+    tab0;
+
+    
+//******************************************************************************************************************************************
+// arit table
+
+let aritTable =
+    let tab0 = tbl_create 6 in
+    let tab0 = tbl_insert tab0 "n" 1 in
+    let tab0 = tbl_insert tab0 "x" 0 in
+    tab0;   
+
+    
+//******************************************************************************************************************************************    
+// enum table
+
+let enumValTab=
+    let tab0 = tbl_create 10 in
+    let tab0 = tbl_insert tab0 I "I" in
+    let tab0 = tbl_insert tab0 T "T" in
+    let tab0 = tbl_insert tab0 C "C" in
+    let tab0 = tbl_insert tab0 E "E" in
+    let tab0 = tbl_insert tab0 True "true" in
+    let tab0 = tbl_insert tab0 False "false" in
+    tab0;
+
+    
+//******************************************************************************************************************************************    
+// type name table
+  
+let typeNameTab =
+    let tab0 = tbl_create 6 in
+    let tab0 = tbl_insert tab0 nStateType   "nStateType" in
+    let tab0 = tbl_insert tab0 BooleanType "Bool"  in   
+    let tab0 = tbl_insert tab0 paraType "Int"  in
+    tab0;
+
+
+//******************************************************************************************************************************************
+// Rule: try
+
+let rule_try i dummy =
+    let form1 = eqn (left ->(Var (Param "n" i)))  (right -> (Const I)) in
+    guard form1 (assign (Param "n" i) (Const T ));
+    
+    
+//******************************************************************************************************************************************
+// Rule: crit
+ 
+let rule_crit i dummy = 
+    let form1 = eqn (left -> (Var (Param "n" i)))  (right -> (Const T)) in
+    let form2 = eqn (left -> (Var (Global "x" )))  (right -> (Const True)) in
+    let form = andList [form1, form2] in
+    let assgn1 = assign (Param "n" i) (Const C) in
+    let assgn2 = assign (Global "x") (Const False) in
+    guard form (parallel [assgn1, assgn2]);
+    
+    
+//******************************************************************************************************************************************
+// Rule: exit
+
+let rule_exit i dummy = 
+    let form1 = eqn (left -> (Var (Param "n" i)))  (right -> (Const C)) in 
+    guard form1 (assign (Param "n" i)  (Const E));
+
+
+//******************************************************************************************************************************************
+// Rule: idle
+
+let rule_idle i dummy = 
+    let form1 = eqn (left -> (Var (Param "n" i))) (right -> (Const E)) in 
+    let assgn1 = assign  (Global "x" )  (Const True) in
+    let assgn2 = assign  (Param "n" i)  (Const I) in 
+    guard form1 ( parallel [assgn1, assgn2]);
+
+
+//******************************************************************************************************************************************
+// rules
+
+let rules = [
+	rule_try, rule_crit, rule_exit, rule_idle];
+
+    
+//******************************************************************************************************************************************
+// rule table
+
+let ruleTable =    
+	let tab0 = tbl_create 6 in
+    let tab0 = tbl_insert tab0 "rule_exit"   rule_exit in
+    let tab0 = tbl_insert tab0 "rule_idle"   rule_idle in
+    let tab0 = tbl_insert tab0 "rule_crit"   rule_crit in
+    let tab0 = tbl_insert tab0 "rule_try"    rule_try  in
+    tab0;   
+   
+
+//******************************************************************************************************************************************
+// paraNums table
+
+
+let paraNumTable =
+    let tab0 = tbl_create 6 in
+    let tab0 = tbl_insert tab0 "rule_exit" 1 in
+    let tab0 = tbl_insert tab0 "rule_idle" 1 in
+    let tab0 = tbl_insert tab0 "rule_crit" 1 in
+    let tab0 = tbl_insert tab0 "rule_try" 1 in
+    tab0;
+    
+    
+//******************************************************************************************************************************************
+// initial state
+
+
+let iniStatement N =
+    let assgn1 = assign (Global "x")  (Const True) in 
+    let assgn2 j = assign (Param "n" j) (Const I) in
+    let assgn2s = parallel (map assgn2 (1 upto N)) in
+    parallel [assgn1, assgn2s];
+
+//************************************** generate SMV **********************************
+
+let paraTypeTable = 
+    let tab0 = tbl_create 20 in
+    let tab0 = tbl_insert tab0 "rule_exit" [paraType, []] in
+    let tab0 = tbl_insert tab0 "rule_idle" [paraType, []] in
+    let tab0 = tbl_insert tab0 "rule_crit" [paraType, []] in
+    let tab0 = tbl_insert tab0 "rule_try" [paraType, []] in
+    tab0;
+// paraTypeTable
+
+let ruleFuncMap rule [a, b] = rule a b;
+
+let muEx i =
+    let isC = eqn (Var (Param "n" i)) (Const C) in
+    let allOthersNotC =
+        let isI j =
+            let notSame = neg (eqn (Const i) (Const j)) in
+            let state = neg (eqn (Var (Param "n" j)) (Const C)) in
+            implyForm notSame state
+        in
+        forallForm (length paraType) isI
+    in
+    implyForm isC allOthersNotC;
+// muEx
+
+let invTable =
+    let tab0 = tbl_create 2 in
+    let tab0 = tbl_insert tab0 "muEx" muEx in
+    tab0;
+// invTable
+
+let invTypeTable =
+    let tab0 = tbl_create 2 in
+    let tab0 = tbl_insert tab0 "muEx" [paraType] in
+    tab0;
+// invTypeTable
+
+let invFuncMap inv [a] = inv a;
+
+load "trans2smv.fl";
+
+trans2smv "mutualex" typeTable ruleTable paraTypeTable invTable invTypeTable 
+    (iniStatement (el (length paraType) paraType)) ruleFuncMap invFuncMap enumValTab dist;
+/*
+//******************************************************************************************************************************************
+// create def
+
+createThyDef aritTable  typeTable typeNameTab enumValTab "mutualEx"	; 
+
+
+//******************************************************************************************************************************************
+// makefile
+
+createMakefile "mutualEx";
+
+load "tbl.fl";
+
+//******************************************************************************************************************************************
+// invariant 1: (n[1] = C) -> (n[2] != C)
+
+let i1 =  1 in
+let i2 =  2 in
+let form1 = eqn (left -> (Var (Param "n" i1))) (right -> (Const C )) then
+let form2 = neg (eqn (left -> (Var (Param "n" i2))) (right -> (Const C))) then 
+let impInv1 = implyForm form1 form2 then 
+let symIndice = [1,2,3] then
+let newParasMethod = newParas  dist symIndice        then
+let parasOfInvMethod = parasOfInv  dist  symIndice then
+
+//******************************************************************************************************************************************
+//find invariants
+
+val (invs,relLib) = findInvsFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice
+typeTable [1,2,3] "mutualEx" "mutualEx" enumValTab [impInv1] (tbl_keys ruleTable)  [] [] in
+
+//******************************************************************************************************************************************
+//show invariants
+
+printStrList (map (formula2str  enumValTab) invs) fseq
+
+printTable invs relLib fseq
+fclose fdebugGCR fseq
+
+fclose fdebug  fseq
+
+fclose fdebug2;
+*/
