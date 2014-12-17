@@ -142,26 +142,26 @@ let aritTable =
 
 let enumValTab = 
     let tab0 = tbl_create 20 in
-    let tab0 = tbl_insert tab0 (INVALID) "INVALID" in
-    let tab0 = tbl_insert tab0 (DIRTY) "DIRTY" in
-    let tab0 = tbl_insert tab0 (VALID) "VALID" in
+    let tab0 = tbl_insert tab0 (INVALID) "invalid" in
+    let tab0 = tbl_insert tab0 (DIRTY) "dirty" in
+    let tab0 = tbl_insert tab0 (VALID) "valid" in
     let tab0 = tbl_insert tab0 (True) "true" in
     let tab0 = tbl_insert tab0 (False) "false" in
-    let tab0 = tbl_insert tab0 (NON) "NON" in
-    let tab0 = tbl_insert tab0 (REQUIRE) "REQUIRE" in
-    let tab0 = tbl_insert tab0 (REQREPALL) "REQREPALL" in
-    let tab0 = tbl_insert tab0 (RANDOM) "RANDOM" in
-    let tab0 = tbl_insert tab0 (RANDINV) "RANDINV" in
-    let tab0 = tbl_insert tab0 (DESIGNATED) "DESIGNATED" in
-    let tab0 = tbl_insert tab0 (TOREP) "TOREP" in
-    let tab0 = tbl_insert tab0 (DONE) "DONE" in
-    let tab0 = tbl_insert tab0 (REPALLDONE) "REPALLDONE" in
-    let tab0 = tbl_insert tab0 (None) "None" in
-    let tab0 = tbl_insert tab0 (NLNCR) "NLNCR" in
-    let tab0 = tbl_insert tab0 (NLNCW) "NLNCW" in
-    let tab0 = tbl_insert tab0 (LNCFR) "LNCFR" in
-    let tab0 = tbl_insert tab0 (LCFR) "LCFR" in
-    let tab0 = tbl_insert tab0 (LNCNFR) "LNCNFR" in
+    let tab0 = tbl_insert tab0 (NON) "non" in
+    let tab0 = tbl_insert tab0 (REQUIRE) "require" in
+    let tab0 = tbl_insert tab0 (REQREPALL) "reqrepall" in
+    let tab0 = tbl_insert tab0 (RANDOM) "random" in
+    let tab0 = tbl_insert tab0 (RANDINV) "randinv" in
+    let tab0 = tbl_insert tab0 (DESIGNATED) "designated" in
+    let tab0 = tbl_insert tab0 (TOREP) "torep" in
+    let tab0 = tbl_insert tab0 (DONE) "done" in
+    let tab0 = tbl_insert tab0 (REPALLDONE) "repalldone" in
+    let tab0 = tbl_insert tab0 (None) "none" in
+    let tab0 = tbl_insert tab0 (NLNCR) "nlncr" in
+    let tab0 = tbl_insert tab0 (NLNCW) "nlncw" in
+    let tab0 = tbl_insert tab0 (LNCFR) "lncfr" in
+    let tab0 = tbl_insert tab0 (LCFR) "lcfr" in
+    let tab0 = tbl_insert tab0 (LNCNFR) "lncnfr" in
     tab0;
 // enumValTab
 
