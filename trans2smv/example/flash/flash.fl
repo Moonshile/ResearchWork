@@ -1,4 +1,5 @@
 load "creatIsaModel0125.fl";
+//load "drawDot.fl";
 
 let dist = 1000;
 
@@ -231,30 +232,30 @@ let aritTable =
 
 let enumValTab =
     let tab0 = tbl_create 20 in
-    let tab0 = tbl_insert tab0   (CACHE_I) "CACHE_I" in
-    let tab0 = tbl_insert tab0   (CACHE_S) "CACHE_S" in
-    let tab0 = tbl_insert tab0   (CACHE_E) "CACHE_E" in
-    let tab0 = tbl_insert tab0   (NODE_None) "NODE_None" in
-    let tab0 = tbl_insert tab0   (NODE_Get) "NODE_Get" in
-    let tab0 = tbl_insert tab0   (NODE_GetX) "NODE_GetX" in
-    let tab0 = tbl_insert tab0   (UNI_None) "UNI_None" in
-    let tab0 = tbl_insert tab0   (UNI_Get) "UNI_Get" in
-    let tab0 = tbl_insert tab0   (UNI_Put) "UNI_Put" in
-    let tab0 = tbl_insert tab0   (UNI_PutX) "UNI_PutX" in
-    let tab0 = tbl_insert tab0   (UNI_Nak) "UNI_Nak" in
-    let tab0 = tbl_insert tab0   (UNI_GetX)  "UNI_GetX" in
-    let tab0 = tbl_insert tab0   (INV_None)  "INV_None" in
-    let tab0 = tbl_insert tab0   (INV_Inv) "INV_Inv" in
-    let tab0 = tbl_insert tab0   (INV_InvAck) "INV_InvAck" in
-    let tab0 = tbl_insert tab0   (RP_None) "RP_None" in
-    let tab0 = tbl_insert tab0   (RP_Replace) "RP_Replace" in
-    let tab0 = tbl_insert tab0   (WB_None) "WB_None" in
-    let tab0 = tbl_insert tab0   (WB_Wb) "WB_Wb" in
-    let tab0 = tbl_insert tab0   (SHWB_None) "SHWB_None" in
-    let tab0 = tbl_insert tab0   (SHWB_ShWb) "SHWB_ShWb" in
-    let tab0 = tbl_insert tab0   (SHWB_FAck) "SHWB_FAck" in
-    let tab0 = tbl_insert tab0   (NAKC_None) "NAKC_None" in
-    let tab0 = tbl_insert tab0   (NAKC_Nakc) "NAKC_Nakc" in
+    let tab0 = tbl_insert tab0   (CACHE_I) "cache_i" in
+    let tab0 = tbl_insert tab0   (CACHE_S) "cache_s" in
+    let tab0 = tbl_insert tab0   (CACHE_E) "cache_e" in
+    let tab0 = tbl_insert tab0   (NODE_None) "node_none" in
+    let tab0 = tbl_insert tab0   (NODE_Get) "node_get" in
+    let tab0 = tbl_insert tab0   (NODE_GetX) "node_getx" in
+    let tab0 = tbl_insert tab0   (UNI_None) "uni_none" in
+    let tab0 = tbl_insert tab0   (UNI_Get) "uni_get" in
+    let tab0 = tbl_insert tab0   (UNI_Put) "uni_put" in
+    let tab0 = tbl_insert tab0   (UNI_PutX) "uni_putx" in
+    let tab0 = tbl_insert tab0   (UNI_Nak) "uni_nak" in
+    let tab0 = tbl_insert tab0   (UNI_GetX)  "uni_getx" in
+    let tab0 = tbl_insert tab0   (INV_None)  "inv_none" in
+    let tab0 = tbl_insert tab0   (INV_Inv) "inv_inv" in
+    let tab0 = tbl_insert tab0   (INV_InvAck) "inv_invack" in
+    let tab0 = tbl_insert tab0   (RP_None) "rp_none" in
+    let tab0 = tbl_insert tab0   (RP_Replace) "rp_replace" in
+    let tab0 = tbl_insert tab0   (WB_None) "wb_none" in
+    let tab0 = tbl_insert tab0   (WB_Wb) "wb_wb" in
+    let tab0 = tbl_insert tab0   (SHWB_None) "shwb_none" in
+    let tab0 = tbl_insert tab0   (SHWB_ShWb) "shwb_shwb" in
+    let tab0 = tbl_insert tab0   (SHWB_FAck) "shwb_fack" in
+    let tab0 = tbl_insert tab0   (NAKC_None) "nakc_none" in
+    let tab0 = tbl_insert tab0   (NAKC_Nakc) "nakc_nakc" in
     let tab0 = tbl_insert tab0   (True) "true" in
     let tab0 = tbl_insert tab0   (False) "false" in
     tab0   ;
@@ -695,9 +696,9 @@ let PI_Local_GetX_PutX3 dummy1 dummy2 =
 	let assgn3 = assign (Param "procCmd" Home) (Const NODE_None) in
 	let assgn4 = assign (Param "InvMarked" Home) (Const False) in
 	let assgn5 = assign (Param "CacheState" Home) (Const CACHE_E) in
-	//let assgn6 = assign (Param "CacheData" Home) (Var (Global "MemData")) in
+//	let assgn6 = assign (Param "CacheData" Home) (Var (Global "MemData")) in
 	
-	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);//, assgn6]);
 	
 let PI_Local_GetX_PutX4  dummy1 dummy2 =
 	//let form0 = eqn (left -> (Const Home)) (right ->(Const Home)) then
@@ -2727,7 +2728,7 @@ let paraNumTable =
     let tab0 = tbl_insert tab0     "NI_Remote_Get_Nak1" 1 in
     
     let tab0 = tbl_insert tab0 "NI_Local_Get_Put3"    1 in  
-    let tab0 = tbl_insert tab0 "NI_Local_Get_Put2"  1 in  
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Put2"  1in  
 	let tab0 = tbl_insert tab0   "NI_Local_Get_Put1" 1 in  
 
     let tab0 = tbl_insert tab0  "NI_Local_Get_Get"  1 in
@@ -2993,6 +2994,7 @@ let iniStatement N=
              assgn9s, assgn10s,  assgn11s, assgn12s,  assgn13s,
              assgn14, assgn15,assgn16,assgn17,assgn18,assgn19,assgn20,assgn21,
              assgn22s, assgn23s,assgn24s ]);
+
 
 //******************************************************************************************************************************************
 

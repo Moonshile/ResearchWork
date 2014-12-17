@@ -7,17 +7,17 @@ VAR
     cache[1] : {invalid, shared, exclusive};
     cache[2] : {invalid, shared, exclusive};
     cache[3] : {invalid, shared, exclusive};
-    channel1[1] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel1[2] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel1[3] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel2_4[1] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel2_4[2] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel2_4[3] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel3[1] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel3[2] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
-    channel3[3] : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel1[1] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel1[2] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel1[3] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel2_4[1] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel2_4[2] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel2_4[3] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel3[1] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel3[2] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    channel3[3] : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
     home_current_client : {1, 2, 3};
-    home_current_command : {emptyc, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
+    home_current_command : {emptyC, req_shared, req_exclusive, invalidate, grant_shared, grant_exclusive, invalidate_ack};
     home_exclusive_granted : {true, false};
     home_invalidate_list[1] : {true, false};
     home_invalidate_list[2] : {true, false};
@@ -31,16 +31,16 @@ ASSIGN
     init(cache[1]) := invalid;
     init(cache[2]) := invalid;
     init(cache[3]) := invalid;
-    init(channel1[1]) := emptyc;
-    init(channel1[2]) := emptyc;
-    init(channel1[3]) := emptyc;
-    init(channel2_4[1]) := emptyc;
-    init(channel2_4[2]) := emptyc;
-    init(channel2_4[3]) := emptyc;
-    init(channel3[1]) := emptyc;
-    init(channel3[2]) := emptyc;
-    init(channel3[3]) := emptyc;
-    init(home_current_command) := emptyc;
+    init(channel1[1]) := emptyC;
+    init(channel1[2]) := emptyC;
+    init(channel1[3]) := emptyC;
+    init(channel2_4[1]) := emptyC;
+    init(channel2_4[2]) := emptyC;
+    init(channel2_4[3]) := emptyC;
+    init(channel3[1]) := emptyC;
+    init(channel3[2]) := emptyC;
+    init(channel3[3]) := emptyC;
+    init(home_current_command) := emptyC;
     init(home_exclusive_granted) := false;
     init(home_invalidate_list[1]) := false;
     init(home_invalidate_list[2]) := false;
@@ -50,182 +50,182 @@ ASSIGN
     init(home_sharer_list[3]) := false;
     next(cache[1]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache10)&((channel2_4[1] = invalidate)&(channel3[1] = emptyc))) : invalid;
+            ((cur_rule = c_rule_sharer_invalidates_cache10)&((channel2_4[1] = invalidate)&(channel3[1] = emptyC))) : invalid;
             ((cur_rule = c_rule_client_receives_shared_grant10)&(channel2_4[1] = grant_shared)) : shared;
             ((cur_rule = c_rule_client_receives_exclusive_grant10)&(channel2_4[1] = grant_exclusive)) : exclusive;
             TRUE : cache[1];
         esac;
     next(cache[2]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache20)&((channel2_4[2] = invalidate)&(channel3[2] = emptyc))) : invalid;
+            ((cur_rule = c_rule_sharer_invalidates_cache20)&((channel2_4[2] = invalidate)&(channel3[2] = emptyC))) : invalid;
             ((cur_rule = c_rule_client_receives_shared_grant20)&(channel2_4[2] = grant_shared)) : shared;
             ((cur_rule = c_rule_client_receives_exclusive_grant20)&(channel2_4[2] = grant_exclusive)) : exclusive;
             TRUE : cache[2];
         esac;
     next(cache[3]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache30)&((channel2_4[3] = invalidate)&(channel3[3] = emptyc))) : invalid;
+            ((cur_rule = c_rule_sharer_invalidates_cache30)&((channel2_4[3] = invalidate)&(channel3[3] = emptyC))) : invalid;
             ((cur_rule = c_rule_client_receives_shared_grant30)&(channel2_4[3] = grant_shared)) : shared;
             ((cur_rule = c_rule_client_receives_exclusive_grant30)&(channel2_4[3] = grant_exclusive)) : exclusive;
             TRUE : cache[3];
         esac;
     next(channel1[1]) := 
         case
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : emptyc;
-            ((cur_rule = c_rule_client_requests_shared_access10)&((cache[1] = invalid)&(channel1[1] = emptyc))) : req_shared;
-            ((cur_rule = c_rule_client_requests_exclusive_access_210)&((cache[1] = shared)&(channel1[1] = emptyc))) : req_exclusive;
-            ((cur_rule = c_rule_client_requests_exclusive_access_110)&((cache[1] = invalid)&(channel1[1] = emptyc))) : req_exclusive;
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyC)&(!(channel1[1] = emptyC)))) : emptyC;
+            ((cur_rule = c_rule_client_requests_shared_access10)&((cache[1] = invalid)&(channel1[1] = emptyC))) : req_shared;
+            ((cur_rule = c_rule_client_requests_exclusive_access_210)&((cache[1] = shared)&(channel1[1] = emptyC))) : req_exclusive;
+            ((cur_rule = c_rule_client_requests_exclusive_access_110)&((cache[1] = invalid)&(channel1[1] = emptyC))) : req_exclusive;
             TRUE : channel1[1];
         esac;
     next(channel1[2]) := 
         case
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : emptyc;
-            ((cur_rule = c_rule_client_requests_shared_access20)&((cache[2] = invalid)&(channel1[2] = emptyc))) : req_shared;
-            ((cur_rule = c_rule_client_requests_exclusive_access_220)&((cache[2] = shared)&(channel1[2] = emptyc))) : req_exclusive;
-            ((cur_rule = c_rule_client_requests_exclusive_access_120)&((cache[2] = invalid)&(channel1[2] = emptyc))) : req_exclusive;
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyC)&(!(channel1[2] = emptyC)))) : emptyC;
+            ((cur_rule = c_rule_client_requests_shared_access20)&((cache[2] = invalid)&(channel1[2] = emptyC))) : req_shared;
+            ((cur_rule = c_rule_client_requests_exclusive_access_220)&((cache[2] = shared)&(channel1[2] = emptyC))) : req_exclusive;
+            ((cur_rule = c_rule_client_requests_exclusive_access_120)&((cache[2] = invalid)&(channel1[2] = emptyC))) : req_exclusive;
             TRUE : channel1[2];
         esac;
     next(channel1[3]) := 
         case
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : emptyc;
-            ((cur_rule = c_rule_client_requests_shared_access30)&((cache[3] = invalid)&(channel1[3] = emptyc))) : req_shared;
-            ((cur_rule = c_rule_client_requests_exclusive_access_230)&((cache[3] = shared)&(channel1[3] = emptyc))) : req_exclusive;
-            ((cur_rule = c_rule_client_requests_exclusive_access_130)&((cache[3] = invalid)&(channel1[3] = emptyc))) : req_exclusive;
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyC)&(!(channel1[3] = emptyC)))) : emptyC;
+            ((cur_rule = c_rule_client_requests_shared_access30)&((cache[3] = invalid)&(channel1[3] = emptyC))) : req_shared;
+            ((cur_rule = c_rule_client_requests_exclusive_access_230)&((cache[3] = shared)&(channel1[3] = emptyC))) : req_exclusive;
+            ((cur_rule = c_rule_client_requests_exclusive_access_130)&((cache[3] = invalid)&(channel1[3] = emptyC))) : req_exclusive;
             TRUE : channel1[3];
         esac;
     next(channel2_4[1]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache10)&((channel2_4[1] = invalidate)&(channel3[1] = emptyc))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared10)&((home_exclusive_granted = false)&(home_current_client = 1)&(channel2_4[1] = emptyc)&(home_current_command = req_shared))) : grant_shared;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyc)&(home_current_client = 1))) : grant_exclusive;
-            ((cur_rule = c_rule_home_sends_invalidate_message_210)&((home_current_command = req_exclusive)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyc))) : invalidate;
-            ((cur_rule = c_rule_home_sends_invalidate_message_110)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyc))) : invalidate;
-            ((cur_rule = c_rule_client_receives_shared_grant10)&(channel2_4[1] = grant_shared)) : emptyc;
-            ((cur_rule = c_rule_client_receives_exclusive_grant10)&(channel2_4[1] = grant_exclusive)) : emptyc;
+            ((cur_rule = c_rule_sharer_invalidates_cache10)&((channel2_4[1] = invalidate)&(channel3[1] = emptyC))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared10)&((home_exclusive_granted = false)&(home_current_client = 1)&(channel2_4[1] = emptyC)&(home_current_command = req_shared))) : grant_shared;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyC)&(home_current_client = 1))) : grant_exclusive;
+            ((cur_rule = c_rule_home_sends_invalidate_message_210)&((home_current_command = req_exclusive)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyC))) : invalidate;
+            ((cur_rule = c_rule_home_sends_invalidate_message_110)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyC))) : invalidate;
+            ((cur_rule = c_rule_client_receives_shared_grant10)&(channel2_4[1] = grant_shared)) : emptyC;
+            ((cur_rule = c_rule_client_receives_exclusive_grant10)&(channel2_4[1] = grant_exclusive)) : emptyC;
             TRUE : channel2_4[1];
         esac;
     next(channel2_4[2]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache20)&((channel2_4[2] = invalidate)&(channel3[2] = emptyc))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared20)&((home_exclusive_granted = false)&(home_current_client = 2)&(channel2_4[2] = emptyc)&(home_current_command = req_shared))) : grant_shared;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyc)&(home_current_client = 2))) : grant_exclusive;
-            ((cur_rule = c_rule_home_sends_invalidate_message_220)&((home_current_command = req_exclusive)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyc))) : invalidate;
-            ((cur_rule = c_rule_home_sends_invalidate_message_120)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyc))) : invalidate;
-            ((cur_rule = c_rule_client_receives_shared_grant20)&(channel2_4[2] = grant_shared)) : emptyc;
-            ((cur_rule = c_rule_client_receives_exclusive_grant20)&(channel2_4[2] = grant_exclusive)) : emptyc;
+            ((cur_rule = c_rule_sharer_invalidates_cache20)&((channel2_4[2] = invalidate)&(channel3[2] = emptyC))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared20)&((home_exclusive_granted = false)&(home_current_client = 2)&(channel2_4[2] = emptyC)&(home_current_command = req_shared))) : grant_shared;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyC)&(home_current_client = 2))) : grant_exclusive;
+            ((cur_rule = c_rule_home_sends_invalidate_message_220)&((home_current_command = req_exclusive)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyC))) : invalidate;
+            ((cur_rule = c_rule_home_sends_invalidate_message_120)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyC))) : invalidate;
+            ((cur_rule = c_rule_client_receives_shared_grant20)&(channel2_4[2] = grant_shared)) : emptyC;
+            ((cur_rule = c_rule_client_receives_exclusive_grant20)&(channel2_4[2] = grant_exclusive)) : emptyC;
             TRUE : channel2_4[2];
         esac;
     next(channel2_4[3]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache30)&((channel2_4[3] = invalidate)&(channel3[3] = emptyc))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared30)&((home_exclusive_granted = false)&(home_current_client = 3)&(channel2_4[3] = emptyc)&(home_current_command = req_shared))) : grant_shared;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyc)&(home_current_client = 3))) : grant_exclusive;
-            ((cur_rule = c_rule_home_sends_invalidate_message_230)&((home_current_command = req_exclusive)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyc))) : invalidate;
-            ((cur_rule = c_rule_home_sends_invalidate_message_130)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyc))) : invalidate;
-            ((cur_rule = c_rule_client_receives_shared_grant30)&(channel2_4[3] = grant_shared)) : emptyc;
-            ((cur_rule = c_rule_client_receives_exclusive_grant30)&(channel2_4[3] = grant_exclusive)) : emptyc;
+            ((cur_rule = c_rule_sharer_invalidates_cache30)&((channel2_4[3] = invalidate)&(channel3[3] = emptyC))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared30)&((home_exclusive_granted = false)&(home_current_client = 3)&(channel2_4[3] = emptyC)&(home_current_command = req_shared))) : grant_shared;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyC)&(home_current_client = 3))) : grant_exclusive;
+            ((cur_rule = c_rule_home_sends_invalidate_message_230)&((home_current_command = req_exclusive)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyC))) : invalidate;
+            ((cur_rule = c_rule_home_sends_invalidate_message_130)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyC))) : invalidate;
+            ((cur_rule = c_rule_client_receives_shared_grant30)&(channel2_4[3] = grant_shared)) : emptyC;
+            ((cur_rule = c_rule_client_receives_exclusive_grant30)&(channel2_4[3] = grant_exclusive)) : emptyC;
             TRUE : channel2_4[3];
         esac;
     next(channel3[1]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache10)&((channel2_4[1] = invalidate)&(channel3[1] = emptyc))) : invalidate_ack;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement210)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = false))) : emptyc;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement110)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : emptyc;
+            ((cur_rule = c_rule_sharer_invalidates_cache10)&((channel2_4[1] = invalidate)&(channel3[1] = emptyC))) : invalidate_ack;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement210)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = false))) : emptyC;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement110)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : emptyC;
             TRUE : channel3[1];
         esac;
     next(channel3[2]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache20)&((channel2_4[2] = invalidate)&(channel3[2] = emptyc))) : invalidate_ack;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement220)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = false))) : emptyc;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement120)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : emptyc;
+            ((cur_rule = c_rule_sharer_invalidates_cache20)&((channel2_4[2] = invalidate)&(channel3[2] = emptyC))) : invalidate_ack;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement220)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = false))) : emptyC;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement120)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : emptyC;
             TRUE : channel3[2];
         esac;
     next(channel3[3]) := 
         case
-            ((cur_rule = c_rule_sharer_invalidates_cache30)&((channel2_4[3] = invalidate)&(channel3[3] = emptyc))) : invalidate_ack;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement230)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = false))) : emptyc;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement130)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : emptyc;
+            ((cur_rule = c_rule_sharer_invalidates_cache30)&((channel2_4[3] = invalidate)&(channel3[3] = emptyC))) : invalidate_ack;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement230)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = false))) : emptyC;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement130)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : emptyC;
             TRUE : channel3[3];
         esac;
     next(home_current_client) := 
         case
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : 3;
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : 2;
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : 1;
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyC)&(!(channel1[3] = emptyC)))) : 3;
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyC)&(!(channel1[2] = emptyC)))) : 2;
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyC)&(!(channel1[1] = emptyC)))) : 1;
             TRUE : home_current_client;
         esac;
     next(home_current_command) := 
         case
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared30)&((home_exclusive_granted = false)&(home_current_client = 3)&(channel2_4[3] = emptyc)&(home_current_command = req_shared))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared20)&((home_exclusive_granted = false)&(home_current_client = 2)&(channel2_4[2] = emptyc)&(home_current_command = req_shared))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared10)&((home_exclusive_granted = false)&(home_current_client = 1)&(channel2_4[1] = emptyc)&(home_current_command = req_shared))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyc)&(home_current_client = 3))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyc)&(home_current_client = 2))) : emptyc;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyc)&(home_current_client = 1))) : emptyc;
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : channel1[3];
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : channel1[2];
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : channel1[1];
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared30)&((home_exclusive_granted = false)&(home_current_client = 3)&(channel2_4[3] = emptyC)&(home_current_command = req_shared))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared20)&((home_exclusive_granted = false)&(home_current_client = 2)&(channel2_4[2] = emptyC)&(home_current_command = req_shared))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared10)&((home_exclusive_granted = false)&(home_current_client = 1)&(channel2_4[1] = emptyC)&(home_current_command = req_shared))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyC)&(home_current_client = 3))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyC)&(home_current_client = 2))) : emptyC;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyC)&(home_current_client = 1))) : emptyC;
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyC)&(!(channel1[3] = emptyC)))) : channel1[3];
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyC)&(!(channel1[2] = emptyC)))) : channel1[2];
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyC)&(!(channel1[1] = emptyC)))) : channel1[1];
             TRUE : home_current_command;
         esac;
     next(home_exclusive_granted) := 
         case
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyc)&(home_current_client = 3))) : true;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyc)&(home_current_client = 2))) : true;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyc)&(home_current_client = 1))) : true;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement130)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : false;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement120)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : false;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement110)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : false;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyC)&(home_current_client = 3))) : true;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyC)&(home_current_client = 2))) : true;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyC)&(home_current_client = 1))) : true;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement130)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : false;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement120)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : false;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement110)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : false;
             TRUE : home_exclusive_granted;
         esac;
     next(home_invalidate_list[1]) := 
         case
-            ((cur_rule = c_rule_home_sends_invalidate_message_210)&((home_current_command = req_exclusive)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyc))) : false;
-            ((cur_rule = c_rule_home_sends_invalidate_message_110)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyc))) : false;
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_sends_invalidate_message_210)&((home_current_command = req_exclusive)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyC))) : false;
+            ((cur_rule = c_rule_home_sends_invalidate_message_110)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[1] = true)&(channel2_4[1] = emptyC))) : false;
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyC)&(!(channel1[3] = emptyC)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyC)&(!(channel1[2] = emptyC)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyC)&(!(channel1[1] = emptyC)))) : (case (home_sharer_list[1] = true):true; TRUE:false; esac);
             TRUE : home_invalidate_list[1];
         esac;
     next(home_invalidate_list[2]) := 
         case
-            ((cur_rule = c_rule_home_sends_invalidate_message_220)&((home_current_command = req_exclusive)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyc))) : false;
-            ((cur_rule = c_rule_home_sends_invalidate_message_120)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyc))) : false;
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_sends_invalidate_message_220)&((home_current_command = req_exclusive)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyC))) : false;
+            ((cur_rule = c_rule_home_sends_invalidate_message_120)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[2] = true)&(channel2_4[2] = emptyC))) : false;
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyC)&(!(channel1[3] = emptyC)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyC)&(!(channel1[2] = emptyC)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyC)&(!(channel1[1] = emptyC)))) : (case (home_sharer_list[2] = true):true; TRUE:false; esac);
             TRUE : home_invalidate_list[2];
         esac;
     next(home_invalidate_list[3]) := 
         case
-            ((cur_rule = c_rule_home_sends_invalidate_message_230)&((home_current_command = req_exclusive)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyc))) : false;
-            ((cur_rule = c_rule_home_sends_invalidate_message_130)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyc))) : false;
-            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
-            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
-            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_sends_invalidate_message_230)&((home_current_command = req_exclusive)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyC))) : false;
+            ((cur_rule = c_rule_home_sends_invalidate_message_130)&((home_current_command = req_shared)&(home_exclusive_granted = true)&(home_invalidate_list[3] = true)&(channel2_4[3] = emptyC))) : false;
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyC)&(!(channel1[3] = emptyC)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyC)&(!(channel1[2] = emptyC)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyC)&(!(channel1[1] = emptyC)))) : (case (home_sharer_list[3] = true):true; TRUE:false; esac);
             TRUE : home_invalidate_list[3];
         esac;
     next(home_sharer_list[1]) := 
         case
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared10)&((home_exclusive_granted = false)&(home_current_client = 1)&(channel2_4[1] = emptyc)&(home_current_command = req_shared))) : true;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyc)&(home_current_client = 1))) : true;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement210)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = false))) : false;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement110)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : false;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared10)&((home_exclusive_granted = false)&(home_current_client = 1)&(channel2_4[1] = emptyC)&(home_current_command = req_shared))) : true;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive10)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[1] = emptyC)&(home_current_client = 1))) : true;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement210)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = false))) : false;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement110)&((channel3[1] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : false;
             TRUE : home_sharer_list[1];
         esac;
     next(home_sharer_list[2]) := 
         case
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared20)&((home_exclusive_granted = false)&(home_current_client = 2)&(channel2_4[2] = emptyc)&(home_current_command = req_shared))) : true;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyc)&(home_current_client = 2))) : true;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement220)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = false))) : false;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement120)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : false;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared20)&((home_exclusive_granted = false)&(home_current_client = 2)&(channel2_4[2] = emptyC)&(home_current_command = req_shared))) : true;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive20)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[2] = emptyC)&(home_current_client = 2))) : true;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement220)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = false))) : false;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement120)&((channel3[2] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : false;
             TRUE : home_sharer_list[2];
         esac;
     next(home_sharer_list[3]) := 
         case
-            ((cur_rule = c_rule_home_sends_reply_to_client_shared30)&((home_exclusive_granted = false)&(home_current_client = 3)&(channel2_4[3] = emptyc)&(home_current_command = req_shared))) : true;
-            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyc)&(home_current_client = 3))) : true;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement230)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = false))) : false;
-            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement130)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyc))&(home_exclusive_granted = true))) : false;
+            ((cur_rule = c_rule_home_sends_reply_to_client_shared30)&((home_exclusive_granted = false)&(home_current_client = 3)&(channel2_4[3] = emptyC)&(home_current_command = req_shared))) : true;
+            ((cur_rule = c_rule_home_sends_reply_to_client_exclusive30)&((home_current_command = req_exclusive)&((home_sharer_list[3] = false)&(home_sharer_list[2] = false)&(home_sharer_list[1] = false))&(channel2_4[3] = emptyC)&(home_current_client = 3))) : true;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement230)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = false))) : false;
+            ((cur_rule = c_rule_home_receives_invalidate_acknowledgement130)&((channel3[3] = invalidate_ack)&(!(home_current_command = emptyC))&(home_exclusive_granted = true))) : false;
             TRUE : home_sharer_list[3];
         esac;
     init(cur_rule) := {c_rule_client_receives_exclusive_grant10, c_rule_client_receives_exclusive_grant20, c_rule_client_receives_exclusive_grant30, c_rule_client_receives_shared_grant10, c_rule_client_receives_shared_grant20, c_rule_client_receives_shared_grant30, c_rule_client_requests_exclusive_access_110, c_rule_client_requests_exclusive_access_120, c_rule_client_requests_exclusive_access_130, c_rule_client_requests_exclusive_access_210, c_rule_client_requests_exclusive_access_220, c_rule_client_requests_exclusive_access_230, c_rule_client_requests_shared_access10, c_rule_client_requests_shared_access20, c_rule_client_requests_shared_access30, c_rule_home_picks_new_request_310, c_rule_home_picks_new_request_320, c_rule_home_picks_new_request_330, c_rule_home_receives_invalidate_acknowledgement110, c_rule_home_receives_invalidate_acknowledgement120, c_rule_home_receives_invalidate_acknowledgement130, c_rule_home_receives_invalidate_acknowledgement210, c_rule_home_receives_invalidate_acknowledgement220, c_rule_home_receives_invalidate_acknowledgement230, c_rule_home_sends_invalidate_message_110, c_rule_home_sends_invalidate_message_120, c_rule_home_sends_invalidate_message_130, c_rule_home_sends_invalidate_message_210, c_rule_home_sends_invalidate_message_220, c_rule_home_sends_invalidate_message_230, c_rule_home_sends_reply_to_client_exclusive10, c_rule_home_sends_reply_to_client_exclusive20, c_rule_home_sends_reply_to_client_exclusive30, c_rule_home_sends_reply_to_client_shared10, c_rule_home_sends_reply_to_client_shared20, c_rule_home_sends_reply_to_client_shared30, c_rule_sharer_invalidates_cache10, c_rule_sharer_invalidates_cache20, c_rule_sharer_invalidates_cache30};
