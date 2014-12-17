@@ -71,6 +71,7 @@ ASSIGN
         esac;
     next(channel1[1]) := 
         case
+            ((cur_rule = c_rule_home_picks_new_request_310)&((home_current_command = emptyc)&(!(channel1[1] = emptyc)))) : emptyc;
             ((cur_rule = c_rule_client_requests_shared_access10)&((cache[1] = invalid)&(channel1[1] = emptyc))) : req_shared;
             ((cur_rule = c_rule_client_requests_exclusive_access_210)&((cache[1] = shared)&(channel1[1] = emptyc))) : req_exclusive;
             ((cur_rule = c_rule_client_requests_exclusive_access_110)&((cache[1] = invalid)&(channel1[1] = emptyc))) : req_exclusive;
@@ -78,6 +79,7 @@ ASSIGN
         esac;
     next(channel1[2]) := 
         case
+            ((cur_rule = c_rule_home_picks_new_request_320)&((home_current_command = emptyc)&(!(channel1[2] = emptyc)))) : emptyc;
             ((cur_rule = c_rule_client_requests_shared_access20)&((cache[2] = invalid)&(channel1[2] = emptyc))) : req_shared;
             ((cur_rule = c_rule_client_requests_exclusive_access_220)&((cache[2] = shared)&(channel1[2] = emptyc))) : req_exclusive;
             ((cur_rule = c_rule_client_requests_exclusive_access_120)&((cache[2] = invalid)&(channel1[2] = emptyc))) : req_exclusive;
@@ -85,6 +87,7 @@ ASSIGN
         esac;
     next(channel1[3]) := 
         case
+            ((cur_rule = c_rule_home_picks_new_request_330)&((home_current_command = emptyc)&(!(channel1[3] = emptyc)))) : emptyc;
             ((cur_rule = c_rule_client_requests_shared_access30)&((cache[3] = invalid)&(channel1[3] = emptyc))) : req_shared;
             ((cur_rule = c_rule_client_requests_exclusive_access_230)&((cache[3] = shared)&(channel1[3] = emptyc))) : req_exclusive;
             ((cur_rule = c_rule_client_requests_exclusive_access_130)&((cache[3] = invalid)&(channel1[3] = emptyc))) : req_exclusive;

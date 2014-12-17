@@ -152,7 +152,8 @@ let rule_home_picks_new_request  N i dummy =
     let iteForm1 j=iteForm (cond j) (Const True) (Const False) then
     let assgn3 j=assign  (  (Param "home_invalidate_list" j)) (iteForm1 j) then
     let assgn3s=parallel (map  assgn3 (1 upto N))in
-    guard form ( parallel [assgn1, assgn2,assgn3s]);
+    let assgn4 = assign (Param "channel1" i) (Const emptyC) in
+    guard form ( parallel [assgn1, assgn2,assgn3s, assgn4]);
 
 //******************************************************************************************************************************************
 //Rule: home sends invalidate message 1

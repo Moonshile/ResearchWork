@@ -42,7 +42,7 @@ ruleset cl: client do
        home_current_command = emptyC & channel1[cl] != emptyC ==>
         begin home_current_command := channel1[cl]; 
               home_current_client := cl;
-              -- channel1[cl] := emptyCh1;
+              channel1[cl] := emptyC;
               for i: client do
                home_invalidate_list[i] := home_sharer_list[i]
               endfor;
@@ -143,7 +143,7 @@ home_exclusive_granted := false;
   endfor;
  home_current_client := 1;
 end;
-
+/*
 -- AG !((Node[2].channel3 = invalidate_ack & home_current_client = 2) & home_current_command = req_shared)
 invariant "inv1"
     !(channel3[2] = invalidate_ack & home_current_client = 2 & home_current_command = req_shared);
@@ -171,7 +171,7 @@ invariant "inv6"
 --AG !((Node[2].channel1 = emptyC & home_current_client = 2) & !(home_current_command = emptyC))
 invariant "inv7"
     !((channel1[2] = emptyC & home_current_client = 2) & !(home_current_command = emptyC));
-
+*/
 
 ---ruleset do
  ---invariant "coherent"
