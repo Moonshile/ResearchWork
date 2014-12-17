@@ -42,13 +42,13 @@ letrec combinationGen res [] =
 // prefix of enumerations generated
 let preEnum = "c_";
 
-// convert a str to its lowwer case
-let toLowwer str =
+// convert a str to its lower case
+let toLower str =
     let delta = (ord "A") - (ord "a") in
     let isUpper c = ((ord c) >= (ord "A")) AND ((ord c) <= ord"Z") in
     let ch2Lowwer c = (isUpper c) => (chr ((ord c) - delta)) | c in
     implode (map ch2Lowwer (explode str));
-// toLowwer
+// toLower
 
 //********************************* Analysis Part *********************************
 
@@ -165,7 +165,8 @@ forward_declare {transFormula :: formula -> (int, string) htbl -> int -> string}
 letrec transExp (Var var) enumValTab dist =
         varName var
     /\ transExp (Const i) enumValTab dist =
-        (i < dist) => (int2str i) | (toLowwer(tbl_element enumValTab i))
+        // tbl_element enumValTab i might need convert to lower
+        (i < dist) => (int2str i) | (tbl_element enumValTab i)
     /\ transExp (iteForm f e1 e2) enumValTab dist =
         "(case "^
             (transFormula f enumValTab dist)^":"^(transExp e1 enumValTab dist)^
