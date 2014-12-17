@@ -7,20 +7,20 @@ VAR
     n[1] : {i, t, c, e};
     n[2] : {i, t, c, e};
     n[3] : {i, t, c, e};
-    x : {true, false};
+    x : boolean;
     cur_rule : {c_rule_crit10, c_rule_crit20, c_rule_crit30, c_rule_exit10, c_rule_exit20, c_rule_exit30, c_rule_idle10, c_rule_idle20, c_rule_idle30, c_rule_try10, c_rule_try20, c_rule_try30};
 
 ASSIGN
     init(n[1]) := i;
     init(n[2]) := i;
     init(n[3]) := i;
-    init(x) := true;
+    init(x) := TRUE;
     next(n[1]) := 
         case
             ((cur_rule = c_rule_try10)&(n[1] = i)) : t;
             ((cur_rule = c_rule_idle10)&(n[1] = e)) : i;
             ((cur_rule = c_rule_exit10)&(n[1] = c)) : e;
-            ((cur_rule = c_rule_crit10)&((n[1] = t)&(x = true))) : c;
+            ((cur_rule = c_rule_crit10)&((n[1] = t)&(x = TRUE))) : c;
             TRUE : n[1];
         esac;
     next(n[2]) := 
@@ -28,7 +28,7 @@ ASSIGN
             ((cur_rule = c_rule_try20)&(n[2] = i)) : t;
             ((cur_rule = c_rule_idle20)&(n[2] = e)) : i;
             ((cur_rule = c_rule_exit20)&(n[2] = c)) : e;
-            ((cur_rule = c_rule_crit20)&((n[2] = t)&(x = true))) : c;
+            ((cur_rule = c_rule_crit20)&((n[2] = t)&(x = TRUE))) : c;
             TRUE : n[2];
         esac;
     next(n[3]) := 
@@ -36,17 +36,17 @@ ASSIGN
             ((cur_rule = c_rule_try30)&(n[3] = i)) : t;
             ((cur_rule = c_rule_idle30)&(n[3] = e)) : i;
             ((cur_rule = c_rule_exit30)&(n[3] = c)) : e;
-            ((cur_rule = c_rule_crit30)&((n[3] = t)&(x = true))) : c;
+            ((cur_rule = c_rule_crit30)&((n[3] = t)&(x = TRUE))) : c;
             TRUE : n[3];
         esac;
     next(x) := 
         case
-            ((cur_rule = c_rule_idle30)&(n[3] = e)) : true;
-            ((cur_rule = c_rule_idle20)&(n[2] = e)) : true;
-            ((cur_rule = c_rule_idle10)&(n[1] = e)) : true;
-            ((cur_rule = c_rule_crit30)&((n[3] = t)&(x = true))) : false;
-            ((cur_rule = c_rule_crit20)&((n[2] = t)&(x = true))) : false;
-            ((cur_rule = c_rule_crit10)&((n[1] = t)&(x = true))) : false;
+            ((cur_rule = c_rule_idle30)&(n[3] = e)) : TRUE;
+            ((cur_rule = c_rule_idle20)&(n[2] = e)) : TRUE;
+            ((cur_rule = c_rule_idle10)&(n[1] = e)) : TRUE;
+            ((cur_rule = c_rule_crit30)&((n[3] = t)&(x = TRUE))) : FALSE;
+            ((cur_rule = c_rule_crit20)&((n[2] = t)&(x = TRUE))) : FALSE;
+            ((cur_rule = c_rule_crit10)&((n[1] = t)&(x = TRUE))) : FALSE;
             TRUE : x;
         esac;
     init(cur_rule) := {c_rule_crit10, c_rule_crit20, c_rule_crit30, c_rule_exit10, c_rule_exit20, c_rule_exit30, c_rule_idle10, c_rule_idle20, c_rule_idle30, c_rule_try10, c_rule_try20, c_rule_try30};
@@ -63,12 +63,3 @@ SPEC
 -- c_muEx3 --
 SPEC
     AG ((n[3] = c) -> (((!(3 = 3)) -> (!(n[3] = c)))&((!(3 = 2)) -> (!(n[2] = c)))&((!(3 = 1)) -> (!(n[1] = c)))))
-    
-SPEC
-    AG (n[1]=e) -> (!(n[2] = e))
-SPEC
-    AG (x=true) -> (!(n[1] = e))
-SPEC
-    AG (n[1]=e) -> (!(n[2] = c))
-SPEC
-    AG (x=true) -> (!(n[1] = c))

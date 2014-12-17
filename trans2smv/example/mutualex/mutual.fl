@@ -70,10 +70,10 @@ let aritTable =
 
 let enumValTab=
     let tab0 = tbl_create 10 in
-    let tab0 = tbl_insert tab0 I "I" in
-    let tab0 = tbl_insert tab0 T "T" in
-    let tab0 = tbl_insert tab0 C "C" in
-    let tab0 = tbl_insert tab0 E "E" in
+    let tab0 = tbl_insert tab0 I "i" in
+    let tab0 = tbl_insert tab0 T "t" in
+    let tab0 = tbl_insert tab0 C "c" in
+    let tab0 = tbl_insert tab0 E "e" in
     let tab0 = tbl_insert tab0 True "true" in
     let tab0 = tbl_insert tab0 False "false" in
     tab0;
