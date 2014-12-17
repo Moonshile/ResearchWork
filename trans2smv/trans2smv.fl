@@ -166,7 +166,19 @@ letrec transExp (Var var) enumValTab dist =
         varName var
     /\ transExp (Const i) enumValTab dist =
         // tbl_element enumValTab i might need convert to lower
-        (i < dist) => (int2str i) | (tbl_element enumValTab i)
+        let const = (i < dist) => (int2str i) | (tbl_element enumValTab i) in
+        let res =
+            (const = "true") => (
+                "TRUE"
+            ) | (
+                (const = "false") => (
+                    "FALSE"
+                ) | (
+                    const
+                )
+            )
+        in
+        res
     /\ transExp (iteForm f e1 e2) enumValTab dist =
         "(case "^
             (transFormula f enumValTab dist)^":"^(transExp e1 enumValTab dist)^
@@ -277,6 +289,7 @@ let transVar indent typeTab ruleTab paraTypeTab funcMap enumValTab dist =
             let fstn = firstn ((length type) - 1) type in
             let last = el (length type) type in
             let typeStr = "{"^(itlist (\x.\r. (x^", "^r)) fstn last)^"}" in
+            let typeStr = (typeStr = "{TRUE, FALSE}") => "boolean" | typeStr in
             (transIndent indent)^varName^" : "^typeStr^";\n"
         in
         ((length vars) = 1) => (
