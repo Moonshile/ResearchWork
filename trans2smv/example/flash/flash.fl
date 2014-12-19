@@ -464,7 +464,7 @@ let PI_Local_Get_Put dummy1 dummy2=
 
 let PI_Remote_GetX src dummy= 
  
-	let form2 = eqn (left ->(Var (Param "procCmd" src))) (right ->(Const NODE_GetX)) then
+	let form2 = eqn (left ->(Var (Param "procCmd" src))) (right ->(Const NODE_None)) then
 	let form3 = eqn (left ->(Var (Param "CacheState" src))) (right ->(Const CACHE_I)) in
 	let form = andList [form2, form3] then
 	

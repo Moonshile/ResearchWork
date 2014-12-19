@@ -1404,7 +1404,7 @@ ASSIGN
         esac;
     next(UniMsg.Cmd[1]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX10)&((procCmd[1] = node_getx)&(CacheState[1] = cache_i))) : uni_getx;
+            ((cur_rule = c_PI_Remote_GetX10)&((procCmd[1] = node_none)&(CacheState[1] = cache_i))) : uni_getx;
             ((cur_rule = c_PI_Remote_Get10)&((procCmd[1] = node_none)&(CacheState[1] = cache_i))) : uni_get;
             ((cur_rule = c_NI_Remote_PutX10)&((UniMsg.Cmd[1] = uni_putx)&(procCmd[1] = node_getx))) : uni_none;
             ((cur_rule = c_NI_Remote_Put10)&(UniMsg.Cmd[1] = uni_put)) : uni_none;
@@ -1452,7 +1452,7 @@ ASSIGN
         esac;
     next(UniMsg.Cmd[2]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX20)&((procCmd[2] = node_getx)&(CacheState[2] = cache_i))) : uni_getx;
+            ((cur_rule = c_PI_Remote_GetX20)&((procCmd[2] = node_none)&(CacheState[2] = cache_i))) : uni_getx;
             ((cur_rule = c_PI_Remote_Get20)&((procCmd[2] = node_none)&(CacheState[2] = cache_i))) : uni_get;
             ((cur_rule = c_NI_Remote_PutX20)&((UniMsg.Cmd[2] = uni_putx)&(procCmd[2] = node_getx))) : uni_none;
             ((cur_rule = c_NI_Remote_Put20)&(UniMsg.Cmd[2] = uni_put)) : uni_none;
@@ -1500,7 +1500,7 @@ ASSIGN
         esac;
     next(UniMsg.Cmd[3]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX30)&((procCmd[3] = node_getx)&(CacheState[3] = cache_i))) : uni_getx;
+            ((cur_rule = c_PI_Remote_GetX30)&((procCmd[3] = node_none)&(CacheState[3] = cache_i))) : uni_getx;
             ((cur_rule = c_PI_Remote_Get30)&((procCmd[3] = node_none)&(CacheState[3] = cache_i))) : uni_get;
             ((cur_rule = c_NI_Remote_PutX30)&((UniMsg.Cmd[3] = uni_putx)&(procCmd[3] = node_getx))) : uni_none;
             ((cur_rule = c_NI_Remote_Put30)&(UniMsg.Cmd[3] = uni_put)) : uni_none;
@@ -1567,7 +1567,7 @@ ASSIGN
         esac;
     next(UniMsg.proc[1]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX10)&((procCmd[1] = node_getx)&(CacheState[1] = cache_i))) : 0;
+            ((cur_rule = c_PI_Remote_GetX10)&((procCmd[1] = node_none)&(CacheState[1] = cache_i))) : 0;
             ((cur_rule = c_PI_Remote_Get10)&((procCmd[1] = node_none)&(CacheState[1] = cache_i))) : 0;
             ((cur_rule = c_NI_Remote_Get_Put213)&((!(1 = 3))&(UniMsg.Cmd[1] = uni_get)&(UniMsg.proc[1] = 3)&(CacheState[3] = cache_e))) : 3;
             ((cur_rule = c_NI_Remote_Get_Put212)&((!(1 = 2))&(UniMsg.Cmd[1] = uni_get)&(UniMsg.proc[1] = 2)&(CacheState[2] = cache_e))) : 2;
@@ -1613,7 +1613,7 @@ ASSIGN
         esac;
     next(UniMsg.proc[2]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX20)&((procCmd[2] = node_getx)&(CacheState[2] = cache_i))) : 0;
+            ((cur_rule = c_PI_Remote_GetX20)&((procCmd[2] = node_none)&(CacheState[2] = cache_i))) : 0;
             ((cur_rule = c_PI_Remote_Get20)&((procCmd[2] = node_none)&(CacheState[2] = cache_i))) : 0;
             ((cur_rule = c_NI_Remote_Get_Put223)&((!(2 = 3))&(UniMsg.Cmd[2] = uni_get)&(UniMsg.proc[2] = 3)&(CacheState[3] = cache_e))) : 3;
             ((cur_rule = c_NI_Remote_Get_Put222)&((!(2 = 2))&(UniMsg.Cmd[2] = uni_get)&(UniMsg.proc[2] = 2)&(CacheState[2] = cache_e))) : 2;
@@ -1659,7 +1659,7 @@ ASSIGN
         esac;
     next(UniMsg.proc[3]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX30)&((procCmd[3] = node_getx)&(CacheState[3] = cache_i))) : 0;
+            ((cur_rule = c_PI_Remote_GetX30)&((procCmd[3] = node_none)&(CacheState[3] = cache_i))) : 0;
             ((cur_rule = c_PI_Remote_Get30)&((procCmd[3] = node_none)&(CacheState[3] = cache_i))) : 0;
             ((cur_rule = c_NI_Remote_Get_Put233)&((!(3 = 3))&(UniMsg.Cmd[3] = uni_get)&(UniMsg.proc[3] = 3)&(CacheState[3] = cache_e))) : 3;
             ((cur_rule = c_NI_Remote_Get_Put232)&((!(3 = 2))&(UniMsg.Cmd[3] = uni_get)&(UniMsg.proc[3] = 2)&(CacheState[2] = cache_e))) : 2;
@@ -1734,7 +1734,7 @@ ASSIGN
         esac;
     next(procCmd[1]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX10)&((procCmd[1] = node_getx)&(CacheState[1] = cache_i))) : node_getx;
+            ((cur_rule = c_PI_Remote_GetX10)&((procCmd[1] = node_none)&(CacheState[1] = cache_i))) : node_getx;
             ((cur_rule = c_PI_Remote_Get10)&((procCmd[1] = node_none)&(CacheState[1] = cache_i))) : node_get;
             ((cur_rule = c_NI_Remote_PutX10)&((UniMsg.Cmd[1] = uni_putx)&(procCmd[1] = node_getx))) : node_none;
             ((cur_rule = c_NI_Remote_Put10)&(UniMsg.Cmd[1] = uni_put)) : node_none;
@@ -1743,7 +1743,7 @@ ASSIGN
         esac;
     next(procCmd[2]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX20)&((procCmd[2] = node_getx)&(CacheState[2] = cache_i))) : node_getx;
+            ((cur_rule = c_PI_Remote_GetX20)&((procCmd[2] = node_none)&(CacheState[2] = cache_i))) : node_getx;
             ((cur_rule = c_PI_Remote_Get20)&((procCmd[2] = node_none)&(CacheState[2] = cache_i))) : node_get;
             ((cur_rule = c_NI_Remote_PutX20)&((UniMsg.Cmd[2] = uni_putx)&(procCmd[2] = node_getx))) : node_none;
             ((cur_rule = c_NI_Remote_Put20)&(UniMsg.Cmd[2] = uni_put)) : node_none;
@@ -1752,7 +1752,7 @@ ASSIGN
         esac;
     next(procCmd[3]) := 
         case
-            ((cur_rule = c_PI_Remote_GetX30)&((procCmd[3] = node_getx)&(CacheState[3] = cache_i))) : node_getx;
+            ((cur_rule = c_PI_Remote_GetX30)&((procCmd[3] = node_none)&(CacheState[3] = cache_i))) : node_getx;
             ((cur_rule = c_PI_Remote_Get30)&((procCmd[3] = node_none)&(CacheState[3] = cache_i))) : node_get;
             ((cur_rule = c_NI_Remote_PutX30)&((UniMsg.Cmd[3] = uni_putx)&(procCmd[3] = node_getx))) : node_none;
             ((cur_rule = c_NI_Remote_Put30)&(UniMsg.Cmd[3] = uni_put)) : node_none;
