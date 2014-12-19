@@ -3092,17 +3092,11 @@ let tab0 = tbl_create 50 in
 
 let ruleFuncMap rule [a, b] = rule a b;
 
-let mutualEx i =
-    let isE = eqn (Var (Param "CacheState" i)) (Const CACHE_E) in
-    let allOthersI =
-        let isI j =
-            let notSame = neg (eqn (Const i) (Const j)) in
-            let state = eqn (Var (Param "CacheState" j)) (Const CACHE_I) in
-            implyForm notSame state
-        in
-        forallForm (length paraType) isI
-    in
-    implyForm isE allOthersI;
+let mutualEx i j =
+    let notSame = neg (eqn (Const i) (Const j)) in
+    let iE = eqn (Var (Param "CacheState" i)) (Const CACHE_E) in
+    let jE = eqn (Var (Param "CacheState" j)) (Const CACHE_E) in
+    implyForm notSame (neg (andList [iE, jE]));
 // mutualEx
 
 let invTable =
@@ -3113,11 +3107,11 @@ let invTable =
 
 let invTypeTable =
     let tab0 = tbl_create 2 in
-    let tab0 = tbl_insert tab0 "mutualEx" [paraType] in
+    let tab0 = tbl_insert tab0 "mutualEx" [paraType, paraType] in
     tab0;
 // invTypeTable
 
-let invFuncMap inv [a] = inv a;
+let invFuncMap inv [a, b] = inv a b;
 
 load "trans2smv.fl";
 
