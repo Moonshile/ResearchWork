@@ -10,7 +10,7 @@
 #endif;
 createIsaModel;
 
-let dist = 1000;
+let dist = 4;
 
 //************************************* constants ****************************************
 
@@ -170,10 +170,10 @@ let enumValTab =
 let typeNameTab = 
     let tab0 = tbl_create 6 in
     let tab0 = tbl_insert tab0 NodeType "Int" in
-    let tab0 = tbl_insert tab0 DataType "Int" in
-    let tab0 = tbl_insert tab0 LockType "Int" in
-    let tab0 = tbl_insert tab0 CacheType "Int" in
-    let tab0 = tbl_insert tab0 AddrType "Int" in
+    //let tab0 = tbl_insert tab0 DataType "Int" in
+    //let tab0 = tbl_insert tab0 LockType "Int" in
+    //let tab0 = tbl_insert tab0 CacheType "Int" in
+    //let tab0 = tbl_insert tab0 AddrType "Int" in
     let tab0 = tbl_insert tab0 BooleanType "Bool" in
     let tab0 = tbl_insert tab0 CacheState "CacheState" in
     let tab0 = tbl_insert tab0 ReplaceStage "ReplaceStage" in
@@ -740,10 +740,6 @@ let iniStatement d =
         assgn7, assgn8, assgn9, assgn10, assgn11, assgn12, assgn13];
 // iniStatement
 
-//************************************** thy def ***************************************
-
-//createThyDef aritTable typeTable typeNameTab enumValTab "godson-t"; 
-
 //************************************** Makefile ***************************************
 
 createMakefile "godson-t";
@@ -853,20 +849,42 @@ load "trans2smv.fl";
 trans2smv "godson-t" typeTable ruleTable paraTypeTable invTable invTypeTable 
     (iniStatement (hd DataType)) ruleFuncMap invFuncMap enumValTab dist;
 
+//************************************** thy def ***************************************
+
+createThyDef aritTable typeTable typeNameTab enumValTab "godson-t"; 
+
 //************************************** Process ***************************************
-/*
+
+// get instantiated rule table and parameter num table
+let instantiatedRuleTable ruleTable paraTypeTable ruleFuncMap =
+    let rules = instantiateRules ruleTable paraTypeTable ruleFuncMap in
+    let f r a b = r in
+    letrec buildTable [] t =
+            t
+        /\ buildTable ((name, rule):rules) t =
+            buildTable rules (tbl_insert t name (f rule))
+    in
+    letrec buildParaNumTable [] t =
+            t
+        /\ buildParaNumTable ((name, rule):rules) t =
+            buildParaNumTable rules (tbl_insert t name 0)
+    in
+    (buildTable rules (tbl_create 200), buildParaNumTable rules (tbl_create 200));
+// instantiatedRuleTable
+
 load "tbl.fl";
 
-let symIndice = [1, 2, 3] then
+let symIndice = [1, 2] then
 let newParasMethod = newParas dist symIndice then
 let parasOfInvMethod = parasOfInv dist symIndice then
+val (ruleTable, paraNumTable) = instantiatedRuleTable ruleTable paraTypeTable ruleFuncMap then
 //find invariants
 val (invs, relLib) = findInvsFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable symIndice
-typeTable [1, 2, 3] "godson-t" "godson-t" enumValTab [DeadlockFree, Coherence] (tbl_keys ruleTable)  [] [] in
+typeTable [1, 2] "godson-t" "godson-t" enumValTab [DeadlockFree 1 0 0 0 0, Coherence 1 1 1 0 0] (tbl_keys ruleTable)  [] [] in
 //show invariants
 printStrList (map (formula2str enumValTab) invs) fseq
 printTable invs relLib fseq
 fclose fdebugGCR fseq
 fclose fdebug fseq
 fclose fdebug2;
-*/
+
