@@ -68,7 +68,10 @@ let varName (Global name) =
 let varName (Global name) =
         name
     /\ varName (Param name i) =
-        name^"["^(int2str i)^"]";
+        // name^"["^(int2str i)^"]";
+        // just for cooperating with newAnalzSimpl0423
+        // in fact, this is fallacious
+        "Node["^(int2str i)^"]."^name;
 // varName
 
 // translate variable names as "a.b.c[0]" to "a.b.c"
