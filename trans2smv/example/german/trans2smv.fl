@@ -71,11 +71,19 @@ let varName (Global name) =
         // name^"["^(int2str i)^"]";
         // just for cooperating with newAnalzSimpl0423
         // in fact, this is fallacious
+        // Note that function getNameAtom should also be changed 
         "Node["^(int2str i)^"]."^name;
 // varName
 
 // translate variable names as "a.b.c[0]" to "a.b.c"
-let getNameAtom name = hd (str_split name "[");
+// just for cooperating with newAnalzSimpl0423
+// in fact, this is fallacious
+// Note that function varName should also be changed 
+//let getNameAtom name = hd (str_split name "[");
+let getNameAtom name =
+    let part = str_split name "]" in
+    ((length part) = 1) => name | (string_tl (hd (tl part)));
+// getNameAtom
 
 // add an associated record of a variable into the var table
 let addVarTuple var tuple t =
