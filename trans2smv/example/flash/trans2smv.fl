@@ -346,7 +346,7 @@ let trans2smv fileName typeTab ruleTab paraTypeTab invTab invTypeTab init ruleFu
     fputs file "\nASSIGN\n" fseq
     fputs file (transInit 1 init enumValTab dist) fseq
     fputs file (transNext 1 ruleTab paraTypeTab ruleFuncMap enumValTab dist) fseq
-    fputs file (transInv 0 invTab invTypeTab invFuncMap enumValTab dist) fseq
+    //fputs file (transInv 0 invTab invTypeTab invFuncMap enumValTab dist) fseq
     fclose file;
 // trans2smv
 

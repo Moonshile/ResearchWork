@@ -893,7 +893,7 @@ val (invs, relLib) = tabularFromParaRulesByInvs dist ruleTable parasOfInvMethod 
 typeTable [1, 2] "godson-t" "godson-t" enumValTab [dlf 1 2] (tbl_keys ruleTable)  [] [] 5 in
 //show invariants
 printStrList (map (formula2str enumValTab) invs) fseq
-printTable invs relLib fseq
+//printTable invs relLib fseq
 fclose fdebugGCR fseq
 fclose fdebug fseq
 fclose fdebug2;
