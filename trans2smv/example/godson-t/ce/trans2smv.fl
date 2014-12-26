@@ -296,6 +296,8 @@ let transVar indent typeTab ruleTab paraTypeTab funcMap enumValTab dist =
     letrec TV indent vars typeTab enumValTab dist =
         let processVar indent varName typeTab enumValTab dist =
             let typeNum = tbl_element typeTab (getNameAtom varName) in
+            // if typeNum is a single value list, then add another useless value
+            let typeNum = ((length typeNum) = 1) => (0:typeNum) | typeNum in
             let type = map (\x. (transExp (Const x) enumValTab dist)) typeNum in
             let fstn = firstn ((length type) - 1) type in
             let last = el (length type) type in
