@@ -781,13 +781,10 @@ let DeadlockFree i dummy1 dummy2 dummy3 dummy4 =
 // DeadlockFree
 
 let dlf m n =
-    let ant =
-        let beUsed1 = eqn (left->(Var (Param "lock.beUsed" m))) (right->(Const True)) in
-        let beUsed2 = eqn (left->(Var (Param "lock.beUsed" n))) (right->(Const True)) in
-        andList [beUsed1, beUsed2]
-    in
-    let cons = neg (eqn (Var (Param "lock.owner" m)) (Var (Param "lock.owner" n))) in
-    andList [ant, neg cons];
+    let beUsed1 = eqn (left->(Var (Param "lock.beUsed" m))) (right->(Const True)) in
+    let beUsed2 = eqn (left->(Var (Param "lock.beUsed" n))) (right->(Const True)) in
+    let cons = eqn (Var (Param "lock.owner" m)) (Var (Param "lock.owner" n)) in
+    andList [beUsed1, beUsed2, cons];
 // dlf
 
 let Coherence i j a dummy1 dummy2 =
@@ -888,6 +885,8 @@ let symIndice = [1, 2] then
 let newParasMethod = newParas dist symIndice then
 let parasOfInvMethod = parasOfInv dist symIndice then
 val (ruleTable, paraNumTable) = instantiatedRuleTable ruleTable paraTypeTable ruleFuncMap then
+let result=existResultFileAndDel "res_lock" then
+let result=existResultFileAndDel "res_inv" then
 //find invariants
 val (invs, relLib) = tabularFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable symIndice
 typeTable [1, 2] "godson-t" "godson-t" enumValTab [dlf 1 2] (tbl_keys ruleTable)  [] [] 5 in
