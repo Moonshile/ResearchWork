@@ -1,0 +1,263 @@
+load "newAnalzSimpl0423.fl";
+//load "creatIsaModel0125.fl";
+letrec filt "" = ""
+/\  filt str =
+        let firstChar = string_hd str in
+        let hd = 
+            firstChar = "(" OR firstChar = ")" OR firstChar = " " 
+                OR firstChar = ";" => ""
+            | firstChar in
+        hd^(filt (string_tl str));
+
+let str2var str =
+    let charList = explode str in
+    (el (strlen str) charList) = "]" =>
+    let var = str_substr str 1 ((strlen str) - 3) in
+    let index = el ((strlen str) - 1) charList in
+    Var (Param var (str2int index)) |
+    Var (Global str);
+
+let revTab enum =
+    let keys = tbl_keys enum in
+    let newTab = tbl_create 10 in
+    letrec insert [] tab = tab
+    /\  insert (k:ks) tab = 
+        let tab = 
+            tbl_insert tab (tbl_element enum k) k in
+        insert ks tab in
+    insert keys newTab;
+
+      
+//let revTable = revTab enumValTab;
+
+
+let str2enum enumTab str  =
+    (Const (str2int str)) catch 
+    (Const (tbl_element (revTab enumTab) str)catch(error str));
+    
+    
+let str2eqn enumTab strEquation =
+    let tmp = str_split strEquation "=" then
+    let var = el 1 tmp in
+    let enumT = el 2 tmp in
+    eqn (str2var var) (str2enum enumTab enumT );
+
+let str2frm enumTab strInv =
+    let tmp = filt strInv in
+    let eqnList = str_split tmp "&" in
+    andList (map (str2eqn enumTab) eqnList);
+
+// --------------------- Test -----------------------
+let testStr = "( ( cache[1]=exclusive)  & ( cache[2]=exclusive)  ) ;";
+let testStr = "( ( cache[2]=exclusive)  & ( channel2_4[1]=grant_exclusive)  ) ;";
+//let frm = str2frm enumTab testStr;
+
+//frm;
+//print (formula2str enumValTab frm);
+//print "\n\n--------------\n\n";
+
+letrec rec_read enumTab fin result =
+    let s = fgets fin then
+    let s = str_substr s 1 ((strlen s)-1) then
+    //print s fseq
+    //print ("\n"^(int2str (length result))^"\n") fseq
+    feof fin => result |
+    s = "" => result |
+    let frm = str2frm enumTab s then
+    //print (formula2str enumValTab frm) fseq
+    rec_read enumTab fin (result@[frm]); 
+
+let file2frms enumTab file =
+    let fin = fopen file "r" in
+    let result = rec_read enumTab fin [] then
+    fclose fin fseq
+    result ;
+
+//file2frms "result_german";
+
+
+
+//------------------ tuple2str-----------------
+
+let para2str paras = implode (map int2str paras);
+
+let rel2str enumTab invHoldForRule2 =
+    "invHoldForRule2"
+/\  rel2str enumTab (invHoldForRule1 _) =
+    "invHoldForRule1 Enable"
+/\  rel2str enumTab (invHoldForRule3 inv pre) =
+    "invHoldForRule3," ^ (formula2str enumTab inv) ^ "," ^
+    (formula2str enumTab pre);
+
+
+let tuple2str enumTab tup =
+    val (paraRuleName, paras, g, inv0, invParas, rel) = tup in
+    (paraRuleName^"#")^ 
+    ((para2str paras)^"#")^ 
+    ((formula2str enumTab g)^"#")^ 
+    ((formula2str enumTab inv0)^"#")^ 
+    ((para2str invParas)^"#")^ 
+    (rel2str enumTab rel);     
+    
+
+//-------------------str2tuple-----------------
+
+let str2para parameters =
+    let charList = explode parameters in
+    map str2int charList;
+
+letrec filtGuard "" = ""
+/\  filtGuard str =
+        let firstChar = string_hd str in
+        let hd = 
+            firstChar = "(" OR firstChar = ")" OR firstChar = " " 
+                OR firstChar = "!" => ""
+            | firstChar in
+        hd^(filtGuard (string_tl str));
+
+   
+
+let str2EqnOrNeg enumTab f =
+    (let isNeg = str_is_substr  "!" f in
+    let f = filtGuard f in
+    isNeg  => neg (str2eqn enumTab f) |
+    str2eqn enumTab f)catch(error ("illegal formula: "^f));
+
+
+letrec filtOr "" = ""
+/\  filtOr str =
+        let firstChar = string_hd str in
+        let hd = 
+            firstChar = "(" OR firstChar = ")" OR firstChar = " " 
+                OR firstChar = ";" OR firstChar = "!" => ""
+            | firstChar in
+        hd^(filtOr (string_tl str));
+
+letrec filtNeg "" = ""
+/\  filtNeg str =
+        let firstChar = string_hd str in
+        let hd = 
+                firstChar = "!" => ""
+            | firstChar in
+        hd^(filtNeg (string_tl str));
+
+
+let str2orList enumTab str =
+    let tmp = filtOr str in
+    //print ("\n----------"^tmp^"-------------\n") fseq
+    let negList = str_split tmp "|" in
+    dualNeg (andList (map (str2eqn enumTab) negList));
+    
+let str2inv enumTab str =
+    str_is_substr "|" str => str2orList enumTab str |
+    str_is_substr "!" str => neg (str2frm enumTab (filtNeg str)) |
+    str_is_substr "&" str => str2frm enumTab str |
+    str2EqnOrNeg enumTab str ;
+
+let str2guard enumTab g =
+    g = "true" => chaos |
+    (str2inv enumTab g) catch (error ("illegal guard: "^g));
+
+let str2tuple enumTab str =
+    // remove ";"
+    let str = str_substr str 1 ((strlen str) - 1) in
+    let tmp = str_split str "#" then
+    let paraRuleName = el 1 tmp in
+    let paras = str2para (el 2 tmp) in
+    let g = str2guard enumTab  (el 3 tmp) in
+    let inv0 = str2frm enumTab (el 4 tmp) in
+    let invParas = str2para (el 5 tmp) in
+    let rel =
+        let relStr = el 6 tmp in
+        relStr = "invHoldForRule2" => invHoldForRule2 |
+        relStr = "invHoldForRule1 Enable" => (invHoldForRule1 Enable) |
+        let rel3 = str_split relStr "," in
+        let invStr = el 2 rel3 in
+        let inv = str2inv enumTab invStr in
+        let preStr = el 3 rel3 in
+        let pre = (preStr = "true") => chaos | 
+            (str2frm enumTab preStr) catch (error ("pre is illegal: " ^ preStr)) in
+        (invHoldForRule3 inv pre ) in
+    (paraRuleName, paras, g, inv0, invParas, rel);
+
+// -------------------Write invs and rels to files ------------------
+
+let write strs file =
+    let fout = fopen file "w" then
+    (foreach [str | strs].(fputs fout (str ^ ";\n"))) fseq
+    fclose fout;
+
+// -------------------Test--------------------
+//let i1=  1 in
+//let i2=  2 in
+//let form1= (eqn (left -> (Var (Param "cache" i1)))  
+//	(right->(Const exclusive))) then
+//let form2= (eqn (left -> (Var (Param "cache" i2)))  
+//	(right->(Const exclusive))) then 
+//let contra = andList [form1, form2] then 
+//
+//// symIndcie = [0, 1, 2, 3]
+//
+//let symIndice = [1,2,3] then
+//let newParasMethod = newParas  dist symIndice        then
+//let parasOfInvMethod = parasOfInv  dist  symIndice then
+//
+//
+//let result=existResultFileAndDel "res_lock" then
+//let result=existResultFileAndDel "res_inv" then
+//
+// val (result, time) = time (tabularFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice
+// typeTable [0, 1,2,3] "cache" "german" enumValTab [contra] (tbl_keys ruleTable)  [] []  5 )in
+// val (invs,relLib)  = result in
+// //show invariants
+// 
+// printStrList (map (formula2str  enumValTab) invs) fseq
+
+// write invs to file
+
+//write (map (formula2str enumValTab) invs) "result_german" fseq
+//write (map (tuple2str) relLib) "rel_german" fseq
+
+//-------------tuple2str--------------------------
+
+// printStrList (map tuple2str relLib) fseq
+
+// print "-------------------------" fseq
+// print ("Time: "^time) fseq
+//fclose fdebug  fseq
+
+//fclose fdebug2;
+
+//-------------file2tuple---------------------------
+
+let tupStr = "rule_home_picks_new_request_3#11#true#( ( channel3[2]=invalidate_ack)  & ( home_current_command=req_shared)  & ( channel2_4[1]=invalidate)  ) #21#invHoldForRule3,(  (!( channel3[2]=invalidate_ack) )  |  (!( home_current_command=emptyC) )  ) ,true;";
+
+//print ("\n\noriginal tuple:\n"^tupStr) ;
+
+//let tup = str2tuple enumTab tupStr;
+
+//tup;
+
+//print (tuple2str tup);
+
+letrec rec_convert enumTab fin result =
+    let s = fgets fin in
+    let s = str_substr s 1 ((strlen s)-1) then
+    //print s fseq
+    //print ("\n"^(int2str (length result))^"\n") fseq
+    feof fin => result |
+    s = "" => result |
+    let tup = str2tuple enumTab s then
+    //print (tuple2str tup) fseq
+    rec_convert enumTab fin (result@[tup]); 
+
+let file2tuple enumTab file =
+    let fin = fopen file "r" in
+    let result = rec_convert enumTab fin [] then
+    fclose fin fseq
+    result ;
+
+// --------------- read from files ------------------
+
+//file2frms enumTab "result_flash";
+//file2tuple enumTab "rel_flash";

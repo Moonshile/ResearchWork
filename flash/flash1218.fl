@@ -1,0 +1,3207 @@
+load "creatIsaModel0125.fl";
+let dist = 4;
+
+
+
+//CACHE_I, CACHE_S, CACHE_E
+let CACHE_I = 0 + dist; 
+let CACHE_S = 1 + dist;
+let CACHE_E = 2 + dist;
+
+
+//  NODE_CMD : enum {NODE_None, NODE_Get, NODE_GetX};
+let NODE_None = 3 + dist;
+let NODE_Get = 4 + dist;
+let NODE_GetX = 5 + dist;
+
+//  UNI_CMD : enum {UNI_None, UNI_Get, UNI_GetX, UNI_Put, UNI_PutX, UNI_Nak};
+let UNI_None = 6 + dist;
+let UNI_Get = 7 + dist;
+let UNI_GetX = dist + 25; 
+let UNI_Put = 8 + dist;
+let UNI_PutX = 9 + dist; 
+let UNI_Nak = 10 + dist;  
+
+//NV_None, INV_Inv, INV_InvAck
+let INV_None = 11 + dist;
+let INV_Inv = 12 + dist;
+let INV_InvAck = 13 + dist;
+
+//RP_None, RP_Replace
+let RP_None = 14 + dist; 
+let RP_Replace = 15 + dist;
+
+
+//WB_None, WB_Wb
+let WB_None = 16 + dist; 
+let WB_Wb = 17 + dist;
+
+//SHWB_None, SHWB_ShWb, SHWB_FAck
+let SHWB_None = 18 + dist;
+let SHWB_ShWb = 19 + dist;
+let SHWB_FAck = 20 + dist;
+
+//NAKC_None, NAKC_Nakc
+let NAKC_None = 21 + dist;
+let NAKC_Nakc = 22 + dist;
+
+
+let True = 23 + dist;
+let False = 24 + dist;
+
+//type
+
+let UNI_CMDType = [UNI_None, UNI_Get, UNI_GetX, UNI_Put, UNI_PutX, UNI_Nak];
+
+let NODE_CMDType = [NODE_None, NODE_Get, NODE_GetX]; 
+
+let CACHE_STATEType = [CACHE_I, CACHE_S, CACHE_E];
+
+let BooleanType = [True, False];
+
+let INV_CMDType = [INV_None, INV_Inv, INV_InvAck];
+
+let RP_CMDType = [RP_None, RP_Replace];
+
+let WB_CMDType = [WB_None, WB_Wb];
+
+let SHWB_CMDType = [SHWB_None, SHWB_ShWb, SHWB_FAck];
+
+let NAKC_CMDType = [NAKC_None, NAKC_Nakc];
+
+//NODE_NUM : 3;
+//DATA_NUM : 2;
+
+let paraType = [1,2,3];
+
+let Home = 0;
+
+let dataType = [1,2];
+
+//    Proc : array [NODE] of NODE_STATE;
+//    Dir : Dir-STATE;
+//    MemData : DATA;
+//    UniMsg : array [NODE] of UNI_MSG;
+//    InvMsg : array [NODE] of INV_MSG;
+//    RpMsg : array [NODE] of RP_MSG;
+//    WbMsg : WB_MSG;
+//    ShWbMsg : SHWB_MSG;
+//    NakcMsg : NAKC_MSG;
+//    __ Auxiliary variables:
+//    CurrData : DATA;
+//    PrevData : DATA;
+//    LastWrVld : boolean;
+//    LastWrPtr : NODE;
+//    Requester : NODE;
+//    Collecting : boolean;
+//    FwdCmd : UNI_CMD;
+//    FwdSrc : NODE;
+//    LastInvAck : NODE;
+//    LastOtherInvAck : NODE;
+
+let typeTable =
+   	let tab0 = tbl_create 20 in
+
+    let tab0 = tbl_insert tab0 "procCmd"   NODE_CMDType in 
+    let tab0 = tbl_insert tab0 "InvMarked"   BooleanType in
+    let tab0 = tbl_insert tab0 "CacheState"   CACHE_STATEType in
+    let tab0 = tbl_insert tab0 "CacheData"   dataType in
+
+    let tab0 = tbl_insert tab0 "Dir.Pending"   BooleanType in
+    let tab0 = tbl_insert tab0 "Dir.local"   BooleanType in
+    let tab0 = tbl_insert tab0 "Dir.Dirty"   BooleanType in   
+    let tab0 = tbl_insert tab0 "Dir.HeadVld"   BooleanType in
+    let tab0 = tbl_insert tab0 "Dir.HeadPtr"   paraType in
+    let tab0 = tbl_insert tab0 "Dir.ShrVld"   BooleanType in
+    let tab0 = tbl_insert tab0 "Dir-ShrSet"   BooleanType in          
+    let tab0 = tbl_insert tab0 "Dir-InvSet"   BooleanType in
+
+    let tab0 = tbl_insert tab0 "MemData"   dataType in
+    
+    let tab0 = tbl_insert tab0 "UniMsg.Cmd"   UNI_CMDType in
+    let tab0 = tbl_insert tab0 "UniMsg.proc"  paraType in
+    let tab0 = tbl_insert tab0 "UniMsg.Data"  dataType in
+    
+    let tab0 = tbl_insert tab0 "InvMsg.Cmd"   INV_CMDType in    
+
+    let tab0 = tbl_insert tab0 "RpMsg.Cmd"   RP_CMDType in
+
+    let tab0 = tbl_insert tab0 "WbMsg.Cmd"   WB_CMDType in
+    let tab0 = tbl_insert tab0 "WbMsg.proc"  paraType in
+    let tab0 = tbl_insert tab0 "WbMsg.Data"  dataType in
+    
+    let tab0 = tbl_insert tab0 "ShWbMsg.Cmd"   SHWB_CMDType in
+    let tab0 = tbl_insert tab0 "ShWbMsg.proc"  paraType in
+    let tab0 = tbl_insert tab0 "ShWbMsg.Data"  dataType in
+
+    let tab0 = tbl_insert tab0 "NakcMsg.Cmd"   NAKC_CMDType in
+
+    //Auxiliary variables
+    
+    let tab0 = tbl_insert tab0 "CurrData"   dataType  in
+   
+    let tab0 = tbl_insert tab0 "PrevData"   dataType  in
+   
+    let tab0 = tbl_insert tab0 "LastWrVld"   BooleanType in
+    
+    let tab0 = tbl_insert tab0 "LastWrPtr"   paraType in
+
+    let tab0 = tbl_insert tab0 "Requester"   paraType in
+    
+    let tab0 = tbl_insert tab0 "Collecting"  BooleanType  in
+   
+    let tab0 = tbl_insert tab0 "FwdCmd"     UNI_CMDType  in
+    
+    let tab0 = tbl_insert tab0 "FwdSrc"   paraType in
+    
+    let tab0 = tbl_insert tab0 "LastInvAck"   paraType in
+    
+    let tab0 = tbl_insert tab0 "LastOtherInvAck" paraType in
+    tab0;
+
+//add the definition of aritTable, enumValTab, typeNameTab ruleTable;
+
+//******************************************************************************************************************************************
+//arit table
+
+let aritTable =
+    let tab0 = tbl_create 20 in
+
+    let tab0 = tbl_insert tab0 "procCmd"   1 in 
+    let tab0 = tbl_insert tab0 "InvMarked"   1 in
+    let tab0 = tbl_insert tab0 "CacheState"   1 in
+    let tab0 = tbl_insert tab0 "CacheData"   1 in
+
+    let tab0 = tbl_insert tab0 "Dir.Pending"   0 in
+    let tab0 = tbl_insert tab0 "Dir.local"   0 in
+    let tab0 = tbl_insert tab0 "Dir.Dirty"   0 in   
+    let tab0 = tbl_insert tab0 "Dir.HeadVld"   0 in
+    let tab0 = tbl_insert tab0 "Dir.HeadPtr"   0 in
+    let tab0 = tbl_insert tab0 "Dir.ShrVld"   0 in
+    let tab0 = tbl_insert tab0 "Dir-ShrSet"   1 in          
+    let tab0 = tbl_insert tab0 "Dir-InvSet"   1 in
+
+    let tab0 = tbl_insert tab0 "MemData"   0 in
+    
+    let tab0 = tbl_insert tab0 "UniMsg.Cmd"   1 in
+    let tab0 = tbl_insert tab0 "UniMsg.proc"  1 in
+    let tab0 = tbl_insert tab0 "UniMsg.Data"  1 in
+    
+    let tab0 = tbl_insert tab0 "InvMsg.Cmd"   1 in    
+
+    let tab0 = tbl_insert tab0 "RpMsg.Cmd"   1 in
+
+    let tab0 = tbl_insert tab0 "WbMsg.Cmd"   0 in
+    let tab0 = tbl_insert tab0 "WbMsg.proc"  0 in
+    let tab0 = tbl_insert tab0 "WbMsg.Data"  0 in
+    
+    let tab0 = tbl_insert tab0 "ShWbMsg.Cmd"   0 in
+    let tab0 = tbl_insert tab0 "ShWbMsg.proc"  0 in
+    let tab0 = tbl_insert tab0 "ShWbMsg.Data"  0 in
+
+    let tab0 = tbl_insert tab0 "NakcMsg.Cmd"   0 in
+
+    //Auxiliary variables
+    
+    let tab0 = tbl_insert tab0 "CurrData"   0  in
+   
+    let tab0 = tbl_insert tab0 "PrevData"   0  in
+   
+    let tab0 = tbl_insert tab0 "LastWrVld"   0 in
+    
+    let tab0 = tbl_insert tab0 "LastWrPtr"   0 in
+
+    let tab0 = tbl_insert tab0 "Requester"   0 in
+    
+    let tab0 = tbl_insert tab0 "Collecting"  0  in
+   
+    let tab0 = tbl_insert tab0 "FwdCmd"     0  in
+    
+    let tab0 = tbl_insert tab0 "FwdSrc"   0 in
+    
+    let tab0 = tbl_insert tab0 "LastInvAck"   0 in
+    
+    let tab0 = tbl_insert tab0 "LastOtherInvAck" 0 in
+    tab0;
+
+  
+//******************************************************************************************************************************************
+//enum value table
+
+let enumValTab =
+    let tab0 = tbl_create 20 in
+    let tab0 = tbl_insert tab0   (CACHE_I) "CACHE_I" in
+    let tab0 = tbl_insert tab0   (CACHE_S) "CACHE_S" in
+    let tab0 = tbl_insert tab0   (CACHE_E) "CACHE_E" in
+    let tab0 = tbl_insert tab0   (NODE_None) "NODE_None" in
+    let tab0 = tbl_insert tab0   (NODE_Get) "NODE_Get" in
+    let tab0 = tbl_insert tab0   (NODE_GetX) "NODE_GetX" in
+    let tab0 = tbl_insert tab0   (UNI_None) "UNI_None" in
+    let tab0 = tbl_insert tab0   (UNI_Get) "UNI_Get" in
+    let tab0 = tbl_insert tab0   (UNI_Put) "UNI_Put" in
+    let tab0 = tbl_insert tab0   (UNI_PutX) "UNI_PutX" in
+    let tab0 = tbl_insert tab0   (UNI_Nak) "UNI_Nak" in
+    let tab0 = tbl_insert tab0   (UNI_GetX)  "UNI_GetX" in
+    let tab0 = tbl_insert tab0   (INV_None)  "INV_None" in
+    let tab0 = tbl_insert tab0   (INV_Inv) "INV_Inv" in
+    let tab0 = tbl_insert tab0   (INV_InvAck) "INV_InvAck" in
+    let tab0 = tbl_insert tab0   (RP_None) "RP_None" in
+    let tab0 = tbl_insert tab0   (RP_Replace) "RP_Replace" in
+    let tab0 = tbl_insert tab0   (WB_None) "WB_None" in
+    let tab0 = tbl_insert tab0   (WB_Wb) "WB_Wb" in
+    let tab0 = tbl_insert tab0   (SHWB_None) "SHWB_None" in
+    let tab0 = tbl_insert tab0   (SHWB_ShWb) "SHWB_ShWb" in
+    let tab0 = tbl_insert tab0   (SHWB_FAck) "SHWB_FAck" in
+    let tab0 = tbl_insert tab0   (NAKC_None) "NAKC_None" in
+    let tab0 = tbl_insert tab0   (NAKC_Nakc) "NAKC_Nakc" in
+    let tab0 = tbl_insert tab0   (True) "true" in
+    let tab0 = tbl_insert tab0   (False) "false" in
+    tab0   ;
+
+
+//******************************************************************************************************************************************
+//type name table
+
+let typeNameTable = 
+    let tab0 = tbl_create 20 in
+    let tab0 = tbl_insert tab0 UNI_CMDType   "UNI_CMDType" in
+    let tab0 = tbl_insert tab0 NODE_CMDType  "NODE_CMDType"    in
+    let tab0 = tbl_insert tab0 CACHE_STATEType "CACHE_STATEType"  in   
+    let tab0 = tbl_insert tab0 BooleanType "Bool"  in
+    let tab0 = tbl_insert tab0 INV_CMDType   "INV_CMDType" in
+    let tab0 = tbl_insert tab0 RP_CMDType  "RP_CMDType"    in
+    let tab0 = tbl_insert tab0 WB_CMDType "WB_CMDType"  in   
+    let tab0 = tbl_insert tab0 SHWB_CMDType "SHWB_CMDType"  in
+    let tab0 = tbl_insert tab0 NAKC_CMDType   "NAKC_CMDType" in
+    let tab0 = tbl_insert tab0 dataType "Int"  in   
+    let tab0 = tbl_insert tab0 paraType "Int"  in  
+    tab0   ;
+
+
+
+
+    
+//ruleset src : NODE; data : DATA do
+//rule "Store"
+//  Sta_Proc[src]_CacheState = CACHE_E
+//==>
+//v//ar NxtSta : STATE;
+//begin
+ // NxtSta := Sta;
+//__
+//  NxtSta_Proc[src]_CacheData := data;
+//  NxtSta_CurrData := data;
+//  NxtSta_LastWrVld := true;
+//  NxtSta_LastWrPtr := src;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;  
+
+
+let Store data src dummy=
+   
+    let form1= eqn (left ->(Var (Param "CacheState" src)))  (right ->(Const CACHE_E)) in  
+      let assgn1=(assign (Param "CacheData" src) ( (Const data))) in 
+     // let assgn2= assign  ( Global "CurrData " )  (Const data) in
+    // let assgn3=assign  ( Global "LastWrVld" ) (Const True) in
+   //  let assgn4=assign  (  Global "LastWrPtr" )  (Const src) in
+    guard form1 assgn1;//( parallel [ assgn1, assgn2]);//( parallel [assgn1, assgn2, assgn3,assgn4]);
+    
+let StoreHome  data dummy1 dummy2=
+   
+    let form1= eqn (left ->(Var (Param "CacheState" Home)))  (right ->(Const CACHE_E)) in  
+    let assgn1=(assign (Param "CacheData" Home) ( (Const data))) in 
+          guard form1 assgn1;
+ //   let assgn2= assign  ( Global "CurrData " )  (Const data) in
+ //   let assgn3=assign  ( Global "LastWrVld" ) (Const True) in
+//    let assgn4=assign  (  Global "LastWrPtr" )  (Const Home) in
+  //  guard form1 ( parallel [assgn1,  assgn3,assgn4]);    
+    
+//ruleset src : NODE do
+//rule "PI_Remote_Get"
+//  src != Home &
+//  Sta_Proc[src]_procCmd = NODE_None &
+//  Sta_Proc[src]_CacheState = CACHE_I
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Proc[src]_procCmd := NODE_Get;
+//  NxtSta_UniMsg[src]_Cmd := UNI_Get;
+//  NxtSta_UniMsg[src]_Proc := Home;
+//  undefine NxtSta_UniMsg[src]_Data;
+///__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;   
+
+let PI_Remote_Get src dummy=
+ //  let form1=neg (eqn (left -> (Const Home)) (right -> (Const src))) then
+   let form2=eqn (left ->(Var (Param "procCmd" src)))  (right ->(Const NODE_None))  then
+   let form3= eqn (left ->(Var (Param "CacheState" src)))  (right ->(Const CACHE_I)) then 
+   let assgn1= assign   ( Param "procCmd" src )  (Const NODE_Get) in
+   let assgn2=assign  (  Param "UniMsg.Cmd" src )  (Const UNI_Get) in
+   // error here let assgn3=assign  (  Param "UniMsg.proc" src )  (Const Home) in
+   let assgn3=assign  (Param "UniMsg.proc" src ) (Const Home) in
+   let form = andList [form2, form3] in
+   guard form ( parallel [assgn1, assgn2, assgn3]); 
+   
+   
+
+//rule "PI_Local_Get_Get"
+//  Sta.Proc[Home].ProcCmd = NODE_None &
+//  Sta.Proc[Home].CacheState = CACHE_I &
+//  !Sta.Dir.Pending & Sta.Dir.Dirty
+//==>
+//var NxtSta : STATE;
+//begin
+ // NxtSta := Sta;
+//--
+ // NxtSta.Proc[Home].ProcCmd := NODE_Get;
+//  NxtSta.Dir.Pending := true;
+//  NxtSta.UniMsg[Home].Cmd := UNI_Get;
+//  NxtSta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
+ // undefine NxtSta.UniMsg[Home].Data;
+ // if (Sta.Dir.HeadPtr != Home) then
+  //  NxtSta.FwdCmd := UNI_Get;
+  //end;
+ // NxtSta.Requester := Home;
+ // NxtSta.Collecting := false;
+//--
+ // Sta := NxtSta;
+//endrule;
+
+let PI_Local_Get_Get dummy1 dummy2 = 
+ // let form0=eqn (Const Home) (Const Home) then
+	let form1 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_I)) in
+	let form3 = eqn (left -> (Var (Global "Dir.Pending") )) (right -> (Const False))  in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty" ))) (right -> (Const True)) in
+	let form=andList [form1,form2,form3,form4] then
+	
+	let assgn1 = assign ( Param "procCmd" Home) (Const NODE_Get) in
+	let assgn2 = assign ( Global "Dir.Pending" ) (Const True) in
+	let assgn3 = assign (Param "UniMsg.Cmd" Home) (Const UNI_Get) in
+	let assgn4 = assign (Param "UniMsg.proc" Home) (Var (Global "Dir.HeadPtr")) in
+//	let form5 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const Home))) in
+// 	let iteExp5=iteForm form5  (Var (Global "FwdCmd")) (Const UNI_Get) then
+//	let assgn5 = assign (Global "FwdCmd")  iteExp5 in
+//	 let assgn6 = assign (Global "Requester") (Const Home) in
+	//let assgn8 = assign (Global "PendReqCmd") (Const UNI_Get) in
+	//let assgn7 = assign (Global "Collecting") (Const False) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4]); //, assgn5, assgn6, assgn7
+	
+	
+//rule "PI_Local_Get_Put"
+//  Sta_Proc[Home]_procCmd = NODE_None &
+//  Sta_Proc[Home]_CacheState = CACHE_I &
+//  !Sta_Dir-Pending & !Sta_Dir-Dirty
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Dir-local := true;
+//  NxtSta_Proc[Home]_procCmd := NODE_None;
+//  if (Sta_Proc[Home]_InvMarked) then
+//    NxtSta_Proc[Home]_InvMarked := false;
+//    NxtSta_Proc[Home]_CacheState := CACHE_I;
+//    undefine NxtSta_Proc[Home]_CacheData;
+//  else
+//    NxtSta_Proc[Home]_CacheState := CACHE_S;
+//    NxtSta_Proc[Home]_CacheData := Sta_MemData;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let PI_Local_Get_Put dummy1 dummy2=
+
+	let form1 = eqn (left ->(Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left ->(Var (Param "CacheState" Home))) (right -> (Const CACHE_I)) in
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False))  in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty" ))) (right -> (Const False)) in
+	let form=andList [form1,form2,form3,form4] then
+	
+	let assgn1 = assign ( Global "Dir.local" ) (Const True) in
+	let assgn0 = assign (Param "procCmd" Home) (Const NODE_None) in
+	
+	let form5=eqn (left -> (Var (Param "InvMarked" Home))) (right -> (Const True)) in
+	let iteEOnInv=iteForm form5 (Const False) (Var (Param "InvMarked" Home)) then
+	let iteEOnCache=iteForm form5 (Const CACHE_I) (Const CACHE_S) then
+//	let iteEOnCacheData =iteForm form5 (Var (Param "CacheData" Home)) (Var (Global "MemData")) then
+	
+	let assgn2 = assign (Param "InvMarked" Home) iteEOnInv in
+	let assgn3 = assign (Param "CacheState" Home) iteEOnCache in
+//	let assgn4 = assign (Param "CacheData" Home) iteEOnCacheData in
+	 
+	
+	guard form (parallel [assgn0, assgn1, assgn2, assgn3]);//, assgn4]);
+
+//ruleset src : NODE do
+//rule "PI_Remote_GetX"
+//  src != Home &
+//  Sta_Proc[src]_procCmd = NODE_None &
+//  Sta_Proc[src]_CacheState = CACHE_I
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Proc[src]_procCmd := NODE_GetX;
+//  NxtSta_UniMsg[src]_Cmd := UNI_GetX;
+//  NxtSta_UniMsg[src]_Proc := Home;
+//  undefine NxtSta_UniMsg[src]_Data;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let PI_Remote_GetX src dummy= 
+ 
+	let form2 = eqn (left ->(Var (Param "procCmd" src))) (right ->(Const  NODE_None)) then
+	let form3 = eqn (left ->(Var (Param "CacheState" src))) (right ->(Const CACHE_I)) in
+	let form = andList [form2, form3] then
+	
+	let assgn1 = assign ( Param "procCmd" src )  (Const NODE_GetX) in
+	let assgn2 = assign (  Param "UniMsg.Cmd" src )  (Const UNI_GetX) in
+	let assgn3 = assign (  Param "UniMsg.proc" src )  (Const Home) in
+	
+	guard form ( parallel [assgn1, assgn2, assgn3]);
+	
+//rule "PI_Local_GetX_GetX"
+// Sta_Proc[Home]_procCmd = NODE_None &
+//  ( Sta_Proc[Home]_CacheState = CACHE_I |
+//    Sta_Proc[Home]_CacheState = CACHE_S ) &
+//  !Sta_Dir-Pending & Sta_Dir-Dirty
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Proc[Home]_procCmd := NODE_GetX;
+//  NxtSta_Dir-Pending := true;
+//  NxtSta_UniMsg[Home]_Cmd := UNI_GetX;
+//  NxtSta_UniMsg[Home]_Proc := Sta_Dir-HeadPtr;
+//  undefine NxtSta_UniMsg[Home]_Data;
+//  if (Sta_Dir-HeadPtr != Home) then
+//    NxtSta_FwdCmd := UNI_GetX;
+//  end;
+//  NxtSta_PendReqSrc := Home;
+//  NxtSta_PendReqCmd := UNI_GetX;
+//  NxtSta_Collecting := false;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+//NxtSta.Proc[Home].ProcCmd := NODE_GetX;
+//  NxtSta.Dir.Pending := true;
+//  NxtSta.UniMsg[Home].Cmd := UNI_GetX;
+ // NxtSta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
+ // undefine NxtSta.UniMsg[Home].Data;
+ // if (Sta.Dir.HeadPtr != Home) then
+ //   NxtSta.FwdCmd := UNI_GetX;
+ // end;
+//  NxtSta.Requester := Home;
+ // NxtSta.Collecting := false;
+//--
+ // Sta := NxtSta;
+
+let PI_Local_GetX_GetX1 dummy1 dummy2= 
+	//let form0 = eqn (left -> (Const Home)) (right -> (Const  Home)) then
+	let form1 = eqn (left ->(Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left ->(Var (Param "CacheState" Home))) (right -> (Const CACHE_I)) in
+	let form3 = eqn (left -> (Var (Global "Dir.Pending") )) (right -> (Const False))  in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty" ))) (right -> (Const True)) in
+	
+	let form = andList [form1,form2,form3,form4] then
+	
+	let assgn1 = assign ( Param "procCmd" Home) (Const NODE_GetX) in
+	let assgn2 = assign ( Global "Dir.Pending" ) (Const True) in
+	let assgn3 = assign ( Param "UniMsg.Cmd" Home) (Const UNI_GetX) in
+	let assgn4 = assign (Param "UniMsg.proc" Home) (Var (Global "Dir.HeadPtr")) in
+ 	let form5 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const Home))) in
+ //	let iteExp5=iteForm form5 (Const UNI_GetX) (Var (Global "FwdCmd")) then
+ //////	let assgn5 = assign (Global "FwdCmd")  iteExp5 in
+ 	//let assgn6 = assign (Global "PendReqSrc") (Const Home) in
+	//let assgn7 = assign (Global "PendReqCmd") (Const UNI_GetX) in
+//	let assgn8 = assign (Global "Collecting") (Const False) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4]);//, assgn5, assgn6, assgn7, assgn8]);
+
+let PI_Local_GetX_GetX2 dummy1 dummy2= 
+//	let form0 = eqn (Const Home) (Const Home) then
+	let form1 = eqn (left ->(Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left ->(Var (Param "CacheState" Home))) (right -> (Const CACHE_S)) in
+	let form3 = eqn (Var (Global "Dir.Pending") ) (Const False)  in
+	let form4 = eqn (Var (Global "Dir.Dirty" )) (Const True) in
+	
+	let form = andList [ form1,form2,form3,form4] then
+	
+	let assgn1 = assign ( Param "procCmd" Home) (Const NODE_GetX) in
+	let assgn2 = assign ( Global "Dir.Pending" ) (Const True) in
+	let assgn3 = assign ( Param "UniMsg.Cmd" Home) (Const UNI_GetX) in
+	let assgn4 = assign (Param "UniMsg.proc" Home) (Var (Global "Dir.HeadPtr")) in
+	let form5 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const Home))) in
+//	let iteExp5=iteForm form5 (Const UNI_GetX) (Var (Global "FwdCmd")) then
+//	let assgn5 = assign (Global "FwdCmd")  iteExp5 in
+//	let assgn6 = assign (Global "PendReqSrc") (Const Home) in
+//	let assgn7 = assign (Global "PendReqCmd") (Const UNI_GetX) in
+	//let assgn8 = assign (Global "Collecting") (Const False) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4]);///, assgn5, assgn6, assgn7, assgn8]);
+
+//rule "PI_Local_GetX_PutX"
+//  Sta_Proc[Home]_procCmd = NODE_None &
+//  ( Sta_Proc[Home]_CacheState = CACHE_I |
+//    Sta_Proc[Home]_CacheState = CACHE_S ) &
+//  !Sta_Dir-Pending & !Sta_Dir-Dirty
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Dir-local := true;
+//  NxtSta_Dir-Dirty := true;
+//  if (Sta_Dir-HeadVld) then
+//    NxtSta_Dir-Pending := true;
+//    NxtSta_Dir-HeadVld := false;
+//    undefine NxtSta_Dir-HeadPtr;
+//    NxtSta_Dir-ShrVld := false;
+//    for p : NODE do
+//      NxtSta_Dir-ShrSet[p] := false;
+//      if ( p != Home &
+//           ( Sta_Dir-ShrVld & Sta_Dir-ShrSet[p] |
+//             Sta_Dir-HeadVld & Sta_Dir-HeadPtr = p ) ) then
+//        NxtSta_Dir-InvSet[p] := true;
+//        NxtSta_InvMsg[p]_Cmd := INV_Inv;
+//      else
+//        NxtSta_Dir-InvSet[p] := false;
+//        NxtSta_InvMsg[p]_Cmd := INV_None;
+//      end;
+//    end;
+//    NxtSta_Collecting := true;
+//    NxtSta_PrevData := Sta_CurrData;
+//    NxtSta_LastOtherInvAck := Sta_Dir-HeadPtr;
+//  end;
+//  NxtSta_Proc[Home]_procCmd := NODE_None;
+//  NxtSta_Proc[Home]_InvMarked := false;
+//  NxtSta_Proc[Home]_CacheState := CACHE_E;
+//  NxtSta_Proc[Home]_CacheData := Sta_MemData;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let PI_Local_GetX_PutX1   N dummy1 dummy2=
+	let form1 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_I)) in
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False))  in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty" ))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) in
+	let form = andList [ form1, form2, form3, form4, form5] then
+	
+	let assgn1 = assign (Global "Dir.local") (Const True) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn4 = assign (Global "Dir.Pending") (Const True) in
+	let assgn5 = assign (Global "Dir.HeadVld") (Const False) in
+	let assgn6 = assign (Global "Dir.ShrVld") (Const False) in
+	let assgn60a= assign ( Param "Dir-ShrSet" Home) (Const False) in	
+	let assgn60b= assign ( Param "Dir-InvSet" Home) (Const False) in
+	let assgn3 p = 
+		let assign30=        assign ( Param "Dir-ShrSet" p) (Const False) in
+        let form61 =  (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const p))) in
+        let form62 = eqn (left -> (Var (Global "Dir.ShrVld"))) (right ->(Const True)) in
+        let form63 = eqn (left -> (Var (Param "Dir-ShrSet" p))) (right ->(Const True)) in
+        let form66 = andList [form62, form63] then
+        let form68 = orList [form61, form66] then 
+                
+        let iteEOnInvSet = iteForm form68 (Const True) (Const False) in
+        let iteEOnCmd = iteForm form68 (Const INV_Inv) (Const INV_None) in
+        let assgn31 = assign (Param "Dir-InvSet" p) iteEOnInvSet in
+        let assgn32 = assign (Param "InvMsg.Cmd" p) iteEOnCmd in
+        parallel [assign30,assgn31,assgn32] in
+         
+//	let assign3=parallel (map assgn3 (1 upto N)) then
+       
+	let assign3=forallStatement N assgn3 then
+	//let assgn7 = assign (Global "Collecting") (Const True) in
+//	let assgn8 = assign (Global "PrevData") (Var (Global "CurrData")) in
+//	let assgn9 = assign (Global "LastOtherInvAck") (Var (Global "Dir.HeadPtr")) in
+	let assgn10 = assign (Param "procCmd" Home) (Const NODE_None) in
+	let assgn11 = assign (Param "InvMarked" Home) (Const False) in
+	let assgn12 = assign (Param "CacheState" Home) (Const CACHE_E) in
+//	let assgn13 = assign (Param "CacheData" Home) (Var (Global "MemData")) in
+	
+	guard form (parallel [assgn1, assgn2, assign3, assgn4, assgn5, assgn6,  assgn10, assgn11, assgn12]);//, assgn13]); assgn7, assgn8, assgn9,
+
+let PI_Local_GetX_PutX2  N dummy1 dummy2=
+	let form1 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_S)) in
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False))  in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty" ))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) in
+	let form = andList [ form1, form2, form3, form4, form5] then
+	
+	let assgn1 = assign (Global "Dir.local") (Const True) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn4 = assign (Global "Dir.Pending") (Const True) in
+	let assgn5 = assign (Global "Dir.HeadVld") (Const False) in
+	let assgn6 = assign (Global "Dir.ShrVld") (Const False) in
+	let assgn60a= assign ( Param "Dir-ShrSet" Home) (Const False) in	
+	let assgn60b= assign ( Param "Dir-InvSet" Home) (Const False) in
+	let assgn3 p = 
+		let assign30=        assign ( Param "Dir-ShrSet" p) (Const False) in
+        let form61 =  (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const p))) in
+        let form62 = eqn (left -> (Var (Global "Dir.ShrVld"))) (right ->(Const True)) in
+        let form63 = eqn (left -> (Var (Param "Dir-ShrSet" p))) (right ->(Const True)) in
+        let form66 = andList [form62, form63] then
+        let form68 = orList [form61, form66] then 
+                
+        let iteEOnInvSet = iteForm form68 (Const True) (Const False) in
+        let iteEOnCmd = iteForm form68 (Const INV_Inv) (Const INV_None) in
+        let assgn31 = assign (Param "Dir-InvSet" p) iteEOnInvSet in
+        let assgn32 = assign (Param "InvMsg.Cmd" p) iteEOnCmd in
+        parallel [assign30,assgn31,assgn32] in
+         
+//	let assign3=parallel (map assgn3 (1 upto N)) then
+let assign3=forallStatement N assgn3 then
+	
+//	let assgn7 = assign (Global "Collecting") (Const True) in
+//	let assgn8 = assign (Global "PrevData") (Var (Global "CurrData")) in
+	//let assgn9 = assign (Global "LastOtherInvAck") (Var (Global "Dir.HeadPtr")) in
+//	let assgn10 = assign (Param "procCmd" Home) (Const NODE_None) in
+	let assgn11 = assign (Param "InvMarked" Home) (Const False) in
+	let assgn12 = assign (Param "CacheState" Home) (Const CACHE_E) in
+//	let assgn13 = assign (Param "CacheData" Home) (Var (Global "MemData")) in
+	
+	guard form (parallel [assgn1, assgn2, assign3, assgn4, assgn5, assgn6,  assgn11, assgn12]);//assgn7, assgn8, assgn9, assgn10,, assgn13]);
+
+let PI_Local_GetX_PutX3 dummy1 dummy2 =
+	//let form0 = eqn (left -> (Const Home)) (right ->(Const Home)) then
+	let form1 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_I)) in
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False))  in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty" ))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const False)) in
+	let form = andList [form1, form2, form3, form4, form5] then
+	
+	let assgn1 = assign (Global "Dir.local") (Const True) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+
+	let assgn3 = assign (Param "procCmd" Home) (Const NODE_None) in
+	let assgn4 = assign (Param "InvMarked" Home) (Const False) in
+	let assgn5 = assign (Param "CacheState" Home) (Const CACHE_E) in
+	let assgn6 = assign (Param "CacheData" Home) (Var (Global "MemData")) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5, assgn6]);
+	
+let PI_Local_GetX_PutX4  dummy1 dummy2 =
+	//let form0 = eqn (left -> (Const Home)) (right ->(Const Home)) then
+	let form1 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_None)) in
+	let form2 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_S)) in
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False))  in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty" ))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const False)) in
+	let form = andList [form1, form2, form3, form4, form5] then
+	
+	let assgn1 = assign (Global "Dir.local") (Const True) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+
+	let assgn3 = assign (Param "procCmd" Home) (Const NODE_None) in
+	let assgn4 = assign (Param "InvMarked" Home) (Const False) in
+	let assgn5 = assign (Param "CacheState" Home) (Const CACHE_E) in
+//	let assgn6 = assign (Param "CacheData" Home) (Var (Global "MemData")) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);//, assgn6]);
+	
+//ruleset dst : NODE do
+//rule "PI_Remote_PutX"
+//  dst != Home &
+//  Sta_Proc[dst]_procCmd = NODE_None &
+//  Sta_Proc[dst]_CacheState = CACHE_E
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Proc[dst]_CacheState := CACHE_I;
+//  undefine NxtSta_Proc[dst]_CacheData;
+//  NxtSta_WbMsg_Cmd := WB_Wb;
+//  NxtSta_WbMsg_Proc := dst;
+//  NxtSta_WbMsg_Data := Sta_Proc[dst]_CacheData;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let PI_Remote_PutX dst dummy1 =
+	//let form0 = neg (eqn (left -> (Const Home)) (right -> (Const dst))) in
+	let form1 = eqn (left -> (Var (Param "procCmd" dst))) (right -> (Const NODE_None)) in
+	let form2 =eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E)) in
+	let form = andList [ form1, form2] then
+	
+	let assgn1 = assign (Param "CacheState" dst) (Const CACHE_I) in
+	let assgn2 = assign (Global "WbMsg.Cmd") (Const WB_Wb) in
+	let assgn3 = assign (Global "WbMsg.proc") (Const dst) in
+	//let assgn4 = assign (Global "WbMsg.Data") (Var (Param "CacheData" dst)) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);//, assgn4]);
+	
+//rule "PI_Local_PutX"
+//  Sta_Proc[Home]_procCmd = NODE_None &
+//  Sta_Proc[Home]_CacheState = CACHE_E
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  if (Sta_Dir-Pending) then
+//    NxtSta_Proc[Home]_CacheState := CACHE_I;
+//    undefine NxtSta_Proc[Home]_CacheData;
+//    NxtSta_Dir-Dirty := false;
+//    NxtSta_MemData := Sta_Proc[Home]_CacheData;
+//  else
+//    NxtSta_Proc[Home]_CacheState := CACHE_I;
+//    undefine NxtSta_Proc[Home]_CacheData;
+//    NxtSta_Dir-local := false;
+//    NxtSta_Dir-Dirty := false;
+//    NxtSta_MemData := Sta_Proc[Home]_CacheData;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let PI_Local_PutX dummy1 dummy2=
+	//let form0 = eqn (left -> (Const Home)) (right -> (Const Home)) then
+	let form1 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_None)) then
+	let form2 = eqn (left -> (Var (Param "CacheState" Home ))) (right -> (Const CACHE_E)) then
+	let form = andList [form1, form2] then
+	
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const True)) in
+	let iteEOnCacheState = (Const CACHE_I) in
+	let iteEOnDirty = (Const False) in
+	let iteEOnMemData = (Var (Param "CacheData" Home)) in
+	let iteEOnLocal = iteForm form3 (Var (Global "Dir.local")) (Const False) in
+	
+	let assgn1 = assign (Param "CacheState" Home) iteEOnCacheState in
+	let assgn2 = assign (Global "Dir.Dirty") iteEOnDirty in
+	//let assgn3 = assign (Global "MemData") iteEOnMemData in
+	let assgn4 = assign (Global "Dir.local") iteEOnLocal in
+	
+	guard form (parallel [assgn1, assgn2, assgn4]); //assgn3,
+	
+//ruleset src : NODE do
+//rule "PI_Remote_Replace"
+//  src != Home &
+//  Sta_Proc[src]_procCmd = NODE_None &
+//  Sta_Proc[src]_CacheState = CACHE_S
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Proc[src]_CacheState := CACHE_I;
+//  undefine NxtSta_Proc[src]_CacheData;
+//  NxtSta_RpMsg[src]_Cmd := RP_Replace;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let PI_Remote_Replace src dummy=
+	//let form1 = neg (eqn (left -> (Const src)) (right -> (Const Home))) then
+	let form2 = eqn (left -> (Var (Param "procCmd" src))) (right -> (Const NODE_None)) then
+	let form3 = eqn (left -> (Var (Param "CacheState" src))) (right -> (Const CACHE_S)) then
+	let form = andList [form2, form3] then
+	
+	//let assgn1 = assign (Param "CacheState" src) (Const CACHE_I) in
+	let assgn2 = assign (Param "RpMsg.Cmd" src) (Const RP_Replace) in
+	
+	guard form (parallel [ assgn2]); //assgn1,
+
+//rule "PI_Local_Replace"
+//  Sta_Proc[Home]_procCmd = NODE_None &
+//  Sta_Proc[Home]_CacheState = CACHE_S
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Dir-local := false;
+//  NxtSta_Proc[Home]_CacheState := CACHE_I;
+//  undefine NxtSta_Proc[Home]_CacheData;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let PI_Local_Replace dummy1 dummy2=
+	//let form0 = eqn (left -> (Const Home)) (right -> (Const  Home)) then
+	let form1 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_None)) then
+	let form2 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_S)) then
+	let form = andList [ form1, form2] then
+	
+	let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Param "CacheState" Home) (Const CACHE_I) in
+	
+	guard form (parallel [assgn1, assgn2]);
+
+//ruleset dst : NODE do
+//rule "NI_Nak"
+//  Sta_UniMsg[dst]_Cmd = UNI_Nak
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[dst]_Cmd := UNI_None;
+//  undefine NxtSta_UniMsg[dst]_Proc;
+//  undefine NxtSta_UniMsg[dst]_Data;
+//  NxtSta_Proc[dst]_procCmd := NODE_None;
+//  NxtSta_Proc[dst]_InvMarked := false;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Nak dst dummy=
+	let form1 = eqn (left -> (Var (Param "UniMsg.Cmd" dst))) (right -> (Const UNI_None)) then
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" dst) (Const UNI_None) in
+	let assgn2 = assign (Param "procCmd" dst) (Const NODE_None) in
+	let assgn3 = assign (Param "InvMarked" dst) (Const False) in
+	
+	guard form1 (parallel [assgn1, assgn2, assgn3]);
+	
+let NI_Nak_Home dummy1 dummy2=
+	let form1 = eqn (left -> (Var (Param "UniMsg.Cmd" Home ))) (right -> (Const UNI_None)) then
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" Home ) (Const UNI_None) in
+	let assgn2 = assign (Param "procCmd" Home ) (Const NODE_None) in
+	let assgn3 = assign (Param "InvMarked" Home ) (Const False) in
+	
+	guard form1 (parallel [assgn1, assgn2, assgn3]);
+		
+	
+//rule "NI_Nak_Clear"
+//  Sta_NakcMsg_Cmd = NAKC_Nakc
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_NakcMsg_Cmd := NAKC_None;
+//  NxtSta_Dir-Pending := false;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let NI_Nak_Clear  dummy1 dummy2= 
+	let form1 = eqn (left -> (Var (Global "NakcMsg.Cmd"))) (right -> (Const NAKC_Nakc)) then
+	
+	let assgn1 = assign (Global "NakcMsg.Cmd") (Const NAKC_None) in
+	let assgn2 = assign (Global "Dir.Pending") (Const False) in
+	
+	guard form1 (parallel [assgn1, assgn2]);
+
+//ruleset src : NODE do
+//rule "NI_Local_Get_Nak"
+//  src != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_Get &
+//  Sta_UniMsg[src]_Proc = Home &
+//  Sta_RpMsg[src]_Cmd != RP_Replace &
+//  ( Sta_Dir-Pending |
+//    Sta_Dir-Dirty & Sta_Dir-local & Sta_Proc[Home]_CacheState != CACHE_E |
+//    Sta_Dir-Dirty & !Sta_Dir-local & Sta_Dir-HeadPtr = src )
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[src]_Cmd := UNI_Nak;
+//  NxtSta_UniMsg[src]_Proc := Home;
+//  undefine NxtSta_UniMsg[src]_Data;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Local_Get_Nak1  src  dummy1=
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) then
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) then
+	let form4 = neg (eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace))) then
+	let form5 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const True)) then
+	let form = andList [ form2, form3, form4, form5] then
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2]);
+	
+let NI_Local_Get_Nak2 src  dummy1=
+
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) then
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src)))  (right -> (Const Home))  then
+	let form4 = neg (eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace))) then
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) then
+	let form6 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) then
+	let form7 = neg (eqn (Var (Param "CacheState" src))  (Const CACHE_E)) then
+	let form = andList [ form2, form3, form4, form5, form6, form7] then
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2]);
+	
+let NI_Local_Get_Nak3 src  dummy1=
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) then
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src)))  (right -> (Const Home))  then
+	let form4 = neg (eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace))) then
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) then
+	let form6 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) then
+	let form7 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) then
+	let form = andList [ form2, form3, form4, form5, form6, form7] then
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2]);
+	
+//ruleset src : NODE do
+//rule "NI_Local_Get_Get"
+//  src != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_Get &
+//  Sta_UniMsg[src]_Proc = Home &
+//  Sta_RpMsg[src]_Cmd != RP_Replace &
+//  !Sta_Dir-Pending & Sta_Dir-Dirty & !Sta_Dir-local & Sta_Dir-HeadPtr != src
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Dir-Pending := true;
+//  NxtSta_UniMsg[src]_Cmd := UNI_Get;
+//  NxtSta_UniMsg[src]_Proc := Sta_Dir-HeadPtr;
+//  undefine NxtSta_UniMsg[src]_Data;
+//  if (Sta_Dir-HeadPtr != Home) then
+//    NxtSta_FwdCmd := UNI_Get;
+//  end;
+//  NxtSta_PendReqSrc := src;
+//  NxtSta_PendReqCmd := UNI_Get;
+//  NxtSta_Collecting := false;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+
+let NI_Local_Get_Get src  dummy1= 
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) then
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) then
+	let form4 = neg (eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace))) then
+	let form5 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) then
+	let form6 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) then
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) then
+	//let form8 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src))) then
+	let form = andList [form2, form3, form4, form5, form6, form7] then
+	
+	let assgn1 = assign (Global "Dir.Pending") (Const True) in
+	let assgn3 = assign (Param "UniMsg.proc" src) (Var (Global "Dir.HeadPtr")) in
+	//let form9 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const Home))) in
+	//let iteEOnFwdCmd = iteForm form9 (Const UNI_Get) (Var (Global "FwdCmd")) in
+	//let assgn4 = assign (Global "FwdCmd") (Const UNI_Get) in
+//	let assgn5 = assign (Global "PendReqSrc") (Const src) in
+//	let assgn6 = assign (Global "PendReqCmd") (Const UNI_Get) in
+//	let assgn7 = assign (Global "Collecting") (Const False) in
+	
+	guard form (parallel [assgn1,  assgn3]);//, assgn4, assgn5, assgn6, assgn7]);
+	
+//ruleset src : NODE do
+//rule "NI_Local_Get_Put"
+//  src != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_Get &
+//  Sta_UniMsg[src]_Proc = Home &
+//  Sta_RpMsg[src]_Cmd != RP_Replace &
+//  !Sta_Dir-Pending &
+//  (Sta_Dir-Dirty -> Sta_Dir-local & Sta_Proc[Home]_CacheState = CACHE_E)
+//__  !Sta_Proc[src]_InvMarked
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  if (Sta_Dir-Dirty) then
+//    NxtSta_Dir-Dirty := false;
+//    NxtSta_Dir-HeadVld := true;
+//    NxtSta_Dir-HeadPtr := src;
+//    NxtSta_MemData := Sta_Proc[Home]_CacheData;
+//    NxtSta_Proc[Home]_CacheState := CACHE_S;
+//    NxtSta_UniMsg[src]_Cmd := UNI_Put;
+//    NxtSta_UniMsg[src]_Proc := Home;
+//    NxtSta_UniMsg[src]_Data := Sta_Proc[Home]_CacheData;
+//  else
+//    if (Sta_Dir-HeadVld) then
+//      NxtSta_Dir-ShrVld := true;
+//      NxtSta_Dir-ShrSet[src] := true;
+//      for p : NODE do
+//        NxtSta_Dir-InvSet[p] := (p = src) | Sta_Dir-ShrSet[p];
+//      end;
+//    else
+//      NxtSta_Dir-HeadVld := true;
+//      NxtSta_Dir-HeadPtr := src;
+//    end;
+//    NxtSta_UniMsg[src]_Cmd := UNI_Put;
+//    NxtSta_UniMsg[src]_Proc := Home;
+//    NxtSta_UniMsg[src]_Data := Sta_MemData;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+
+let NI_Local_Get_Put1 N src dummy1 = 
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) then
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) then
+	let form4 = neg (eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace))) then
+	let form5 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) then
+	let form6 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) then
+	let form7 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) then
+	let form = andList [form2, form3, form4, form5, form6, form7] then
+
+	let assgn1 = assign (Global "Dir.ShrVld") (Const True) in
+	let assgn2 = assign (Param  "Dir-ShrSet" src) (Const True) in 
+	let assgn3 = assign (Param  "Dir-InvSet" Home) (Var  (Param  "Dir-ShrSet" Home)) in 
+	let assgn4s p = 
+		let form1s = eqn (left -> (Const p)) (right -> (Const src)) in 
+		let iteEOnInvSet = iteForm form1s (Const True) (Var (Param "Dir-ShrSet" p)) in
+		assign (Param "Dir-InvSet" p) iteEOnInvSet in
+    
+    let assgn4=forallStatement N assgn4s then
+	let assgn7 = assign (Param "UniMsg.Cmd" src) (Const UNI_Put) in
+	let assgn8 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn9 = assign (Param "UniMsg.Data" src) (Var (Global "MemData")) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn7, assgn8]);//,assgn9]);
+	
+let NI_Local_Get_Put2   src  dummy1=
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) then
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) then
+	let form4 = neg (eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace))) then
+	let form5 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) then
+	let form6 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) then
+	let form7 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const False)) then
+	let form = andList [ form2, form3, form4, form5, form6, form7] then
+	
+	let assgn1 = assign (Global "Dir.HeadVld") (Const True) in
+	let assgn2 = assign (Global "Dir.HeadPtr") (Const src) in
+
+	let assgn3 = assign (Param "UniMsg.Cmd" src) (Const UNI_Put) in
+	let assgn4 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn5 = assign (Param "UniMsg.Data" src) (Var (Global "MemData")) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4]);//, assgn5]);	
+
+let NI_Local_Get_Put3 src  dummy1  = 
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) then
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) then
+	let form4 = neg (eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace))) then
+	let form5 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) then
+	let form6 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) then
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) then
+	let form8 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_E)) then
+	let form = andList [form2, form3, form4, form5, form6, form7,form8] then
+	
+	let assgn1 = assign (Global "Dir.Dirty") (Const False) in
+	let assgn2 = assign (Global "Dir.HeadVld") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadPtr") (Const src) in
+	//let assgn4 = assign (Global "MemData") (Var (Param "CacheData" Home)) in
+	let assgn5 = assign (Param "CacheState" Home) (Const CACHE_S) in
+	let assgn6 = assign (Param "UniMsg.Cmd" src) (Const UNI_Put) in
+	let assgn7 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn8 = assign (Param "UniMsg.Data" src) (Var (Param "CacheData" Home)) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3,   assgn5, assgn6, assgn7 ]);	
+	
+
+//ruleset src : NODE; dst : NODE do
+//rule "NI_Remote_Get_Nak"
+//  src != dst & dst != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_Get &
+//  Sta_UniMsg[src]_Proc = dst &
+//  Sta_Proc[dst]_CacheState != CACHE_E
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[src]_Cmd := UNI_Nak;
+//  NxtSta_UniMsg[src]_Proc := dst;
+//  undefine NxtSta_UniMsg[src]_Data;
+//  NxtSta_NakcMsg_Cmd := NAKC_Nakc;
+//  NxtSta_FwdCmd := UNI_None;
+//  NxtSta_FwdSrc := src;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Remote_Get_Nak1  dst dummy1= 
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" Home))) (right -> (Const UNI_Get)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" Home))) (right -> (Const dst)) in
+	let form5 = neg (eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E))) in
+	let form = andList [ form3, form4, form5] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" Home) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" Home) (Const dst) in
+	let assgn3 = assign (Global "NakcMsg.Cmd") (Const NAKC_Nakc) in
+	//let assgn4 = assign (Global "FwdCmd") (Const UNI_None) in
+//	let assgn5 = assign (Global "FwdSrc") (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);//, assgn4, assgn5]);
+	
+
+let NI_Remote_Get_Nak2 src dst =
+	let form1 = neg (eqn (left -> (Const src)) (right -> (Const dst))) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const dst)) in
+	let form5 = neg (eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E))) in
+	let form = andList [form1,  form3, form4, form5] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const dst) in
+	let assgn3 = assign (Global "NakcMsg.Cmd") (Const NAKC_Nakc) in
+	//let assgn4 = assign (Global "FwdCmd") (Const UNI_None) in
+	//let assgn5 = assign (Global "FwdSrc") (Const src) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);//, assgn4, assgn5]);
+	
+//ruleset src : NODE; dst : NODE do
+//rule "NI_Remote_Get_Put"
+//  src != dst & dst != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_Get &
+//  Sta_UniMsg[src]_Proc = dst &
+//  Sta_Proc[dst]_CacheState = CACHE_E
+//__  !Sta_Proc[src]_InvMarked
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Proc[dst]_CacheState := CACHE_S;
+//  NxtSta_UniMsg[src]_Cmd := UNI_Put;
+//  NxtSta_UniMsg[src]_Proc := dst;
+//  NxtSta_UniMsg[src]_Data := Sta_Proc[dst]_CacheData;
+//  if (src != Home) then
+//    NxtSta_ShWbMsg_Cmd := SHWB_ShWb;
+//    NxtSta_ShWbMsg_Proc := src;
+//    NxtSta_ShWbMsg_Data := Sta_Proc[dst]_CacheData;
+//  end;
+//  NxtSta_FwdCmd := UNI_None;
+//  NxtSta_FwdSrc := src;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Remote_Get_Put1  dst dummy1= 
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" Home))) (right -> (Const UNI_Get)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" Home))) (right -> (Const dst)) in
+	let form5 = eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E)) in
+	let form = andList [ form3, form4, form5] in
+	
+	let assgn1 = assign (Param "CacheState" dst) (Const CACHE_S) in
+	let assgn2 = assign (Param "UniMsg.Cmd" Home) (Const UNI_Put) in
+	let assgn3 = assign (Param "UniMsg.proc" Home) (Const dst) in
+	//let assgn4 = assign (Param "UniMsg.Data" Home) (Var (Param "Proc_CacheData" dst)) in
+	
+	//let assgn5 = assign (Global "FwdCmd") (Const UNI_None) in
+//	let assgn6 = assign (Global "FwdSrc") (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3 ]);//, assgn5, assgn6]);
+	
+	
+
+let NI_Remote_Get_Put2 src  dst = 
+	let form1 = neg (eqn (left -> (Const src)) (right -> (Const dst))) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_Get)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const dst)) in
+	let form5 = eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E)) in
+	let form = andList [form1 ,form3, form4, form5] in
+	
+	let assgn1 = assign (Param "CacheState" dst) (Const CACHE_S) in
+	let assgn2 = assign (Param "UniMsg.Cmd" src) (Const UNI_Put) in
+	let assgn3 = assign (Param "UniMsg.proc" src) (Const dst) in
+	//let assgn4 = assign (Param "UniMsg.Data" src) (Var (Param "Proc_CacheData" dst)) in
+	let assgn5 = assign (Global "ShWbMsg.Cmd") (Const SHWB_ShWb)  in
+	let assgn6 = assign (Global "ShWbMsg.proc") (Const src) in
+//	let assgn7 = assign (Global "ShWbMsg.Data") (Var (Param "Proc_CacheData" dst)) in
+	//let assgn8 = assign (Global "FwdCmd") (Const UNI_None) in
+	//let assgn9 = assign (Global "FwdSrc") (Const src) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3,  assgn5, assgn6]);//,, assgn7assgn4, assgn8, assgn9]);	
+	
+//ruleset src : NODE do
+//rule "NI_Local_GetX_Nak"
+//  src != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_GetX &
+//  Sta_UniMsg[src]_Proc = Home &
+//  ( Sta_Dir-Pending |
+//    Sta_Dir-Dirty & Sta_Dir-local & Sta_Proc[Home]_CacheState != CACHE_E |
+//    Sta_Dir-Dirty & !Sta_Dir-local & Sta_Dir-HeadPtr = src )
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[src]_Cmd := UNI_Nak;
+//  NxtSta_UniMsg[src]_Proc := Home;
+//  undefine NxtSta_UniMsg[src]_Data;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Local_GetX_Nak1 src dummy1=
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const True)) in
+	let form = andList [ form2, form3, form4] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2]);
+	
+let NI_Local_GetX_Nak2 src dummy1  =
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) in
+	let form5 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	let form6 = neg (eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_E))) in
+	let form = andList [form2, form3, form4, form5, form6] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2]);
+	
+let NI_Local_GetX_Nak3 src  dummy1=
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) in
+	let form5 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) in
+	let form6 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) in
+	let form = andList [ form2, form3, form4, form5, form6] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2]);
+
+//ruleset src : NODE do
+//rule "NI_Local_GetX_GetX"
+//  src != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_GetX &
+//  Sta_UniMsg[src]_Proc = Home &
+//  !Sta_Dir-Pending & Sta_Dir-Dirty & !Sta_Dir-local & Sta_Dir-HeadPtr != src
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Dir-Pending := true;
+//  NxtSta_UniMsg[src]_Cmd := UNI_GetX;
+//  NxtSta_UniMsg[src]_Proc := Sta_Dir-HeadPtr;
+//  undefine NxtSta_UniMsg[src]_Data;
+//  if (Sta_Dir-HeadPtr != Home) then
+//    NxtSta_FwdCmd := UNI_GetX;
+//  end;
+//  NxtSta_PendReqSrc := src;
+//  NxtSta_PendReqCmd := UNI_GetX;
+//  NxtSta_Collecting := false;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+//___
+let NI_Local_GetX_GetX src dummy1=
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) in
+	let form6 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) in
+	let form7 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src))) in
+	let form = andList [ form2, form3, form4, form5, form6, form7] in
+	
+	let assgn1 = assign (Global "Dir.Pending") (Const True) in
+	let assgn2 = assign (Param "UniMsg.Cmd" src) (Const UNI_GetX) in
+	let assgn3 = assign (Param "UniMsg.proc" src) (Var (Global "Dir.HeadPtr")) in
+//	let form8 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const Home))) in
+//	let iteEOnFwdCmd = iteForm form8 (Const UNI_GetX) (Var (Global "FwdCmd")) in
+	//let assgn4 = assign (Global "FwdCmd") iteEOnFwdCmd in
+	//let assgn5 = assign (Global "PendReqSrc") (Const src) in
+	//let assgn6 = assign (Global "PendReqCmd") (Const UNI_GetX) in
+//	let assgn7 = assign (Global "Collecting") (Const False) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);//, assgn4, assgn5, assgn6, assgn7]);
+	
+	
+
+//ruleset src : NODE do
+//rule "NI_Local_GetX_PutX"
+//  src != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_GetX &
+//  Sta_UniMsg[src]_Proc = Home &
+//  !Sta_Dir-Pending &
+//  (Sta_Dir-Dirty -> Sta_Dir-local & Sta_Proc[Home]_CacheState = CACHE_E)
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  if (Sta_Dir-Dirty) then
+//    NxtSta_Dir-local := false;
+//    NxtSta_Dir-Dirty := true;
+//    NxtSta_Dir-HeadVld := true;
+//    NxtSta_Dir-HeadPtr := src;
+//    NxtSta_Dir-ShrVld := false;
+//    for p : NODE do
+//      NxtSta_Dir-ShrSet[p] := false;
+//      NxtSta_Dir-InvSet[p] := false;
+//    end;
+//    NxtSta_UniMsg[src]_Cmd := UNI_PutX;
+//    NxtSta_UniMsg[src]_Proc := Home;
+//    NxtSta_UniMsg[src]_Data := Sta_Proc[Home]_CacheData;
+//    NxtSta_Proc[Home]_CacheState := CACHE_I;
+//    undefine NxtSta_Proc[Home]_CacheData;
+//  elsif (Sta_Dir-HeadVld ->
+//         Sta_Dir-HeadPtr = src  &
+//         forall p : NODE do p != src -> !Sta_Dir-ShrSet[p] end) then
+//    NxtSta_Dir-local := false;
+//    NxtSta_Dir-Dirty := true;
+//    NxtSta_Dir-HeadVld := true;
+//    NxtSta_Dir-HeadPtr := src;
+//    NxtSta_Dir-ShrVld := false;
+//    for p : NODE do
+//      NxtSta_Dir-ShrSet[p] := false;
+//      NxtSta_Dir-InvSet[p] := false;
+//    end;
+//    NxtSta_UniMsg[src]_Cmd := UNI_PutX;
+//    NxtSta_UniMsg[src]_Proc := Home;
+//    NxtSta_UniMsg[src]_Data := Sta_MemData;
+//    NxtSta_Proc[Home]_CacheState := CACHE_I;
+//    undefine NxtSta_Proc[Home]_CacheData;
+//    if (Sta_Dir-local) then
+//      NxtSta_Proc[Home]_CacheState := CACHE_I;
+//      undefine NxtSta_Proc[Home]_CacheData;
+//      if (Sta_Proc[Home]_procCmd = NODE_Get) then
+//        NxtSta_Proc[Home]_InvMarked := true;
+//      end;
+//    end;
+//  else
+//    NxtSta_Dir-Pending := true;
+//    NxtSta_Dir-local := false;
+//    NxtSta_Dir-Dirty := true;
+//    NxtSta_Dir-HeadVld := true;
+//    NxtSta_Dir-HeadPtr := src;
+//    NxtSta_Dir-ShrVld := false;
+//    for p : NODE do
+//      NxtSta_Dir-ShrSet[p] := false;
+//      if ( p != Home & p != src &
+//           ( Sta_Dir-ShrVld & Sta_Dir-ShrSet[p] |
+//             Sta_Dir-HeadVld & Sta_Dir-HeadPtr = p ) ) then
+//        NxtSta_Dir-InvSet[p] := true;
+//        NxtSta_InvMsg[p]_Cmd := INV_Inv;
+//      else
+//        NxtSta_Dir-InvSet[p] := false;
+//        NxtSta_InvMsg[p]_Cmd := INV_None;
+//      end;
+//    end;
+//    NxtSta_UniMsg[src]_Cmd := UNI_PutX;
+//    NxtSta_UniMsg[src]_Proc := Home;
+//    NxtSta_UniMsg[src]_Data := Sta_MemData;
+//    if (Sta_Dir-local) then
+//      NxtSta_Proc[Home]_CacheState := CACHE_I;
+//      undefine NxtSta_Proc[Home]_CacheData;
+//      if (Sta_Proc[Home]_procCmd = NODE_Get) then
+//        NxtSta_Proc[Home]_InvMarked := true;
+//      end;
+//    end;
+//    NxtSta_PendReqSrc := src;
+//    NxtSta_PendReqCmd := UNI_GetX;
+//    NxtSta_Collecting := true;
+//    NxtSta_PrevData := Sta_CurrData;
+//    if (Sta_Dir-HeadPtr != src) then
+//      NxtSta_LastOtherInvAck := Sta_Dir-HeadPtr;
+//    else
+//      for p : NODE do
+//        if (p != src & Sta_Dir-ShrSet[p]) then NxtSta_LastOtherInvAck := p end;
+//      end;
+//    end;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+
+let NI_Local_GetX_PutX1   N src dummy1=
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+	let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const False)) in
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	let form8 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_Get)) in
+	let form = andList [ form2, form3, form4, form5, form6,form7,form8] in
+	
+	let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+	let assgn6s p = 
+		let assgn61 = assign (Param "Dir-ShrSet" p) (Const False) in
+		let assgn62 = assign (Param "Dir-InvSet" p) (Const False) in
+		parallel [assgn61, assgn62] in
+//	let assgn6 = parallel (map assgn6s (1 upto N)) in
+let assgn6=forallStatement N assgn6s then
+	let assgn7 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn8 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn9 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in
+	let assgn10 = assign (Param "CacheState" Home) (Const CACHE_I) in	
+	let assgn11 = assign (Param "InvMarked"  Home) (Const True) in
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5,  assgn51,  assgn52, assgn6, assgn7, assgn8, assgn10, assgn11]);     //assgn9, 
+
+
+let NI_Local_GetX_PutX2 N src   dummy1 =  
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+	let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const False)) in
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	let form8 = neg (eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_Get))) in
+	let form = andList [ form2, form3, form4, form5, form6,form7,form8] in
+	
+	let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+	let assgn6s p = 
+		let assgn61 = assign (Param "Dir-ShrSet" p) (Const False) in
+		let assgn62 = assign (Param "Dir-InvSet" p) (Const False) in
+		parallel [assgn61, assgn62] in
+	//let assgn6 = parallel (map assgn6s (1 upto N)) in
+let assgn6=forallStatement N assgn6s then
+	let assgn7 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn8 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn9 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in
+	let assgn10 = assign (Param "CacheState" Home) (Const CACHE_I) in	
+	let assgn11 = assign (Param "InvMarked"  Home) (Const True) in
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5,  assgn51,  assgn52, assgn6, assgn7, assgn8,  assgn10, assgn11]); 
+	
+let NI_Local_GetX_PutX3   N  src dummy1=  
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+	let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const False)) in
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) in
+	let form = andList [ form2, form3, form4, form5, form6,form7] in
+	
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+	let assgn6s p = 
+		let assgn61 = assign (Param "Dir-ShrSet" p) (Const False) in
+		let assgn62 = assign (Param "Dir-InvSet" p) (Const False) in
+		parallel [assgn61, assgn62] in
+	//let assgn6 = parallel (map assgn6s (1 upto N)) in
+   let assgn6=forallStatement N assgn6s then
+	let assgn7 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn8 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn9 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in
+	let assgn10 = assign (Param "CacheState" Home) (Const CACHE_I) in	 
+	guard form (parallel [assgn2, assgn3, assgn4, assgn5,  assgn51,  assgn52, assgn6, assgn7, assgn8,   assgn10]); 	
+
+
+let NI_Local_GetX_PutX4   N  src dummy1=  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in 
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	let form8 = eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_Get)) in
+	let form9 = eqn (left -> (Var (Param "Dir-ShrSet" Home))) (right -> (Const False)) in
+	let pform i = eqn (Var (Param "Dir-ShrSet"  i)) (Const False) then
+   // let form10= andList (map pform (1 upto N)) then
+  let form10=forallForm N pform then
+	let form = andList [ form2, form3, form4, form5, form7,form8,form9,form10] in
+	let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+	let assgn6s p = 
+		let assgn61 = assign (Param "Dir-ShrSet" p) (Const False) in
+		let assgn62 = assign (Param "Dir-InvSet" p) (Const False) in
+		parallel [assgn61, assgn62] in
+//	let assgn6 = parallel (map assgn6s (1 upto N)) in
+   let assgn6=forallStatement N assgn6s then
+	let assgn7 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn8 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn9 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in assgn9,
+	let assgn10 = assign (Param "CacheState" Home) (Const CACHE_I) in	
+
+	let assgn11 = assign (Param "InvMarked"  Home) (Const True) in 
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5,  assgn51,  assgn52, assgn6, assgn7, assgn8,  assgn10 ]); 
+
+
+let NI_Local_GetX_PutX5    N src dummy1 =  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+	let form6 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) in
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	let form8 =neg( eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_Get))) in
+	let form9 = eqn (left -> (Var (Param "Dir-ShrSet" Home))) (right -> (Const False)) in
+	let pform i = eqn (Var (Param "Dir-ShrSet"  i)) (Const False) then
+ //   let form10= andList (map pform (1 upto N)) then
+  let form10=forallForm N pform then
+	let form = andList [ form2, form3, form4, form5, form6,form7,form8,form9,form10] in
+	let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+	let assgn6s p = 
+		let assgn61 = assign (Param "Dir-ShrSet" p) (Const False) in
+		let assgn62 = assign (Param "Dir-InvSet" p) (Const False) in
+		parallel [assgn61, assgn62] in
+	//let assgn6 = parallel (map assgn6s (1 upto N)) in
+     let assgn6=forallStatement N assgn6s then
+	let assgn7 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn8 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn9 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in assgn9, 
+	let assgn10 = assign (Param "CacheState" Home) (Const CACHE_I) in
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4,  assgn5,  assgn51,  assgn52, assgn6, assgn7, assgn8, assgn10]); 	
+
+
+let NI_Local_GetX_PutX6   N src  dummy1=  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+	let form6 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) in
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) in
+	let form9 = eqn (left -> (Var (Param "Dir-ShrSet" Home))) (right -> (Const False)) in
+	let pform i = eqn (Var (Param "Dir-ShrSet"  i)) (Const False) then
+  //  let form10= andList (map pform (1 upto N)) then
+    let form10=forallForm N pform then
+	let form = andList [ form2, form3, form4, form5, form6,form7,form9,form10] in 
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+	let assgn6s p = 
+		let assgn61 = assign (Param "Dir-ShrSet" p) (Const False) in
+		let assgn62 = assign (Param "Dir-InvSet" p) (Const False) in
+		parallel [assgn61, assgn62] in
+	//let assgn6 = parallel (map assgn6s (1 upto N)) in
+     let assgn6=forallStatement N assgn6s then
+	let assgn7 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn8 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn9 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in assgn9,
+	let assgn10 = assign (Param "CacheState" Home) (Const CACHE_I) in
+	guard form (parallel [  assgn2, assgn3, assgn4,  assgn5,  assgn51,  assgn52, assgn6, assgn7, assgn8,  assgn10]); 	
+
+
+
+let NI_Local_GetX_PutX7    N src dummy1 =  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+	let form6 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src))) in
+	let form7 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	
+	let form8 =neg( eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_Get))) in
+	
+	let form = andList [ form2, form3, form4, form5, form6,form7,form8] in 
+
+    let assgn0 = assign (Global "Dir.Pending") (Const True) in
+    let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+	
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+    
+    let assgn6s p = assign (Param "Dir-ShrSet" p) (Const False) in
+          let assgn6=forallStatement N assgn6s then
+	 //let assgn6 = parallel (map assgn6s (1 upto N)) in
+	 let assgn7s p = 
+	   let form71=eqn (Const p) (Const src) then
+	   let form721=eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+	   let form722=eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+	   let form72=andList [form721, form722] then
+	   let form731=eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+	   let form732=eqn (Var (Global  "Dir.HeadPtr"  )) (Const p) then
+	   let form73=andList [form731, form732] then
+	   let exp=iteForm form71 (Const False)
+	   (iteForm form72 (Const True) 
+	   ((iteForm form73 (Const True ) (Const False) ))) then
+	   assign (Param "Dir-InvSet" p) exp in
+   //let assgn7 = parallel (map assgn7s (1 upto N)) in 
+   let assgn7=forallStatement N assgn7s then
+   let assgn8= assign (Param "InvMsg.Cmd" Home) (Const INV_None) in
+	 let assgn9s p = 
+	   let form91=eqn (Const p) (Const src) then
+	   let form921=eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+	   let form922=eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+	   let form92=andList [form921, form922] then
+	   let form931=eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+	   let form932=eqn (Var (Global  "Dir.HeadPtr"  )) (Const p) then
+	   let form93=andList [form931, form932] then
+	   let exp=iteForm form91 (Const INV_None)
+	   (iteForm form92 (Const INV_Inv) 
+	   (iteForm form93 (Const INV_Inv) (Const INV_None) )) then
+	   assign (Param "InvMsg.Cmd" p) exp in
+  // let assgn9 = parallel (map assgn9s (1 upto N)) in 
+    let assgn9=forallStatement N assgn9s then              
+		
+	let assgn10 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn11 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn12 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in assgn12,
+	let assgn13 = assign (Param "CacheState" Home) (Const CACHE_I) in
+	guard form (parallel [assgn0,assgn1, assgn2, assgn3, assgn4,  assgn5,  assgn51,  assgn52, assgn6, assgn7,
+	 assgn8, assgn9, assgn10,assgn11,assgn13]); 	
+
+//start here
+let NI_Local_GetX_PutX8 N src   dst =  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+    let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) in
+	let form7 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) in
+    let form8 = eqn (left -> (Var (Param "Dir-ShrSet" dst))) (right -> (Const True)) in
+	let form9 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	
+	let form10 = neg( eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_Get))) in
+	
+	let form = andList [ form2, form3, form4, form5, form6, form7, form8, form9, form10] in 
+
+    let assgn0 = assign (Global "Dir.Pending") (Const True) in
+    let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+	
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+    
+    let assgn6s p = assign (Param "Dir-ShrSet" p) (Const False) in
+        
+//	let assgn6 = parallel (map assgn6s (1 upto N)) in
+   let assgn6=forallStatement N assgn6s then                    
+	let assgn7s p = 
+        let form71 = eqn (Const p) (Const src) then
+        let form721 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form722 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form72 = andList [form721, form722] then
+        let form731 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form732 = eqn (Var (Global  "Dir.HeadPtr" )) (Const p) then
+        let form73 = andList [form731, form732] then
+        let exp = iteForm form71 (Const False)
+        (iteForm form72 (Const True) 
+        ((iteForm form73 (Const True ) (Const False) ))) then
+        assign (Param "Dir-InvSet" p) exp in
+  //  let assgn7 = parallel (map assgn7s (1 upto N)) in 
+        let assgn7=forallStatement N assgn7s then     
+    let assgn8= assign (Param "InvMsg.Cmd" Home) (Const INV_None) in
+	let assgn9s p = 
+        let form91 = eqn (Const p) (Const src) then
+        let form921 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form922 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form92 = andList [form921, form922] then
+        let form931 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form932 = eqn (Var (Global  "Dir.HeadPtr"  )) (Const p) then
+        let form93 = andList [form931, form932] then
+        let exp = iteForm form91 (Const INV_None)
+        (iteForm form92 (Const INV_Inv) 
+        (iteForm form93 (Const INV_Inv) (Const INV_None) )) then
+        assign (Param "InvMsg.Cmd" p) exp in
+    //let assgn9 = parallel (map assgn9s (1 upto N)) in 
+        let assgn9=forallStatement N assgn9s then     
+		
+	let assgn10 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn11 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn12 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in assgn12,
+	let assgn13 = assign (Param "CacheState" Home) (Const CACHE_I) in
+	guard form (parallel [assgn0,assgn1, assgn2, assgn3,  assgn4,  assgn5,  assgn51,  assgn52, assgn6, assgn7,
+	assgn8, assgn9, assgn10,assgn11,assgn13]); 	
+
+let NI_Local_GetX_PutX8_home   N   src dummy1=  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+    let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) in
+	let form7 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) in
+    let form8 = eqn (left -> (Var (Param "Dir-ShrSet" Home))) (right -> (Const True)) in
+	let form9 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	
+	let form10 = neg( eqn (left -> (Var (Param "procCmd" Home))) (right -> (Const NODE_Get))) in
+	
+	let form = andList [ form2, form3, form4, form5, form6, form7, form8, form9, form10] in 
+
+    let assgn0 = assign (Global "Dir.Pending") (Const True) in
+    let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+	
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+    
+    let assgn6s p = assign (Param "Dir-ShrSet" p) (Const False) in
+        
+//	let assgn6 = parallel (map assgn6s (1 upto N)) in
+ let assgn6=forallStatement N assgn6s then     
+	let assgn7s p = 
+        let form71 = eqn (Const p) (Const src) then
+        let form721 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form722 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form72 = andList [form721, form722] then
+        let form731 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form732 = eqn (Var (Global  "Dir.HeadPtr" )) (Const p) then
+        let form73 = andList [form731, form732] then
+        let exp = iteForm form71 (Const False)
+        (iteForm form72 (Const True) 
+        ((iteForm form73 (Const True ) (Const False) ))) then
+        assign (Param "Dir-InvSet" p) exp in
+   // let assgn7 = parallel (map assgn7s (1 upto N)) in 
+    let assgn7=forallStatement N assgn7s then     
+    let assgn8= assign (Param "InvMsg.Cmd" Home) (Const INV_None) in
+	let assgn9s p = 
+        let form91 = eqn (Const p) (Const src) then
+        let form921 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form922 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form92 = andList [form921, form922] then
+        let form931 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form932 = eqn (Var (Global  "Dir.HeadPtr"  )) (Const p) then
+        let form93 = andList [form931, form932] then
+        let exp = iteForm form91 (Const INV_None)
+        (iteForm form92 (Const INV_Inv) 
+        (iteForm form93 (Const INV_Inv) (Const INV_None) )) then
+        assign (Param "InvMsg.Cmd" p) exp in
+   // let assgn9 = parallel (map assgn9s (1 upto N)) in 
+       let assgn9=forallStatement N assgn9s then     
+		
+	let assgn10 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn11 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn12 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in
+	let assgn13 = assign (Param "CacheState" Home) (Const CACHE_I) in
+	guard form (parallel [assgn0,assgn1, assgn2, assgn3,  assgn4, assgn5,  assgn51,  assgn52, assgn6, assgn7,
+	assgn8, assgn9, assgn10,assgn11,assgn13]); 	//assgn12,
+    
+
+let NI_Local_GetX_PutX9   N src dummy=  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+    let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) in
+	let form7 = neg (eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src))) in
+    
+	let form8 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) in
+	
+	
+	let form = andList [ form2, form3, form4, form5, form6, form7, form8] in 
+
+    let assgn0 = assign (Global "Dir.Pending") (Const True) in
+    let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+	
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+    
+    let assgn6s p = assign (Param "Dir-ShrSet" p) (Const False) in
+        
+    let assgn6 = forallStatement N assgn6s then       
+	let assgn7s p = 
+        let form71 = eqn (Const p) (Const src) then
+        let form721 = eqn (Var  (Global "Dir.ShrVld" )) (Const True) then
+        let form722 = eqn (Var  (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form72 = andList [form721, form722] then
+        let form731 = eqn (Var  (Global "Dir.HeadVld" )) (Const True) then
+        let form732 = eqn (Var (Global  "Dir.HeadPtr" )) (Const p) then
+        let form73 = andList [form731, form732] then
+        let exp = iteForm form71 (Const False)
+        (iteForm form72 (Const True) 
+        (iteForm form73 (Const True ) (Const False) )) then
+        assign (Param "Dir-InvSet" p) exp in
+    let assgn7 = forallStatement N assgn7s then   
+    let assgn8 = assign (Param "InvMsg.Cmd" Home) (Const INV_None) in
+	let assgn9s p = 
+        let form91 = eqn (Const p) (Const src) then
+        let form921 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form922 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form92 = andList [form921, form922] then
+        let form931 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form932 = eqn (Var (Global  "Dir.HeadPtr"  )) (Const p) then
+        let form93 = andList [form931, form932] then
+        let exp = iteForm form91 (Const INV_None)
+        (iteForm form92 (Const INV_Inv) 
+        (iteForm form93 (Const INV_Inv) (Const INV_None) )) then
+        assign (Param "InvMsg.Cmd" p) exp in
+    let assgn9=forallStatement N assgn9s then      
+		
+	let assgn10 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn11 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn12 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) inassgn12,
+//  let assgn13 = assign (Global "Collecting") (Const True) in
+//  let assgn14 = assign (Global "PrevData") (Var (Global "CurrData")) in , assgn14
+	guard form (parallel [assgn0,assgn1, assgn2, assgn3, assgn4,  assgn5,  assgn51,  assgn52, assgn6, assgn7,
+	assgn8, assgn9, assgn10,assgn11]); 	    
+    
+    
+let NI_Local_GetX_PutX10    N src dst =  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+    let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) in
+	let form7 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) in
+    let form8 = eqn (left -> (Var (Param "Dir-ShrSet" dst))) (right -> (Const True)) in
+	let form9 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) in
+	
+	
+	let form = andList [ form2, form3, form4, form5, form6, form7, form8, form9] in 
+
+    let assgn0 = assign (Global "Dir.Pending") (Const True) in
+    let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+	
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+    
+    let assgn6s p = assign (Param "Dir-ShrSet" p) (Const False) in
+        
+//	let assgn6 = parallel (map assgn6s (1 upto N)) in
+     let assgn6=forallStatement N assgn6s then       
+	let assgn7s p = 
+        let form71 = eqn (Const p) (Const src) then
+        let form721 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form722 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form72 = andList [form721, form722] then
+        let form731 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form732 = eqn (Var (Global  "Dir.HeadPtr" )) (Const p) then
+        let form73 = andList [form731, form732] then
+        let exp = iteForm form71 (Const False)
+        (iteForm form72 (Const True) 
+        ((iteForm form73 (Const True ) (Const False) ))) then
+        assign (Param "Dir-InvSet" p) exp in
+  //  let assgn7 = parallel (map assgn7s (1 upto N)) in 
+       let assgn7=forallStatement N assgn7s then    
+    let assgn8= assign (Param "InvMsg.Cmd" Home) (Const INV_None) in
+	let assgn9s p = 
+        let form91 = eqn (Const p) (Const src) then
+        let form921 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form922 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form92 = andList [form921, form922] then
+        let form931 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form932 = eqn (Var (Global  "Dir.HeadPtr"  )) (Const p) then
+        let form93 = andList [form931, form932] then
+        let exp = iteForm form91 (Const INV_None)
+        (iteForm form92 (Const INV_Inv) 
+        (iteForm form93 (Const INV_Inv) (Const INV_None) )) then
+        assign (Param "InvMsg.Cmd" p) exp in
+    //let assgn9 = parallel (map assgn9s (1 upto N)) in 
+       let assgn9=forallStatement N assgn9s then    
+		
+	let assgn10 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn11 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn12 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in assgn12
+//  let assgn13 = assign (Global "Collecting") (Const True) in
+//  let assgn14 = assign (Global "PrevData") (Var (Global "CurrData")) in , assgn14
+	guard form (parallel [assgn0,assgn1, assgn2, assgn3,   assgn4, assgn5,  assgn51,  assgn52, assgn6, assgn7,
+	assgn8, assgn9, assgn10,assgn11]); 	
+
+    
+let NI_Local_GetX_PutX10_home N src  dummy=  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+    let form6 = eqn (left -> (Var (Global "Dir.HeadVld"))) (right -> (Const True)) in
+	let form7 = eqn (left -> (Var (Global "Dir.HeadPtr"))) (right -> (Const src)) in
+    let form8 = eqn (left -> (Var (Param "Dir-ShrSet" Home))) (right -> (Const True)) in
+	let form9 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const False)) in
+	
+	
+	let form = andList [ form2, form3, form4, form5, form6, form7, form8, form9] in 
+
+    let assgn0 = assign (Global "Dir.Pending") (Const True) in
+    let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+	
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+    
+    let assgn6s p = assign (Param "Dir-ShrSet" p) (Const False) in
+        
+	//let assgn6 = parallel (map assgn6s (1 upto N)) in
+  let assgn6=forallStatement N assgn6s then    
+	let assgn7s p = 
+        let form71 = eqn (Const p) (Const src) then
+        let form721 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form722 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form72 = andList [form721, form722] then
+        let form731 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form732 = eqn (Var (Global  "Dir.HeadPtr" )) (Const p) then
+        let form73 = andList [form731, form732] then
+        let exp = iteForm form71 (Const False)
+        (iteForm form72 (Const True) 
+        (iteForm form73 (Const True ) (Const False) )) then
+        assign (Param "Dir-InvSet" p) exp in
+    //let assgn7 = parallel (map assgn7s (1 upto N)) in 
+         let assgn7=forallStatement N assgn7s then    
+    let assgn8= assign (Param "InvMsg.Cmd" Home) (Const INV_None) in
+	let assgn9s p = 
+        let form91 = eqn (Const p) (Const src) then
+        let form921 = eqn (Var (Global "Dir.ShrVld" )) (Const True) then
+        let form922 = eqn (Var (Param  "Dir-ShrSet"  p)) (Const True) then
+        let form92 = andList [form921, form922] then
+        let form931 = eqn (Var (Global "Dir.HeadVld" )) (Const True) then
+        let form932 = eqn (Var (Global  "Dir.HeadPtr"  )) (Const p) then
+        let form93 = andList [form931, form932] then
+        let exp = iteForm form91 (Const INV_None)
+        (iteForm form92 (Const INV_Inv) 
+        (iteForm form93 (Const INV_Inv) (Const INV_None) )) then
+        assign (Param "InvMsg.Cmd" p) exp in
+  //  let assgn9 = parallel (map assgn9s (1 upto N)) in 
+     let assgn9=forallStatement N assgn9s then    
+   
+		
+	let assgn10 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn11 = assign (Param "UniMsg.proc" src) (Const Home) in
+//	let assgn12 = assign (Param "UniMsg.Data" src) (Var (Global "MemData" )) in assgn12,
+//  let assgn13 = assign (Global "Collecting") (Const True) in
+//  let assgn14 = assign (Global "PrevData") (Var (Global "CurrData")) in , assgn14
+	guard form (parallel [assgn0,assgn1, assgn2, assgn3, assgn4,   assgn5,  assgn51,  assgn52, assgn6, assgn7,
+	assgn8, assgn9, assgn10,assgn11]); 	
+    
+
+let NI_Local_GetX_PutX11   N  src dummy=  
+	
+	
+	let form2 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const Home)) in
+	let form4 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const False)) in
+	let form5 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) in
+	let form6 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+    let form7 = eqn (left -> (Var (Param "CacheState" Home))) (right -> (Const CACHE_E)) in
+	
+	
+	let form = andList [ form2, form3, form4, form5, form6, form7] in 
+
+    let assgn1 = assign (Global "Dir.local") (Const False) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const True) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const True) in 
+	let assgn4 = assign (Global "Dir.HeadPtr") (Const src) in
+	let assgn5 = assign (Global "Dir.ShrVld") (Const False) in
+	
+    let assgn51 = assign (Param "Dir-ShrSet" Home) (Const False) in
+    let assgn52 = assign (Param "Dir-InvSet" Home) (Const False) in
+    
+    let assgn6s p = assign (Param "Dir-ShrSet" p) (Const False) in       
+    let assgn6 = forallStatement N assgn6s then    
+
+	let assgn7s p = assign (Param "Dir-InvSet" p) (Const False) in
+    let assgn7 = forallStatement N assgn7s then   
+
+	let assgn10 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn11 = assign (Param "UniMsg.proc" src) (Const Home) in
+	//let assgn12 = assign (Param "UniMsg.Data" src) (Var (Param "CacheData" Home )) in
+	let assgn13 = assign (Param "CacheState" Home) (Const CACHE_I) in
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4,  assgn5,  assgn51,  assgn52, assgn6, assgn7,
+	assgn10,assgn11,assgn13]); 	//,assgn12
+    
+    
+    
+    
+    
+//ruleset src : NODE; dst : NODE do
+//rule "NI_Remote_GetX_Nak"
+//  src != dst & dst != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_GetX &
+//  Sta_UniMsg[src]_Proc = dst &
+//  Sta_Proc[dst]_CacheState != CACHE_E
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[src]_Cmd := UNI_Nak;
+//  NxtSta_UniMsg[src]_Proc := dst;
+//  undefine NxtSta_UniMsg[src]_Data;
+//  NxtSta_NakcMsg_Cmd := NAKC_Nakc;
+//  NxtSta_FwdCmd := UNI_None;
+//  NxtSta_FwdSrc := src;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Remote_GetX_Nak_Home   dst  dummy= 
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" Home))) (right -> (Const UNI_GetX)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" Home))) (right -> (Const dst)) in
+	let form5 = neg (eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E))) in
+	let form = andList [form3, form4, form5] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" Home) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" Home) (Const dst) in
+	let assgn3 = assign (Global "NakcMsg.Cmd") (Const NAKC_Nakc) in
+	//let assgn4 = assign (Global "FwdCmd") (Const UNI_None) in
+	//let assgn5 = assign (Global "FwdSrc") (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);//, assgn4, assgn5]);
+
+let NI_Remote_GetX_Nak src dst =
+	let form1 = neg (eqn (left -> (Const src)) (right -> (Const dst))) in 
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const dst)) in
+	let form5 = neg (eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E))) in
+	let form = andList [form1,  form3, form4, form5] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" src) (Const UNI_Nak) in
+	let assgn2 = assign (Param "UniMsg.proc" src) (Const dst) in
+	let assgn3 = assign (Global "NakcMsg.Cmd") (Const NAKC_Nakc) in
+//	let assgn4 = assign (Global "FwdCmd") (Const UNI_None) in
+	//let assgn5 = assign (Global "FwdSrc") (Const src) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);//, assgn4, assgn5]);
+	
+//ruleset src : NODE; dst : NODE do
+//rule "NI_Remote_GetX_PutX"
+//  src != dst & dst != Home &
+//  Sta_UniMsg[src]_Cmd = UNI_GetX &
+//  Sta_UniMsg[src]_Proc = dst &
+//  Sta_Proc[dst]_CacheState = CACHE_E
+//__  !Sta_Proc[src]_InvMarked
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_Proc[dst]_CacheState := CACHE_I;
+//  undefine NxtSta_Proc[dst]_CacheData;
+//  NxtSta_UniMsg[src]_Cmd := UNI_PutX;
+//  NxtSta_UniMsg[src]_Proc := dst;
+//  NxtSta_UniMsg[src]_Data := Sta_Proc[dst]_CacheData;
+//  if (src != Home) then
+//    NxtSta_ShWbMsg_Cmd := SHWB_FAck;
+//    NxtSta_ShWbMsg_Proc := src;
+//    undefine NxtSta_ShWbMsg_Data;
+//  end;
+//  NxtSta_FwdCmd := UNI_None;
+//  NxtSta_FwdSrc := src;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Remote_GetX_PutX_Home  dst dummy = 
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" Home))) (right -> (Const UNI_GetX)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" Home))) (right -> (Const dst)) in
+	let form5 = eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E)) in
+	let form = andList [form3, form4, form5] in
+	
+	let assgn1 = assign (Param "CacheState" dst) (Const CACHE_I) in
+	let assgn2 = assign (Param "UniMsg.Cmd" Home) (Const UNI_PutX) in
+	let assgn3 = assign (Param "UniMsg.proc" Home) (Const dst) in
+	//let assgn4 = assign (Param "UniMsg.Data" Home) (Var (Param "CacheData" dst)) in
+	//let form6 = neg (eqn (left -> (Const Home)) (right -> (Const Home))) in
+	//let iteEOnCmd = iteForm form6 (Const SHWB_FAck) (Var (Global "ShWbMsg.Cmd")) in
+	//let iteEOnProc = iteForm form6 (Const Home) (Var (Global "ShWbMsg.proc")) in
+	//let assgn5 = assign (Global "ShWbMsg.Cmd") iteEOnCmd in
+	//let assgn6 = assign (Global "ShWbMsg.proc") iteEOnProc in
+//	let assgn7 = assign (Global "FwdCmd") (Const UNI_None) in
+//	let assgn8 = assign (Global "FwdSrc") (Const Home) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);//, , assgn4 assgn7, assgn8]);   
+
+
+let NI_Remote_GetX_PutX src dst =
+	let form1 = neg (eqn (left -> (Const src)) (right -> (Const dst))) in
+	let form3 = eqn (left -> (Var (Param "UniMsg.Cmd" src))) (right -> (Const UNI_GetX)) in
+	let form4 = eqn (left -> (Var (Param "UniMsg.proc" src))) (right -> (Const dst)) in
+	let form5 = eqn (left -> (Var (Param "CacheState" dst))) (right -> (Const CACHE_E)) in
+	let form = andList [form1, form3, form4, form5] in
+	
+	let assgn1 = assign (Param "CacheState" dst) (Const CACHE_I) in
+	let assgn2 = assign (Param "UniMsg.Cmd" src) (Const UNI_PutX) in
+	let assgn3 = assign (Param "UniMsg.proc" src) (Const dst) in
+	//let assgn4 = assign (Param "UniMsg.Data" src) (Var (Param "CacheData" dst)) in
+	let form6 = neg (eqn (left -> (Const src)) (right -> (Const Home))) in
+//	let iteEOnCmd = iteForm form6 (Const SHWB_FAck) (Var (Global "ShWbMsg.Cmd")) in
+//	let iteEOnProc = iteForm form6 (Const src) (Var (Global "ShWbMsg.proc")) in
+	let assgn5 = assign (Global "ShWbMsg.Cmd") (Const SHWB_FAck) in
+	let assgn6 = assign (Global "ShWbMsg.proc") (Const src) in
+//	let assgn7 = assign (Global "FwdCmd") (Const UNI_None) in
+//	let assgn8 = assign (Global "FwdSrc") (Const src) in
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn5, assgn6]);// assgn4,, assgn7, assgn8]);
+
+
+	
+//rule "NI_Local_Put"
+//  Sta_UniMsg[Home]_Cmd = UNI_Put
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[Home]_Cmd := UNI_None;
+//  undefine NxtSta_UniMsg[Home]_Proc;
+//  undefine NxtSta_UniMsg[Home]_Data;
+//  NxtSta_Dir-Pending := false;
+//  NxtSta_Dir-Dirty := false;
+//  NxtSta_Dir-local := true;
+//  NxtSta_MemData := Sta_UniMsg[Home]_Data;
+//  NxtSta_Proc[Home]_procCmd := NODE_None;
+//  if (Sta_Proc[Home]_InvMarked) then
+//    NxtSta_Proc[Home]_InvMarked := false;
+//    NxtSta_Proc[Home]_CacheState := CACHE_I;
+//    undefine NxtSta_Proc[Home]_CacheData;
+//  else
+//    NxtSta_Proc[Home]_CacheState := CACHE_S;
+//    NxtSta_Proc[Home]_CacheData := Sta_UniMsg[Home]_Data;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let NI_Local_Put  dummy1 dummy2 = 
+	let form1 = eqn (left -> (Var (Param "UniMsg.Cmd"  Home))) (right -> (Const UNI_Put)) in
+	
+	
+	let assgn1 = assign (Param "UniMsg.Cmd"  Home) (Const UNI_None) in
+	let assgn2 = assign (Global "Dir.Pending") (Const False) in
+	let assgn3 = assign (Global "Dir.Dirty") (Const False) in
+	let assgn4 = assign (Global "Dir.local") (Const True) in
+	//let assgn5 = assign (Global "MemData") (Var (Param "UniMsg.Data"  Home)) in
+	let assgn6 = assign (Param "procCmd"  Home) (Const NODE_None) in
+	let form2 = eqn (left -> (Var (Param "InvMarked"  Home))) (right -> (Const True)) in
+	let iteEOnInvMarked = iteForm form2 (Const False) (Var (Param "InvMarked"  Home)) in
+	let iteEOnCacheState = iteForm form2 (Const CACHE_I) (Const CACHE_S) in
+	//let iteEOnCacheData = iteForm form2 (Var (Param "CacheData"  Home)) (Var (Param "UniMsg.Data"  Home)) in
+	let assgn7 = assign (Param "InvMarked"  Home) iteEOnInvMarked in
+	let assgn8 = assign (Param "CacheState"  Home) iteEOnCacheState in
+//	let assgn9 = assign (Param "CacheData"  Home) iteEOnCacheData in
+	
+	guard form1 (parallel [assgn1, assgn2, assgn3, assgn4,  assgn6, assgn7, assgn8]);
+	
+//ruleset dst : NODE do
+//rule "NI_Remote_Put"
+//  dst != Home &
+//  Sta_UniMsg[dst]_Cmd = UNI_Put
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[dst]_Cmd := UNI_None;
+//  undefine NxtSta_UniMsg[dst]_Proc;
+//  undefine NxtSta_UniMsg[dst]_Data;
+//  NxtSta_Proc[dst]_procCmd := NODE_None;
+//  if (Sta_Proc[dst]_InvMarked) then
+//    NxtSta_Proc[dst]_InvMarked := false;
+//    NxtSta_Proc[dst]_CacheState := CACHE_I;
+//    undefine NxtSta_Proc[dst]_CacheData;
+//  else
+//    NxtSta_Proc[dst]_CacheState := CACHE_S;
+//    NxtSta_Proc[dst]_CacheData := Sta_UniMsg[dst]_Data;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+
+
+
+let NI_Remote_Put dst dummy=
+//	let form0 = eqn (left -> (Const Home)) (right -> (Const dst)) in
+	let form1 = eqn (left -> (Var (Param "UniMsg.Cmd" dst))) (right -> (Const UNI_Put)) in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" dst) (Const UNI_None) in
+	let assgn2 = assign (Param "procCmd" dst) (Const NODE_None) in
+	let form2 = eqn (left -> (Var (Param "InvMarked" dst))) (right -> (Const True)) in
+	let iteEOnInvMarked = iteForm form2 (Const False) (Var (Param "InvMarked" dst)) in
+	let iteEOnCacheState = iteForm form2 (Const CACHE_I) (Const CACHE_S) in
+	//let iteEOnCacheData = iteForm form2 (Var (Param "CacheData" dst)) (Var (Param "UniMsg.Data" dst)) in
+	let assgn3 = assign (Param "InvMarked" dst) iteEOnInvMarked in
+	let assgn4 = assign (Param "CacheState" dst) iteEOnCacheState in
+//	let assgn5 = assign (Param "CacheData" dst) iteEOnCacheData in , assgn5
+	
+	guard form1 (parallel [assgn1, assgn2, assgn3, assgn4]);
+	
+//rule "NI_Local_PutXAcksDone"
+//  Sta_UniMsg[Home]_Cmd = UNI_PutX
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[Home]_Cmd := UNI_None;
+//  undefine NxtSta_UniMsg[Home]_Proc;
+//  undefine NxtSta_UniMsg[Home]_Data;
+//  NxtSta_Dir-Pending := false;
+//  NxtSta_Dir-local := true;
+//  NxtSta_Dir-HeadVld := false;
+//  undefine NxtSta_Dir-HeadPtr;
+//  NxtSta_Proc[Home]_procCmd := NODE_None;
+//  NxtSta_Proc[Home]_InvMarked := false;
+//  NxtSta_Proc[Home]_CacheState := CACHE_E;
+//  NxtSta_Proc[Home]_CacheData := Sta_UniMsg[Home]_Data;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+   
+let NI_Local_PutXAcksDone dummy1 dummy2 =
+	//let form0 = eqn (left -> (Const Home)) (right -> (Const  Home)) in
+	let form1 = eqn (left -> (Var (Param "UniMsg.Cmd"  Home))) (right -> (Const UNI_PutX)) in
+	//let form = andList [form0, form1] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd"  Home) (Const UNI_None) in
+	let assgn2 = assign (Global "Dir.Pending") (Const False) in
+	let assgn3 = assign (Global "Dir.local") (Const True) in
+	let assgn4 = assign (Global "Dir.HeadVld") (Const False) in
+	let assgn5 = assign (Param "procCmd"  Home) (Const NODE_None) in
+	let assgn6 = assign (Param "InvMarked"  Home) (Const False) in
+	let assgn7 = assign (Param "CacheState"  Home) (Const CACHE_E) in
+//	let assgn8 = assign (Param "CacheData"  Home) (Var (Param "UniMsg.Data"  Home)) in ,assgn8
+	
+	guard form1 (parallel [assgn1, assgn2, assgn3, assgn4, assgn5, assgn6, assgn7 ]);
+	
+//ruleset dst : NODE do
+//rule "NI_Remote_PutX"
+//  dst != Home &
+//  Sta_UniMsg[dst]_Cmd = UNI_PutX &
+//  Sta_Proc[dst]_procCmd = NODE_GetX
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_UniMsg[dst]_Cmd := UNI_None;
+//  undefine NxtSta_UniMsg[dst]_Proc;
+//  undefine NxtSta_UniMsg[dst]_Data;
+//  NxtSta_Proc[dst]_procCmd := NODE_None;
+//  NxtSta_Proc[dst]_InvMarked := false;
+//  NxtSta_Proc[dst]_CacheState := CACHE_E;
+//  NxtSta_Proc[dst]_CacheData := Sta_UniMsg[dst]_Data;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Remote_PutX dst dummy=
+	 
+	let form1 = eqn (left -> (Var (Param "UniMsg.Cmd" dst))) (right -> (Const UNI_PutX)) in
+	let form2 = eqn (left -> (Var (Param "procCmd" dst))) (right -> (Const NODE_GetX)) in
+	let form = andList [ form1, form2] in
+	
+	let assgn1 = assign (Param "UniMsg.Cmd" dst) (Const UNI_None) in
+	let assgn2 = assign (Param "procCmd" dst) (Const NODE_None) in
+	let assgn3 = assign (Param "InvMarked" dst) (Const False) in
+	let assgn4 = assign (Param "CacheState" dst) (Const CACHE_E) in
+//	let assgn5 = assign (Param "CacheData" dst) (Var (Param "UniMsg.Data" dst)) in , assgn5
+
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4]);
+
+
+
+
+//ruleset dst : NODE do
+//rule "NI_Inv"
+//  dst != Home &
+//  Sta_InvMsg[dst]_Cmd = INV_Inv
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_InvMsg[dst]_Cmd := INV_InvAck;
+//  NxtSta_Proc[dst]_CacheState := CACHE_I;
+//  undefine NxtSta_Proc[dst]_CacheData;
+//  if (Sta_Proc[dst]_procCmd = NODE_Get) then
+//    NxtSta_Proc[dst]_InvMarked := true;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+let NI_Inv dst dummy=
+	
+	let form2 = eqn (left -> (Var (Param "InvMsg.Cmd" dst))) (right -> (Const INV_Inv)) in
+	//let form = andList [ form2] in
+	
+	let assgn1 = assign (Param "InvMsg.Cmd" dst) (Const INV_InvAck) in
+	let assgn2 = assign (Param "CacheState" dst) (Const CACHE_I) in
+	let form3 = eqn (left -> (Var (Param "procCmd" dst))) (right -> (Const NODE_Get)) in
+	let iteEOnInvMarked = iteForm form3 (Const True) (Var (Param "InvMarked" dst)) in
+	let assgn3 = assign (Param "InvMarked" dst) iteEOnInvMarked in
+	
+	guard form2 (parallel [assgn1, assgn2, assgn3]);
+
+
+	
+//ruleset src : NODE do
+//rule "NI_InvAck"
+//  src != Home &
+//  Sta_InvMsg[src]_Cmd = INV_InvAck &
+//  Sta_Dir-Pending & Sta_Dir-InvSet[src]  
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_InvMsg[src]_Cmd := INV_None;
+//  NxtSta_Dir-InvSet[src] := false;
+//  if (exists p : NODE do p != src & Sta_Dir-InvSet[p] end) then
+//    NxtSta_LastInvAck := src;
+//    for p : NODE do
+//      if (p != src & Sta_Dir-InvSet[p]) then
+//        NxtSta_LastOtherInvAck := p;
+//      end;
+//    end;
+//  else
+//    NxtSta_Dir-Pending := false;
+//    if (Sta_Dir-local & !Sta_Dir-Dirty) then
+//      NxtSta_Dir-local := false;
+//    end;
+//    NxtSta_Collecting := false;
+//    NxtSta_LastInvAck := src;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+//src is in [1__4]; 
+
+
+
+
+let NI_InvAck_1 src pp=
+	let form1 = neg (eqn (left -> (Const src)) (right -> (Const pp))) then
+	let form2 = eqn (left -> (Var (Param "InvMsg.Cmd" src))) (right -> (Const INV_InvAck)) then
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const True)) then
+	let form4 = eqn (left -> (Var (Param "Dir-InvSet" src))) (right -> (Const True)) then
+	let form5 = eqn (left -> (Var (Param "Dir-InvSet" pp))) (right -> (Const True)) then
+	let form=andList [form1,form2,form3, form4,form5] then
+	
+	let assign1 = assign (Param "InvMsg.Cmd" src) (Const INV_None) then  
+	let assign2 = assign (Param "Dir-InvSet" src) (Const False) then  
+	// let assign4 = assign (Global "LastInvAck") (Const src) then
+
+	// let assign5   = assign (Global "LastOtherInvAck") (Const pp) then
+	
+	
+	guard form (parallel ([assign1, assign2])); //assign4,assign5]));
+
+
+
+let NI_InvAck_1_Home src dummy =
+	//let form1 = neg (eqn (left -> (Const src)) (right -> (Const Home))) then
+	let form2 = eqn (left -> (Var (Param "InvMsg.Cmd" src))) (right -> (Const INV_InvAck)) then
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const True)) then
+	let form4 = eqn (left -> (Var (Param "Dir-InvSet" src))) (right -> (Const True)) then	
+	let form5 = eqn (left -> (Var (Param "Dir-InvSet" Home))) (right -> (Const True)) then
+	let form=andList [form2,form3, form4,form5] then
+	
+	let assign1 = assign (Param "InvMsg.Cmd" src) (Const INV_None) then  
+	let assign2 = assign (Param "Dir-InvSet" src) (Const False) then  
+	//let assign4 = assign (Global "LastInvAck") (Const src) then
+	//let iteExp i = iteForm (pform  Home) (Const  Home) (Var (Global "LastOtherInvAck")) then
+	//let assign5   = assign (Global "LastOtherInvAck") (Const Home) then
+	//let assign3s = map assign3 (1 upto N) then
+	
+	guard form (parallel ([assign1, assign2])); // assign4,assign5]));
+
+let NI_InvAck_2  N src dummy= 
+	//let form1 = neg (eqn (left -> (Const src)) (right -> (Const Home))) then
+	let form2 = eqn (left -> (Var (Param "InvMsg.Cmd" src))) (right -> (Const INV_InvAck)) then
+	let form3 = eqn (left -> (Var (Global "Dir.Pending"))) (right -> (Const True)) then
+	let form4 = eqn (left -> (Var (Param "Dir-InvSet" src))) (right -> (Const True)) then
+	let pform i =
+	   let eq1 = neg (eqn (Const  i) (Const src)) then
+	   let eq2 = eqn (Var (Param "Dir-InvSet"  Home)) (Const False) then
+	   andList [eq1,eq2] then
+	//let form1 =   (andList (map pform (1 upto N))) then
+   let form1=forallForm N pform then
+	let form = andList [form1,form2,form3, form4  ] then
+	
+	let assgn1 = assign (Global "Dir.Pending") (Const False) in
+	let form5 = eqn (left -> (Var (Global "Dir.local"))) (right -> (Const True)) in
+	let form6 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const False)) in
+	let form7 = andList [form5, form6] in
+	let iteEOnLocal = iteForm form7 (Const False) (Var (Global "Dir.local")) in
+	let assgn2 = assign (Global "Dir.local") iteEOnLocal in
+//	let assgn3 = assign (Global "Collecting") (Const False) in
+//	let assgn4 = assign (Global "LastInvAck") (Const src) in
+	
+	guard form (parallel [assgn1, assgn2]);//, assgn3, assgn4]);
+
+//rule "NI_Wb"
+//  Sta_WbMsg_Cmd = WB_Wb
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_WbMsg_Cmd := WB_None;
+//  undefine NxtSta_WbMsg_Proc;
+//  undefine NxtSta_WbMsg_Data;
+//  NxtSta_Dir-Dirty := false;
+//  NxtSta_Dir-HeadVld := false;
+//  undefine NxtSta_Dir-HeadPtr;
+//  NxtSta_MemData := Sta_WbMsg_Data;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+ 
+
+      
+let NI_Wb dummy1 dummy2 = 
+	let form = eqn (left -> (Var (Global "WbMsg.Cmd"))) (right -> (Const WB_Wb)) in
+	let assgn1 = assign (Global "WbMsg.Cmd") (Const WB_None) in
+	let assgn2 = assign (Global "Dir.Dirty") (Const False) in
+	let assgn3 = assign (Global "Dir.HeadVld") (Const False) in
+//	let assgn4 = assign (Global "MemData") (Var (Global "WbMsg.Data")) in , assgn4
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);
+	
+//rule "NI_FAck"
+//  Sta_ShWbMsg_Cmd = SHWB_FAck
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_ShWbMsg_Cmd := SHWB_None;
+//  undefine NxtSta_ShWbMsg_Proc;
+//  undefine NxtSta_ShWbMsg_Data;
+//  NxtSta_Dir-Pending := false;
+//  if (Sta_Dir-Dirty) then
+//    NxtSta_Dir-HeadPtr := Sta_ShWbMsg_Proc;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let NI_FAck dummy1 dummy2 =
+	let form = eqn (left -> (Var (Global "ShWbMsg.Cmd"))) (right -> (Const SHWB_FAck)) in
+	let assgn1 = assign (Global "ShWbMsg.Cmd") (Const SHWB_None) in
+	let assgn2 = assign (Global "Dir.Pending") (Const False) in
+	let form1 = eqn (left -> (Var (Global "Dir.Dirty"))) (right -> (Const True)) in
+	let iteEOnHeadPtr = iteForm form1 (Var (Global "ShWbMsg.proc")) (Var (Global "Dir.HeadPtr")) in
+	let assgn3 = assign (Global "Dir.HeadPtr") iteEOnHeadPtr in
+	
+	guard form (parallel [assgn1, assgn2, assgn3]);
+
+
+//rule "NI_ShWb"
+//  Sta_ShWbMsg_Cmd = SHWB_ShWb
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_ShWbMsg_Cmd := SHWB_None;
+//  undefine NxtSta_ShWbMsg_Proc;
+//  undefine NxtSta_ShWbMsg_Data;
+//  NxtSta_Dir-Pending := false;
+//  NxtSta_Dir-Dirty := false;
+//  NxtSta_Dir-ShrVld := true;
+//__  NxtSta_Dir-ShrSet[Sta_ShWbMsg_Proc] := true;
+//  for p : NODE do
+//    NxtSta_Dir-ShrSet[p] := (p = Sta_ShWbMsg_Proc) | Sta_Dir-ShrSet[p];
+//    NxtSta_Dir-InvSet[p] := (p = Sta_ShWbMsg_Proc) | Sta_Dir-ShrSet[p];
+//  end;
+//  NxtSta_MemData := Sta_ShWbMsg_Data;
+//__
+//  Sta := NxtSta;
+//endrule;
+
+let NI_ShWb N dummy1 dummy2=
+	let form = eqn (left -> (Var (Global "ShWbMsg.Cmd"))) (right -> (Const SHWB_ShWb)) in
+	let assgn1 = assign (Global "ShWbMsg.Cmd") (Const SHWB_None) in
+	let assgn2 = assign (Global "Dir.Pending") (Const False) in
+	let assgn3 = assign (Global "Dir.Dirty") (Const False) in
+	let assgn4 = assign (Global "Dir.ShrVld") (Const True) in
+	let assgn5s i =
+		let form1 = eqn (left -> (Var (Global "ShWbMsg.proc"))) (right -> (Const  i)) in
+		let form2 = eqn (left -> (Var (Param "Dir-ShrSet"  i))) (right -> (Const True)) in
+		//let form3 = orList [form1, form2] in
+		let iteEOnSet = iteForm form1 (Const True) 
+                        (iteForm form2 (Const True) (Const False)) in
+		let assgn51 = assign (Param "Dir-ShrSet"  i) iteEOnSet in
+		let assgn52 = assign (Param "Dir-InvSet"  i) iteEOnSet in
+		parallel [assgn51, assgn52] in
+//	let assgn5 = parallel (map assgn5s (1 upto N)) in
+   let assgn5=forallStatement N assgn5s then    
+//	let assgn6 = assign (Global "MemData") (Var (Global "ShWbMsg.Data")) in , assgn6
+	
+	guard form (parallel [assgn1, assgn2, assgn3, assgn4, assgn5]);
+	
+//ruleset src : NODE do
+//rule "NI_Replace"
+//  Sta_RpMsg[src]_Cmd = RP_Replace
+//==>
+//var NxtSta : STATE;
+//begin
+//  NxtSta := Sta;
+//__
+//  NxtSta_RpMsg[src]_Cmd := RP_None;
+//  if (Sta_Dir-ShrVld) then
+//    NxtSta_Dir-ShrSet[src] := false;
+//    NxtSta_Dir-InvSet[src] := false;
+//  end;
+//__
+//  Sta := NxtSta;
+//endrule;
+//endruleset;
+
+     
+let NI_ReplaceShrVld src dummy=
+	let form = eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace)) in
+    let form1 = eqn (left -> (Var (Global "Dir.ShrVld"))) (right -> (Const True)) in
+	let assgn1 = assign (Param "RpMsg.Cmd" src) (Const RP_None) in
+	let assgn2 = assign (Param "Dir-ShrSet" src) (Const False) in
+	let assgn3 = assign (Param "Dir-InvSet" src) (Const False) in
+	let form2=andList[form,form1] in
+	guard form2 (parallel [assgn1, assgn2, assgn3]);
+
+
+let NI_ReplaceHomeShrVld dummy1 dummy2  =
+	let form = eqn (left -> (Var (Param "RpMsg.Cmd" Home))) (right -> (Const RP_Replace)) in
+    let form1 = eqn (left -> (Var (Global "Dir.ShrVld"))) (right -> (Const True)) in
+	let assgn1 = assign (Param "RpMsg.Cmd" Home) (Const RP_None) in
+	let assgn2 = assign (Param "Dir-ShrSet" Home) (Const False) in
+	let assgn3 = assign (Param "Dir-InvSet" Home) (Const False) in
+	let form2=andList[form,form1] in
+	guard form2 (parallel [assgn1, assgn2, assgn3]);
+
+let NI_Replace src dummy =
+	let form = eqn (left -> (Var (Param "RpMsg.Cmd" src))) (right -> (Const RP_Replace)) in
+    let form1 = eqn (left -> (Var (Global "Dir.ShrVld"))) (right -> (Const False)) in
+	let assgn1 = assign (Param "RpMsg.Cmd" src) (Const RP_None)  in
+	let form2=andList[form,form1] in
+	guard form2 assgn1;
+
+let NI_ReplaceHome dummy1 dummy2  =
+	let form = eqn (left -> (Var (Param "RpMsg.Cmd" Home))) (right -> (Const RP_Replace)) in
+    let form1 = eqn (left -> (Var (Global "Dir.ShrVld"))) (right -> (Const False)) in
+	let assgn1 = assign (Param "RpMsg.Cmd" Home) (Const RP_None) in
+	let form2=andList[form,form1] in
+	guard form2 assgn1;
+
+ 
+ 
+
+//******************************************************************************************************************************************
+//paraNums table
+
+let paraNumTable =    
+	let tab0 = tbl_create 50 in
+    
+    let tab0 = tbl_insert tab0  "NI_ReplaceHome"  0  in 
+	let tab0 = tbl_insert tab0   "NI_Replace" 1 in  
+	let tab0 = tbl_insert tab0 "NI_ReplaceHomeShrVld"  0 in  
+	let tab0 = tbl_insert tab0   "NI_ReplaceShrVld" 1 in  
+
+    let tab0 = tbl_insert tab0      "NI_ShWb" 0  in
+    let tab0 = tbl_insert tab0      "NI_FAck" 0 in  
+	let tab0 = tbl_insert tab0        "NI_Wb" 0 in  
+    
+    let tab0 = tbl_insert tab0      "NI_InvAck_1"  2 in  
+    let tab0 = tbl_insert tab0      "NI_InvAck_2" 1 in  
+    let tab0 = tbl_insert tab0      "NI_InvAck_1_Home" 1  in 
+    
+	let tab0 = tbl_insert tab0     "NI_Inv"   1 in  
+    let tab0 = tbl_insert tab0     "NI_Remote_PutX"  1 in
+    let tab0 = tbl_insert tab0     "NI_Local_PutXAcksDone" 0 in  
+	let tab0 = tbl_insert tab0     "NI_Remote_Put" 1 in  
+    let tab0 = tbl_insert tab0     "NI_Local_Put" 0 in
+    
+    let tab0 = tbl_insert tab0    "NI_Remote_GetX_PutX" 2 in 
+    let tab0 = tbl_insert tab0    "NI_Remote_GetX_PutX_Home" 1 in 
+     
+	let tab0 = tbl_insert tab0     "NI_Remote_GetX_Nak" 2 in  
+    let tab0 = tbl_insert tab0     "NI_Remote_GetX_Nak_Home" 1 in  
+    
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_PutX11" 1 in
+    let tab0 = tbl_insert tab0     "NI_Local_GetX_PutX10_home" 1 in  
+	let tab0 = tbl_insert tab0        "NI_Local_GetX_PutX10" 2 in  
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_PutX9" 1 in
+    let tab0 = tbl_insert tab0     "NI_Local_GetX_PutX8_home" 1 in
+	let tab0 = tbl_insert tab0      "NI_Local_GetX_PutX8" 2 in  
+    let tab0 = tbl_insert tab0     "NI_Local_GetX_PutX7" 1 in
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_PutX6"1 in  
+	let tab0 = tbl_insert tab0      "NI_Local_GetX_PutX5" 1 in  
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_PutX4" 1 in
+    let tab0 = tbl_insert tab0     "NI_Local_GetX_PutX3" 1 in  
+	let tab0 = tbl_insert tab0     "NI_Local_GetX_PutX2" 1 in  
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_PutX1" 1 in
+    
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_GetX" 1 in  
+    
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_Nak3" 1 in  
+	let tab0 = tbl_insert tab0      "NI_Local_GetX_Nak2" 1 in  
+    let tab0 = tbl_insert tab0      "NI_Local_GetX_Nak1" 1 in
+    
+    let tab0 = tbl_insert tab0 "NI_Remote_Get_Put2"    2 in  
+    let tab0 = tbl_insert tab0 "NI_Remote_Get_Put1"    1 in  
+    
+	let tab0 = tbl_insert tab0    "NI_Remote_Get_Nak2" 2 in  
+    let tab0 = tbl_insert tab0     "NI_Remote_Get_Nak1" 1 in
+    
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Put3"    1 in  
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Put2"  1in  
+	let tab0 = tbl_insert tab0   "NI_Local_Get_Put1" 1 in  
+
+    let tab0 = tbl_insert tab0  "NI_Local_Get_Get"  1 in
+    
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Nak3"    1 in  
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Nak2" 1 in  
+	let tab0 = tbl_insert tab0 "NI_Local_Get_Nak1" 1 in  
+
+    let tab0 = tbl_insert tab0 "NI_Nak_Clear"    0  in
+    
+    let tab0 = tbl_insert tab0   "NI_Nak_Home" 0 in  
+    let tab0 = tbl_insert tab0   "NI_Nak" 1 in  
+    
+    let tab0 = tbl_insert tab0    "PI_Local_Replace" 0 in  
+	let tab0 = tbl_insert tab0    "PI_Remote_Replace" 1 in  
+    let tab0 = tbl_insert tab0     "PI_Local_PutX"  0 in
+    let tab0 = tbl_insert tab0    "PI_Remote_PutX" 1 in  
+    
+    let tab0 = tbl_insert tab0     "PI_Local_GetX_PutX4" 0 in  
+	let tab0 = tbl_insert tab0      "PI_Local_GetX_PutX3" 0 in  
+    let tab0 = tbl_insert tab0     "PI_Local_GetX_PutX2" 0  in
+    let tab0 = tbl_insert tab0      "PI_Local_GetX_PutX1" 0 in
+    
+      
+	let tab0 = tbl_insert tab0     "PI_Local_GetX_GetX2"  0 in  
+    let tab0 = tbl_insert tab0    "PI_Local_GetX_GetX1" 0 in
+    
+    let tab0 = tbl_insert tab0     "PI_Remote_GetX"  1 in  
+	let tab0 = tbl_insert tab0     "PI_Local_Get_Put" 0 in  
+    let tab0 = tbl_insert tab0     "PI_Local_Get_Get" 0  in
+    let tab0 = tbl_insert tab0     "PI_Remote_Get" 1 in  
+	let tab0 = tbl_insert tab0     "StoreHome" 0 in  
+    let tab0 = tbl_insert tab0      "Store" 1 in
+    tab0;      
+    
+//******************************************************************************************************************************************
+//rule list
+
+let rules=[
+     NI_ReplaceHome, 
+	   NI_Replace,  
+	   NI_ReplaceHomeShrVld,  
+	   NI_ReplaceShrVld,  
+
+        (NI_ShWb 3) ,
+        NI_FAck,  
+	      NI_Wb,  
+    
+        
+         (NI_InvAck_2 3),  
+          NI_InvAck_1_Home  ,
+         NI_InvAck_1,  
+    
+	    NI_Inv,  
+         NI_Remote_PutX ,
+         NI_Local_PutXAcksDone,  
+	    NI_Remote_Put,  
+         NI_Local_Put ,
+    
+        NI_Remote_GetX_PutX,         
+        NI_Remote_GetX_PutX_Home,
+        
+	    NI_Remote_GetX_Nak,  
+        NI_Remote_GetX_Nak_Home,
+
+       (NI_Local_GetX_PutX11 3) ,
+        ( NI_Local_GetX_PutX10_home 3),  
+	       ( NI_Local_GetX_PutX10 3),  
+         (NI_Local_GetX_PutX9 3),
+       ( NI_Local_GetX_PutX8_home 3),
+	    (NI_Local_GetX_PutX8 3),  
+       (NI_Local_GetX_PutX7 3) ,
+       (NI_Local_GetX_PutX6 3),  
+	     (NI_Local_GetX_PutX5 3),  
+         (NI_Local_GetX_PutX4 3),
+       (NI_Local_GetX_PutX3 3),  
+	    (NI_Local_GetX_PutX2 3),  
+      (NI_Local_GetX_PutX1 3) ,
+    
+         NI_Local_GetX_GetX,  
+        NI_Local_GetX_Nak3,  
+	     NI_Local_GetX_Nak2,  
+       NI_Local_GetX_Nak1 ,
+       NI_Remote_Get_Put2,  
+        NI_Remote_Get_Put1,  
+	     NI_Remote_Get_Nak2,  
+         NI_Remote_Get_Nak1 ,
+         NI_Local_Get_Put3,  
+        NI_Local_Get_Put2,  
+	    (NI_Local_Get_Put1 3),  
+         NI_Local_Get_Get , 
+            NI_Local_Get_Nak3,  
+         NI_Local_Get_Nak2,  
+	     NI_Local_Get_Nak1,  
+        NI_Nak_Clear ,
+         NI_Nak_Home,  
+         NI_Nak,  
+        PI_Local_Replace,  
+	     PI_Remote_Replace,  
+         PI_Local_PutX ,
+       PI_Remote_PutX,  
+         PI_Local_GetX_PutX4,  
+	    PI_Local_GetX_PutX3,  
+         (PI_Local_GetX_PutX2 3) ,
+        (PI_Local_GetX_PutX1 3),  
+     PI_Local_GetX_GetX2,  
+         PI_Local_GetX_GetX1 ,
+        PI_Remote_GetX,  
+	     PI_Local_Get_Put,  
+         PI_Local_Get_Get ,
+         PI_Remote_Get  ,  
+     (StoreHome 6),  
+       (Store 6)  
+];
+
+
+	
+//******************************************************************************************************************************************
+//rule table
+
+let ruleTable =    
+	let tab0 = tbl_create 50 in
+    
+    let tab0 = tbl_insert tab0 "NI_ReplaceHome" NI_ReplaceHome in 
+	let tab0 = tbl_insert tab0 "NI_Replace" NI_Replace in  
+	let tab0 = tbl_insert tab0 "NI_ReplaceHomeShrVld" NI_ReplaceHomeShrVld in  
+	let tab0 = tbl_insert tab0 "NI_ReplaceShrVld" NI_ReplaceShrVld in  
+
+    let tab0 = tbl_insert tab0 "NI_ShWb"    (NI_ShWb 3)  in
+    let tab0 = tbl_insert tab0 "NI_FAck"    NI_FAck in  
+	let tab0 = tbl_insert tab0 "NI_Wb"      NI_Wb in  
+     
+    let tab0 = tbl_insert tab0 "NI_InvAck_2"    (NI_InvAck_2 3) in  
+    let tab0 = tbl_insert tab0 "NI_InvAck_1_Home"     NI_InvAck_1_Home   in
+    let tab0 = tbl_insert tab0 "NI_InvAck_1"    NI_InvAck_1 in  
+    
+	let tab0 = tbl_insert tab0 "NI_Inv"   NI_Inv in  
+    let tab0 = tbl_insert tab0 "NI_Remote_PutX"    NI_Remote_PutX  in
+    let tab0 = tbl_insert tab0 "NI_Local_PutXAcksDone"    NI_Local_PutXAcksDone in  
+	let tab0 = tbl_insert tab0 "NI_Remote_Put"   NI_Remote_Put in  
+    let tab0 = tbl_insert tab0 "NI_Local_Put"    NI_Local_Put  in
+    
+    let tab0 = tbl_insert tab0 "NI_Remote_GetX_PutX"    NI_Remote_GetX_PutX in
+     let tab0 = tbl_insert tab0 "NI_Remote_GetX_PutX_Home"    NI_Remote_GetX_PutX_Home in 
+     
+	let tab0 = tbl_insert tab0 "NI_Remote_GetX_Nak"   NI_Remote_GetX_Nak in  
+    let tab0 = tbl_insert tab0 "NI_Remote_GetX_Nak_Home"   NI_Remote_GetX_Nak_Home in 
+    
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX11"    (NI_Local_GetX_PutX11 3)  in
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX10_home"   ( NI_Local_GetX_PutX10_home 3) in  
+	let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX10"      ( NI_Local_GetX_PutX10 3) in  
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX9"    (NI_Local_GetX_PutX9 3) in
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX8_home"   ( NI_Local_GetX_PutX8_home 3) in
+	let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX8"    (NI_Local_GetX_PutX8 3) in  
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX7"    (NI_Local_GetX_PutX7 3)  in
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX6"    (NI_Local_GetX_PutX6 3) in  
+	let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX5"    (NI_Local_GetX_PutX5 3) in  
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX4"    (NI_Local_GetX_PutX4 3) in
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX3"    (NI_Local_GetX_PutX3 3) in  
+	let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX2"    (NI_Local_GetX_PutX2 3) in  
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_PutX1"    (NI_Local_GetX_PutX1 3)  in
+    
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_GetX"    NI_Local_GetX_GetX in  
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_Nak3"    NI_Local_GetX_Nak3 in  
+	let tab0 = tbl_insert tab0 "NI_Local_GetX_Nak2"    NI_Local_GetX_Nak2 in  
+    let tab0 = tbl_insert tab0 "NI_Local_GetX_Nak1"    NI_Local_GetX_Nak1  in
+    let tab0 = tbl_insert tab0 "NI_Remote_Get_Put2"    NI_Remote_Get_Put2 in  
+    let tab0 = tbl_insert tab0 "NI_Remote_Get_Put1"    NI_Remote_Get_Put1 in  
+	let tab0 = tbl_insert tab0 "NI_Remote_Get_Nak2"    NI_Remote_Get_Nak2 in  
+    let tab0 = tbl_insert tab0 "NI_Remote_Get_Nak1"    NI_Remote_Get_Nak1  in
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Put3"    NI_Local_Get_Put3 in  
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Put2"    NI_Local_Get_Put2 in  
+	let tab0 = tbl_insert tab0 "NI_Local_Get_Put1"    (NI_Local_Get_Put1 3) in  
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Get"    NI_Local_Get_Get  in
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Nak3"    NI_Local_Get_Nak3 in  
+    let tab0 = tbl_insert tab0 "NI_Local_Get_Nak2"    NI_Local_Get_Nak2 in  
+	let tab0 = tbl_insert tab0 "NI_Local_Get_Nak1"    NI_Local_Get_Nak1 in  
+    let tab0 = tbl_insert tab0 "NI_Nak_Clear"    NI_Nak_Clear  in
+    let tab0 = tbl_insert tab0 "NI_Nak_Home"    NI_Nak_Home in  
+    let tab0 = tbl_insert tab0 "NI_Nak"    NI_Nak in  
+    let tab0 = tbl_insert tab0 "PI_Local_Replace"    PI_Local_Replace in  
+	let tab0 = tbl_insert tab0 "PI_Remote_Replace"    PI_Remote_Replace in  
+    let tab0 = tbl_insert tab0 "PI_Local_PutX"    PI_Local_PutX  in
+    let tab0 = tbl_insert tab0 "PI_Remote_PutX"    PI_Remote_PutX in  
+    let tab0 = tbl_insert tab0 "PI_Local_GetX_PutX4"    PI_Local_GetX_PutX4 in  
+	let tab0 = tbl_insert tab0 "PI_Local_GetX_PutX3"    PI_Local_GetX_PutX3 in  
+    let tab0 = tbl_insert tab0 "PI_Local_GetX_PutX2"    (PI_Local_GetX_PutX2 3)  in
+    let tab0 = tbl_insert tab0 "PI_Local_GetX_PutX1"    (PI_Local_GetX_PutX1 3) in  
+	let tab0 = tbl_insert tab0 "PI_Local_GetX_GetX2"    PI_Local_GetX_GetX2 in  
+    let tab0 = tbl_insert tab0 "PI_Local_GetX_GetX1"    PI_Local_GetX_GetX1  in
+    let tab0 = tbl_insert tab0 "PI_Remote_GetX"    PI_Remote_GetX in  
+	let tab0 = tbl_insert tab0 "PI_Local_Get_Put"    PI_Local_Get_Put in  
+    let tab0 = tbl_insert tab0 "PI_Local_Get_Get"    PI_Local_Get_Get  in
+    let tab0 = tbl_insert tab0 "PI_Remote_Get"    PI_Remote_Get in  
+	let tab0 = tbl_insert tab0 "StoreHome"    (StoreHome 6) in  
+    let tab0 = tbl_insert tab0 "Store"    (Store 6) in
+    tab0;   
+
+
+ 
+    
+createThyDef aritTable  typeTable typeNameTable enumValTab "flash"	;    
+
+length (tbl_values ruleTable);
+length (tbl_values paraNumTable);
+length rules;
+
+ 
+
+let iniStatement N=
+  let assgn1=assign  (  Global "Dir.Pending" )  (Const False) then
+  let assgn2= assign   ( Global "Dir.local" )  (Const False) in
+  let assgn3= assign   ( Global "Dir.Dirty" )  (Const False) in
+  let assgn4= assign   ( Global "Dir.ShrVld" )  (Const False) in
+  let assgn5= assign   ( Global "Dir.HeadVld" )  (Const False) in
+     
+  let assgn25= assign   ( Global "Dir.HeadPtr" )  (Const 0) in
+    
+  let assgn6= assign   ( Param "procCmd" 0 )  (Const NODE_None) in     
+  let assgn7= assign   ( Param "InvMarked" 0 )  (Const False) in    
+  let assgn8= assign   ( Param "CacheState" 0 )  (Const CACHE_I) in
+
+  let assgn9 j=assign    (Param "procCmd" j )  (Const NODE_None) in    
+  //let assgn9s=parallel (map  assgn9 (1 upto N)) in
+   let assgn9s=forallStatement N assgn9  in
+
+  let assgn10 j=assign  (Param "InvMarked" j)  (Const False) in
+  let assgn10s=forallStatement N assgn10  in //parallel (map  assgn10 (1 upto N))in    
+  
+  let assgn11 j=assign  (  (Param "CacheState" j))  (Const CACHE_I) in
+  //let assgn11s=parallel (map  assgn11 (1 upto N))in
+    let assgn11s=forallStatement N assgn11  in
+
+   let assgn12 j=assign  (  (Param "Dir-ShrSet" j)) ( (Const False)) in
+  //let assgn12s=parallel (map  assgn12 (1 upto N))  in    
+   let assgn12s=forallStatement N assgn12  in
+
+  let assgn13 j=assign  (  (Param "Dir-InvSet" j))  (Const CACHE_I) in
+  //let assgn13s=parallel (map  assgn13 (1 upto N))  in
+     let assgn13s=forallStatement N assgn13  in
+
+  let assgn14= assign   ( Param "Dir-ShrSet" 0 )  (Const False) in     
+  let assgn15= assign   ( Param "Dir-InvSet" 0 )  (Const False) in  
+
+  let assgn16= assign   ( Global "WbMsg.Cmd" )  (Const WB_None) in
+  let assgn17= assign   ( Global "ShWbMsg.Cmd" )  (Const SHWB_None) in
+  let assgn18= assign   ( Global "NakcMsg.Cmd" )  (Const NAKC_None) in
+
+  let assgn19= assign   ( Param "UniMsg.Cmd" 0 )  (Const UNI_None) in     
+  let assgn20= assign   ( Param "InvMsg.Cmd" 0 )  (Const INV_None) in    
+  let assgn21= assign   ( Param "RpMsg.Cmd" 0 )  (Const RP_None) in 
+
+  let assgn22 j=assign    (Param "UniMsg.Cmd" j )  (Const UNI_None) in    
+  //let assgn22s=parallel (map  assgn22 (1 upto N)) in
+   let assgn22s=forallStatement N assgn22  in
+  let assgn23 j=assign  (  (Param "InvMsg.Cmd" j)) ( (Const INV_None)) in
+ // let assgn23=parallel (map  assgn23 (1 upto N))in    
+    let assgn23s=forallStatement N assgn23  in
+  let assgn24 j=assign   (Param "RpMsg.Cmd" j)  (Const RP_None) in
+  //let assgn24s=parallel (map  assgn24 (1 upto N))in
+   let assgn24s=forallStatement N assgn24  in   
+   let assgn26=assign (Global "ShWbMsg.proc") (Const 0) in 
+  
+  ( parallel [assgn1, assgn2,assgn3, assgn4,assgn5,assgn6,assgn7,assgn8,
+             assgn9s, assgn10s,  assgn11s, assgn12s,  assgn13s,
+             assgn14, assgn15,assgn16,assgn17,assgn18,assgn19,assgn20,assgn21,
+             assgn22s, assgn23s,assgn24s,assgn25,assgn26 ]);
+
+
+
+//( ( Node[1].CacheState=CACHE_E)  & ( Node[2].UniMsg.Cmd=UNI_PutX)  ) -----------
+//( ( Node[1].CacheState=CACHE_E)  & ( Node[2].CacheState=CACHE_E)  ) ;
+//( ( Node[2].CacheState=CACHE_E)  & ( Node[1].UniMsg.Cmd=UNI_PutX)  ) ;
+
+//letrec loopCreateProof invs relLib=
+          
+ //   let result=existResultFileAndDel "needAgain" then
+    //       load "creatIsaModel0125.fl" fseq// load "createIsaModel0125.fl" fseq
+    //       createIsabelleModel dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash"  fseq
+     //      print "need Again" fseq
+  // loopCreateProof invs relLib;
+
+let invs=file2frms enumValTab "result_flash";
+let relLib=file2tuple enumValTab "rel_flash";
+//invs; relLib; kk;
+//oblAnalysis dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash";
+print ((int2str (length invs))^"\n")  fseq print ((int2str (length relLib))^"\n") ;
+ createIsabelleModel1 dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash"; 
+ //createIsabelleModel dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash" ;
+kk;
+
+let i1=  1 in
+let i2=  2 in
+let form1= eqn (left -> (Var (Param "CacheState" i1)))   (right->(Const CACHE_E)) then
+let form2=   ( eqn (left -> (Var (Param "CacheState" i2))) (right->(Const CACHE_E)) ) then 
+let contra=andList[form1, form2] then 
+
+let form1'= eqn (left -> (Var (Param "UniMsg.Cmd" 1 ) ))   (right->(Const UNI_GetX)) then
+let form2'=   ( eqn (left -> (Var (Param "UniMsg.proc" 1))) (right->(Const 2)) ) then 
+let form3'=   neg ( eqn (left -> (Var (Global "Dir.HeadPtr" ))) (right->(Const 2)) ) then 
+let contra'=andList[form1', form2',form3'] then 
+
+
+let form1''= eqn (left -> (Var (Param "UniMsg.Cmd" 1 ) ))   (right->(Const UNI_Get)) then
+let form2''=   ( eqn (left -> (Var (Param "UniMsg.proc" 1))) (right->(Const 2)) ) then 
+let form3''=   neg ( eqn (left -> (Var (Global "Dir.HeadPtr" ))) (right->(Const 2)) ) then 
+let contra''=andList[form1'', form2'',form3''] then 
+let symIndice=[1,2,3] then
+let newParasMethod=newParas  dist symIndice        then
+let parasOfInvMethod=parasOfInv  dist  symIndice then
+let result=existResultFileAndDel "res_lock" then
+ let result=existResultFileAndDel "res_inv" then
+val (invs,relLib)=
+
+tabularFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice 
+  typeTable [1,2,3,0] "flash" "flash" enumValTab [contra] (tbl_keys ruleTable)  [] [] 5 in
+printStrList (map (formula2SmvStr  enumValTab) invs)  fseq
+
+
+write (map (formula2str enumValTab) invs) "result_flash" fseq
+write (map (tuple2str enumValTab) relLib) "rel_flash" fseq
+
+let fdebug3=fopen "fInvs" "a" then
+   fputs fdebug3 "now invariants\n" fseq
+   let strs=itlist (\str1.\str2.str1^"\n"^str2) (map (formula2SmvStr  enumValTab) invs) "\n" then
+   fputs fdebug3 strs fseq
+     fclose fdebug3 ; kkfseq
+
+loopCreateProof invs relLib;
+
+
+let invs=file2frms enumValTab "result_flash";
+let relLib=file2tuple enumValTab "rel_flash";
+//invs; relLib; kk;
+//oblAnalysis dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash";
+ createIsabelleModel1 dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash"; 
+ //createIsabelleModel dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash" ;
+kk;
+
+let i1=  1 in
+let i2=  2 in
+let form1= eqn (left -> (Var (Param "CacheState" i1)))   (right->(Const CACHE_E)) then
+let form2=   ( eqn (left -> (Var (Param "CacheState" i2))) (right->(Const CACHE_E)) ) then 
+let contra=andList[form1, form2] then 
+let symIndice=[1,2,3] then
+let newParasMethod=newParas  dist symIndice        then
+let parasOfInvMethod=parasOfInv  dist  symIndice then
+let result=existResultFileAndDel "res_lock" then
+ let result=existResultFileAndDel "res_inv" then
+val (invs,relLib)=
+
+tabularFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice 
+  typeTable [1,2,3,0] "flash" "flash" enumValTab [contra] (tbl_keys ruleTable)  [] [] 5 in
+printStrList (map (formula2SmvStr  enumValTab) invs)  fseq
+
+write (map (formula2str enumValTab) invs) "result_flash" fseq
+write (map (tuple2str enumValTab) relLib) "rel_flash" fseq
+
+let fdebug3=fopen "fInvs" "a" then
+   fputs fdebug3 "now invariants\n" fseq
+   let strs=itlist (\str1.\str2.str1^"\n"^str2) (map (formula2SmvStr  enumTab) invsLib) "\n" then
+   fputs fdebug3 strs fseq
+     fclose fdebug3 fseq  kk;
+
+loopCreateProof invs relLib;
+
+//tabularFromParaRule  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRuleName newInvs invsLib relLib
+//tabularFromParaRule  dist  ruleTable parasOfInvMethod  newParasMethod paraNumTable symIndice   typeTable  [1,2,3,0] "flash" "flash" enumValTab contra "NI_Remote_PutX" [] [contra] [] in
+ 
+//tabularFromParaRulesByInv dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice 
+//  typeTable [1,2,3,0] "flash" "flash" enumValTab contra (tbl_keys ruleTable)  [] [contra] [] in
+//invs fseq
+//print "the last result=\n" fseq
+//printStrList (map (formula2SmvStr  enumValTab) invs); kk;
+
+//tabularFromParaRulesByInv dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice 
+//  typeTable [1,2,3,0] "flash" "flash" enumValTab contra (tbl_keys ruleTable)  [] [contra] [] in
+
+let i1=  1 in
+let i2=  2 in
+let form1= eqn (left -> (Var (Param "CacheState" i1)))   (right->(Const CACHE_E)) then
+let form2= neg ( eqn (left -> (Var (Param "CacheState" i2))) (right->(Const CACHE_S)) ) then 
+let impInv1=implyForm form1 form2 then 
+let symIndice=[1,2,3] then
+let newParasMethod=newParas  dist symIndice        then
+let parasOfInvMethod=parasOfInv  dist  symIndice then
+let result=existResultFileAndDel "res_lock" then
+ let result=existResultFileAndDel "res_inv" then
+
+val (invs,relLib)=findInvsFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable  symIndice 
+  typeTable [1,2,3,0] "flash" "flash" enumValTab [impInv1] (tbl_keys ruleTable)  [] [] in
+
+printStrList (map (formula2SmvStr  enumValTab) invs);kk; fseq
+ 
+
+
+
+let i1=  1 in
+let i2=  2 in
+let form1= eqn (left -> (Var (Param "CacheState" 2)))   (right->(Const CACHE_E)) then
+let form2=   ( eqn (left -> (Var (Param "UniMsg.Cmd" 1))) (right->(Const UNI_PutX)) ) then 
+
+let form3= eqn (left -> (Var (Param "CacheState" 1)))   (right->(Const CACHE_E)) then
+let form4=   ( eqn (left -> (Var (Param "UniMsg.Cmd" 2))) (right->(Const UNI_PutX)) ) then 
+
+let contra=andList[form3, form4] then 
+
+let contra1=andList[form3, form1] then 
+let contra2=andList[form1, form2] then 
+
+let symIndice=[1,2,3] then
+isimpliedByOldInv   dist symIndice  enumValTab  "flash" contra [contra1,contra2];kk;
+kk;
+
+
+let i1=  1 in
+let i2=  2 in
+let form1= eqn (left -> (Var (Param "CacheState" 2)))   (right->(Const CACHE_E)) then
+let form2=   ( eqn (left -> (Var (Param "UniMsg.Cmd" 1))) (right->(Const UNI_PutX)) ) then 
+
+let form3= eqn (left -> (Var (Param "CacheState" 1)))   (right->(Const CACHE_E)) then
+let form4=   ( eqn (left -> (Var (Param "UniMsg.Cmd" 2))) (right->(Const UNI_PutX)) ) then  
+let contra=andList[form1, form2] then 
+let contra1=andList[form3, form4 ] then 
+
+let symIndice=[1,2,3] then
+isimpliedByOldInv   dist symIndice  enumValTab  "flash" contra [contra1];kk;
+
+perm [1,2];kk;
+
+/
+//
+//inv1=( ( Dir.HeadPtr=3)  & ( Node[3].UniMsg.Cmd=UNI_GetX)  & ( Node[3].UniMsg.proc=2)  ) 
+
+//inv2=( ( Dir.HeadPtr=2)  & ( Node[2].UniMsg.Cmd=UNI_GetX)  & ( Node[2].UniMsg.proc=3)  ) 
+
+//inv1'=( ( Dir.HeadPtr=3)  & ( UniMsg.Cmd[2]=UNI_GetX)  & ( UniMsg.proc[2]=2)  ) 
+//inv2=( ( Dir.HeadPtr=2)  & ( UniMsg.Cmd[2]=UNI_GetX)  & ( UniMsg.proc[2]=3)  ) 
+
+
+//inv1'=( ( Dir.HeadPtr=3)  & ( UniMsg.Cmd[3]=UNI_GetX)  & ( UniMsg.proc[3]=2)  ) 
+//inv2=( ( Dir.HeadPtr=2)  & ( UniMsg.Cmd[2]=UNI_GetX)  & ( UniMsg.proc[2]=3)  ) 
+//* 
+
+let i1=  1 in
+let i2=  2 in
+let form1= eqn (left -> (Var (Global "Dir.HeadPtr" )))   (right->(Const 2)) then
+let form2=   ( eqn (left -> (Var (Param "UniMsg.Cmd" 2))) (right->(Const UNI_GetX)) ) then 
+let form3=   ( eqn (left -> (Var (Param "UniMsg.proc" 2))) (right->(Const 3)) ) then 
+
+
+let form1'= eqn (left -> (Var (Global "Dir.HeadPtr" )))   (right->(Const 3)) then
+let form2'=   ( eqn (left -> (Var (Param "UniMsg.Cmd" 3))) (right->(Const UNI_GetX)) ) then 
+let form3'=   ( eqn (left -> (Var (Param "UniMsg.proc" 3))) (right->(Const 2)) ) then 
+
+ 
+let contra=andList[form1, form2,form3] then  
+let contra'=andList[form1', form2',form3'] then 
+
+let symIndice=[1,2,3] then
+isimpliedByOldInv   dist symIndice  enumValTab  "flash" contra [contra'];kk;
+kk;
+
+
+ createIsabelleModel dist [1,2,3] invs (iniStatement 3)  ruleTable paraType typeNameTable enumValTab typeTable aritTable   paraNumTable  relLib "flash"  "flash"  
+ ;
+//invs;
+
+//let fout = fopen ("cand_inv") "w"    then
+
+     
+ //    fputs fout "Complete" fseq
+ //    fclose fout  fseq
+//let fout = fopen ("cand_lock") "w"    then
+
+     
+  //   fputs fout "Complete";
+

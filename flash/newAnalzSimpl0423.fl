@@ -1,0 +1,2824 @@
+let fdebug=fopen "fdebug" "w";
+let fdebug1=fopen "fdebug1" "w";
+let fdebug2=fopen "fdebug2" "w";
+let fdebug3=fopen "fInvs" "w" then fclose fdebug3;
+let dist=4;
+let indexForAll=100;
+let cmurphiDir="~/Tools/cmurphi5.4.9/src/mu";
+let z3PathName="~/Tools/Isabelle2013-2/contrib/z3-3.2/x86-linux/z3";
+
+let printStrList strList=
+        print  "-----------\n"  fseq
+	(foreach [str | strList]. print (str^ ";\n" ) ) fseq
+	 print  "\n-----------\n"  ;
+
+let down N=N downto 1;
+
+
+let symId symRel symIndices=
+   let symRelVars=(map fst (tbl_values symRel)) then
+   let IndiceNotInSymRel=filter (\x. NOT (mem x symRelVars)) symIndices then
+   let otherIds=map (\x.(x,x)) IndiceNotInSymRel then
+  // let symRel=tbl_insert symRel 1 1 then   
+  // let symRel=tbl_insert symRel 2 2 then
+          tbl_insert_assoc_list symRel otherIds;
+
+//let sym
+
+
+lettype varType=Global  {name:: string}    |
+    Param   {name:: string} {id ::int};
+
+    
+lettype expType=Var varType |  Const int | iteForm formula expType  expType | fun string (expType list) 
+
+andlettype formula = pred (expType list) |
+	                eqn {left ::  expType} {right::  expType} |
+                  neg {form :: formula} |
+                  andList {glist ::   formula list}  |                  
+                  orList  {glist::  formula list} |
+                  implyForm {ant::  formula} {cons::  formula} |
+                  forallForm {N::int} {fnForm::int -> formula} |
+                  chaos |
+                  miracle;    
+  
+  
+lettype statement= assign varType expType   |  
+                   parallel (statement list) |
+                   forallStatement {N::int} {fnForm::int -> statement};
+                   
+lettype rule =  guard formula  statement;     
+
+letrec formContainForall (forallForm N pf)=T
+/\  formContainForall  (andList  fs)=itlist (defix OR) (map formContainForall fs) F
+/\  formContainForall  (orList fs) =itlist (defix OR) (map formContainForall fs) F
+/\  formContainForall  (eqn l r)=F
+/\  formContainForall (neg f)=formContainForall f 
+/\  formContainForall (implyForm p q)=(formContainForall p)  OR (formContainForall q)
+/\  formContainForall chaos=F
+/\ formContainForall miracle=F;
+
+letrec statementContainForall (forallStatement N ps)=T
+/\  statementContainForall  (parallel SL)=itlist (defix OR) (map statementContainForall SL) F
+/\  statementContainForall _=F;
+  
+let ruleContainForall (guard g S)= (formContainForall g) OR (statementContainForall S);
+
+let subst2Form (v,e)=eqn (Var v) e;
+
+letrec andList2ands (eqn l r)= [(eqn l r)]
+/\ andList2ands (andList frms)=flat (map andList2ands frms)
+/\ andList2ands (neg frm)=[(neg frm)]
+/\ andList2ands (orList  forms)=[orList  forms]
+/\ andList2ands (forallForm N fl)=flat (map andList2ands (map fl (down N)))
+/\ andList2ands chaos=[]
+/\ andList2ands miracle=[miracle];
+
+letrec orList2ors (eqn l r)= [(eqn l r)]
+/\ orList2ors (andList frms)=[andList frms]
+/\ orList2ors (neg frm)=[(neg frm)]
+/\ orList2ors (orList  forms)=flat (map orList2ors forms)
+/\ orList2ors (forallForm N fl)=[forallForm N fl]
+/\ orList2ors chaos=[chaos]
+/\ orList2ors miracle=[ ];
+
+let  isConstExp (Const i)=T
+/\   isConstExp _=F;  
+
+let  isIteExp (iteForm cond e1 e2)=T
+/\   isIteExp _=F; 
+
+forward_declare  {simpTaut::formula -> formula list};
+
+letrec simpExp (Var v)=Var v
+/\ simpExp (Const i)=(Const i)
+/\ simpExp (iteForm f e1 e2)=(simpTaut f)=[] =>(simpExp e1) |
+                              (simpTaut f)=[miracle]=>(simpExp e2)|
+                              iteForm ( f) (simpExp e1) (simpExp e2);
+
+letrec simpTaut (eqn l r)= l=r=>[ ]| 
+                           (isConstExp l) AND (isConstExp r)=> 
+                           [miracle] |  [ (eqn (simpExp l) (simpExp r))]
+/\ simpTaut (andList frms)= (filter (\f. (f!=chaos))  (flat (map simpTaut frms)))
+ 
+/\ simpTaut (neg frm)=
+   let mid=(simpTaut frm) then
+   mid=[miracle]=> [] | map neg  mid
+/\ simpTaut chaos=[]
+/\ simpTaut (orList  forms)=[orList  (flat (map simpTaut  forms))]
+/\ simpTaut (forallForm N fl)=flat (map simpTaut (map fl (down N)))
+/\ simpTaut (forallForm N fl)=[]
+/\ simpTaut miracle =[miracle];  
+
+let strengthEn  g exprList =map (\(h,e). (andList (andList2ands (andList [g,h])), e)) exprList;
+
+//letrec iteExp2 (Var v)=[(chaos,Var v)]
+///\iteExp2 (Const i)=[(chaos, Const i)]
+///\iteExp2 ( iteForm f e1 e2)=
+//   let fs=iteForm2 f then
+////   let fsT=filter (\(f',f'').f''=chaos) fs then
+//   let fsF=filter (\(f',f'').f''=miracle ) fs then
+//   let e1s=iteExp2 e1 then
+//   let e2s=iteExp2 e1 then
+//   let fsTProj=map fst fsT then
+//   let fsFProj=map fst fsF then
+//   let projT=flat (map (\g. strengthEn g e1s) fsTProj) then
+//   let projF=flat (map (\g. strengthEn g e2s) fsFProj) then
+//   projT@projF;
+   
+//letrec iteForm2  (eqn l r)=
+//    let ls1=iteExp2 
+
+let strengthEn  g exprList =map (\(h,e). (andList (andList2ands (andList [g,h])), e)) exprList;
+
+forward_declare {subFormulaByAssignList:: (varType # expType) list -> formula -> (formula # formula) list};
+
+letrec subExpByAssignList asgns (Var v) =
+  let substV=(snd (hd (filter (\p. fst p=v) asgns)) catch (Var v)) then
+  isIteExp substV =>
+  val (iteForm cond e1 e2)=substV in
+   [(cond, e1),(neg cond,e2)] |
+  [(chaos, substV)]
+/\ subExpByAssignList asgns (Const i) = [(chaos,(Const i))]
+   /\ subExpByAssignList asgns (iteForm f e1  e2) =
+  let fs=subFormulaByAssignList asgns f then
+  let fsT=filter (\(f',f'').f''=chaos) fs then
+  let fsF=filter (\(f',f'').f''=miracle ) fs then 
+  let fsTProj=map fst fsT then
+  let fsFProj=map fst fsF then
+	let e1s=subExpByAssignList asgns e1 then
+	let e2s=subExpByAssignList asgns e2 then
+	let projT=flat (map (\g. strengthEn g e1s) fsTProj) then
+   let projF=flat (map (\g. strengthEn g e2s) fsFProj) then
+   projT@projF;
+//(	strengthEn f res1 ) @(strengthEn (neg f) res2);
+
+
+
+
+letrec prod  opr [] remainder = []
+   /\ prod  opr ((g,f):subGlist') remainder =
+   let ands=prod  opr subGlist'  remainder then
+   let strengthEn' (g',f') =
+        opr=andList=>
+        map (\(h,f'). (andList (andList2ands (andList [g',h])),  opr (andList2ands (opr [f,f'])))) remainder|
+        map (\(h,f'). (andList (andList2ands (andList [g',h])),  opr (orList2ors (opr [f,f'])))) remainder then
+   	  (strengthEn' (g,f))@ands ;
+   	  
+   	  
+
+
+letrec transLsDNFs    [(orList cnfs)]=cnfs
+   /\ transLsDNFs    ((orList cnfs):others)=
+      let cnfs'=transLsDNFs others then
+      let andComb  cnf (andList cnf1)= [andList (cnf@cnf1)] then
+      let andProd (andList cnf) =flat (map (andComb cnf) cnfs') then
+      flat (map andProd cnfs) ;
+      
+let desOr (orList frms)=frms;      
+
+
+let getVarName (Global v)=v
+/\ getVarName (Param v i)=v;
+
+                                                    
+let  inverseVals typeTable vname vval=
+   let key=getVarName vname then
+   val (Const i)=vval in
+   let vals=(tbl_element typeTable key) subtract [i] then
+     vals;      
+   
+letrec elimNot typeTable (eqn left right) = eqn left right 
+/\  elimNot typeTable (neg f) =
+    val (eqn l r) = f in
+    val (Var v) = l in
+    let invVals = inverseVals typeTable v r in
+    let const2form l c = andList [eqn l (Const c)] in
+    orList (map (const2form l) invVals)
+/\  elimNot typeTable (andList forms) = andList (map (elimNot typeTable) forms)
+/\  elimNot typeTable (orList forms) = orList (map (elimNot typeTable) forms)
+/\  elimNot typeTable (implyForm f1 f2) = implyForm (elimNot typeTable f1) (elimNot typeTable f2) 
+/\  elimNot typeTable (forallForm N pf) = elimNot typeTable (andList (map pf (down N)));
+	
+	
+letrec form2Dnf typeTable (eqn l r)=	orList [(andList [(eqn l r)])]
+
+/\ form2Dnf typeTable (andList forms)=
+   let Lsforms'=map (form2Dnf typeTable) forms then
+   orList (transLsDNFs Lsforms')  
+   
+/\ form2Dnf typeTable (orList forms)=
+    let Lsforms'=map (form2Dnf typeTable) forms then
+    
+    orList (flat (map desOr Lsforms'))
+    
+/\ form2Dnf typeTable (neg (eqn l r))=  elimNot typeTable (neg (eqn l r))    
+/\  form2Dnf typeTable (neg (neg f))=form2Dnf typeTable f
+/\  form2Dnf typeTable (neg  (orList forms))=    
+   form2Dnf typeTable (andList (map neg forms))
+   
+/\  form2Dnf typeTable (neg  (andList forms))=    
+   form2Dnf typeTable (orList (map neg forms))   ;
+   
+let normalizeRule   typeTable r=
+	val (guard g S)=r in
+	val (orList gs)=form2Dnf typeTable g in
+	let genRule g'=guard g' S then
+	map genRule gs;
+	
+	   	  
+letrec subFormulaByAssignList asgns (eqn le re) =
+	let subE1=(subExpByAssignList asgns le ) then
+	let subE2=(subExpByAssignList asgns re )  then
+	let combine (g,e) =map (\(g2,e2). (andList (andList2ands (andList [g,g2])), (eqn e e2))) subE2 then
+	flat (map   combine subE1)
+	
+/\  subFormulaByAssignList asgns   (neg f) =
+	let substF=(subFormulaByAssignList asgns   f ) then
+	 let enNeg (g,f') =    (g,(neg f'))   then
+    map enNeg  substF
+    
+ /\  subFormulaByAssignList asgns   (andList [] ) =  [(chaos,andList [])] 
+    
+/\  subFormulaByAssignList asgns   (andList (f:glist) ) =
+	 let remainder= subFormulaByAssignList asgns (andList glist) then
+	 let fs=subFormulaByAssignList asgns f then
+   prod   andList fs  remainder
+   
+ 
+/\  subFormulaByAssignList asgns   (orList [] ) =[(chaos,orList [])] 
+
+/\  subFormulaByAssignList asgns   (orList (f:glist) ) =
+	 let remainder= subFormulaByAssignList asgns (orList glist) then
+	 let fs=subFormulaByAssignList asgns f then
+   prod   orList fs  remainder
+
+
+/\  subFormulaByAssignList asgns   (implyForm ant0 cons0 ) = 
+	let subE1=(subFormulaByAssignList asgns ant0) then
+	let subE2=(subFormulaByAssignList asgns cons0)  then
+	let combine (g,f) =map (\(g2,f2). (andList (andList2ands (andList [g,g2])), implyForm  f f2)) subE2 then
+	
+  flat( map combine subE1)
+   
+   
+/\  subFormulaByAssignList asgns   (forallForm N fnForm) = subFormulaByAssignList asgns (andList ((map  fnForm (down N))))
+/\  subFormulaByAssignList asgns  chaos=[(chaos,chaos)]
+/\ subFormulaByAssignList asgns  miracle=[(chaos,miracle)] ;
+  
+
+letrec parallelStatement2Statements (assign v e)= [assign v e]
+/\  parallelStatement2Statements (parallel S)= flat (map parallelStatement2Statements S) 
+/\  parallelStatement2Statements (forallStatement N paraSt)=
+  let S=  (map  paraSt (down N)) then
+  let sts= (map parallelStatement2Statements S) then
+    flat sts;
+
+
+letrec parallelStatement2AssignList (assign v e)= [( v, e) ]
+/\  parallelStatement2AssignList (parallel S)= flat (map parallelStatement2AssignList S)
+/\  parallelStatement2AssignList (forallStatement N paraSt)=
+  let S=  (map  paraSt (down N)) then
+  let sts= (map parallelStatement2AssignList S) then
+    flat sts;; 
+
+
+let preCond f S= subFormulaByAssignList  (parallelStatement2AssignList S) f;
+
+
+
+//****************************************************************************************************************************************** 
+//In our work, each value of a control message is encoded by a unique integer. For readability, a string is 
+//allocated to each message to illustrate its meaning.
+//For instance, I, T, C, E, TRUE, and FALSE are defined by 0 1 2 3 4 5 6 respectively. 
+//Strings  I ,  T ,  C ,  E ,  TRUE ,  FALSE  are related with them respectively. See German.fl
+//Part III: another codes for printing variables, values, formulae, and statements into a string
+//This code is used to match whether two formulas are symmetric, namely :
+//n[1]=C ->!n[2]=C is symmetric n[2]=C --> !n[1]=C
+//For a parameterized varaible, we do not print the index 1 into the string, 
+//namely "n=C ->!n=C" is generated for the above formula;  after deciding the character string equal, 
+//we try to unify the two formulae
+//****************************************************************************************************************************************** 
+ 
+let getVarName (Global v)=v
+/\ getVarName (Param v i)=v;
+
+let enumTypeOf enumTab name=tbl_element enumTab name;
+
+forward_declare {formula2CharacterStr ::int list -> (int, string) htbl -> formula -> string};
+let enum2Str  typeval2StrTab i=
+    //val (v,val0)=pair in
+//  let enumT=enumTypeOf  v  then
+//   print (int2str i) fseq
+  ( tbl_element typeval2StrTab i) catch (int2str i);
+  
+
+let var2CharacterStr  symIndices (Global v)=v
+/\   var2CharacterStr symIndices (Param v i)=mem i  symIndices =>v | v^(int2str i);
+
+letrec exp2CharacterStr  symIndices  typeval2CharacterStrTab  (Var var)=var2CharacterStr symIndices var
+/\ exp2CharacterStr  symIndices  typeval2CharacterStrTab  (Const i)=
+         mem i (tbl_keys typeval2CharacterStrTab) => enum2Str  typeval2CharacterStrTab i
+         | "i" 
+/\ exp2CharacterStr  symIndices  typeval2CharacterStrTab (iteForm f e1 e2)=
+	 "iteForm "^ (formula2CharacterStr  symIndices  typeval2CharacterStrTab f)^
+	   (exp2CharacterStr  symIndices  typeval2CharacterStrTab e1)^    
+	   (exp2CharacterStr  symIndices  typeval2CharacterStrTab e2)  
+         ;
+
+
+//let assignment2CharacterStr  typeval2CharacterStrTab (Assign v val0)
+//    =(var2CharacterStr v)^ = ^(exp2CharacterStr  typeval2CharacterStrTab val0);
+
+
+letrec formula2CharacterStr  symIndices  typeval2CharacterStrTab (eqn l r)
+   = (exp2CharacterStr  symIndices  typeval2CharacterStrTab l)^ "=" ^ (exp2CharacterStr  symIndices  typeval2CharacterStrTab r)
+   
+/\ formula2CharacterStr  symIndices  typeval2CharacterStrTab (andList frms)
+   =itlist (\e.\str. (formula2CharacterStr  symIndices  typeval2CharacterStrTab e) ^" & "^str) frms ""  
+   
+//please note that the formulae will be only allowed when negation is at the    nested level
+/\ formula2CharacterStr  symIndices  typeval2CharacterStrTab (neg frm)=
+    "!"^  (formula2CharacterStr  symIndices  typeval2CharacterStrTab  frm)
+    
+/\ formula2CharacterStr  symIndices  typeval2CharacterStrTab (andList [form])=
+    (formula2CharacterStr  symIndices  typeval2CharacterStrTab form)
+    
+/\ formula2CharacterStr symIndices typeval2CharacterStrTab (orList frms)=
+    itlist (\e.\str. (formula2CharacterStr symIndices typeval2CharacterStrTab e) ^" | "^str) frms  ""   
+
+/\  formula2CharacterStr  symIndices  typeval2CharacterStrTab (implyForm  f1 f2)
+   =(formula2CharacterStr  symIndices  typeval2CharacterStrTab f1)^" -> "^(formula2CharacterStr  symIndices  typeval2CharacterStrTab f2)
+   
+/\  formula2CharacterStr  symIndices  typeval2CharacterStrTab (forallForm N fnForm)
+   =(formula2CharacterStr  symIndices  typeval2CharacterStrTab (andList (map fnForm (down N) )))  
+   
+/\   formula2CharacterStr  symIndices  typeval2CharacterStrTab chaos= "chaos"  
+
+/\   formula2CharacterStr  symIndices  typeval2CharacterStrTab miracle= "false"  ;
+
+
+letrec statement2CharacterStr  symIndices  typeval2CharacterStrTab (assign v val0)
+    =(var2CharacterStr  symIndices  v)^ "=" ^(exp2CharacterStr  symIndices  typeval2CharacterStrTab val0)
+    
+
+    
+/\statement2CharacterStr  symIndices  typeval2CharacterStrTab (parallel SL)=
+     itlist (\s.\str. (statement2CharacterStr  symIndices  typeval2CharacterStrTab  s) ^" & "^str) SL  "" 
+     
+/\statement2CharacterStr symIndices typeval2CharacterStrTab (forallStatement N PSL)=
+  let  SL=map PSL (down N) then
+  statement2CharacterStr  symIndices  typeval2CharacterStrTab (parallel SL) ;
+
+let rule2CharacterStr symIndices typeval2CharacterStrTab  rule=
+  val (guard pre S)= rule in
+  ( formula2CharacterStr  symIndices  typeval2CharacterStrTab  pre)^(" ==>\n" )
+   ^(statement2CharacterStr  symIndices  typeval2CharacterStrTab  S);           
+                   
+let forAllForm N paraForm=
+	  andList (map paraForm (down N));
+	  
+let existsForm N paraForm=
+	  orList (map paraForm (down N));	
+
+let tbl_someUpdate tbl k content=
+   // (SOME (tbl_insert tbl k content  )) catch ((tbl_element tbl k)=content => SOME tbl | NONE);
+  mem k (tbl_keys tbl) => ((tbl_element tbl k)=content => SOME tbl | NONE)
+  |SOME (tbl_insert tbl k content) ;
+  
+//note that the invariant is always in a special implyForm, e.g., 
+//( ( channel2_4[1]=grant_exclusive)  $\longrightarrow$  ($\neg$( cache[2]=exclusive) ) ) ;  
+//( ( ( home_exclusive_granted=false)  $\wedge$ ( home_current_command=req_shared)  )  $\longrightarrow$  ($\neg$( channel2_4[1]=invalidate) ) ) ;
+//premise is composed of conjunctions, but conclusion is only one formula;
+
+	  
+let unifyRight env expFromStatement (Const i)=
+  val (SOME env)= env in
+  (case expFromStatement where
+    (  case (Const i')=i=i'=> SOME env | NONE
+     /\case (Var v)=tbl_someUpdate env v (Const i)
+     ))
+     
+/\unifyRight env expFromStatement (Var v)=
+   val (SOME env)= env in
+  (case expFromStatement where
+    (  case (Const i')=tbl_someUpdate env v (Const i')  
+     /\case (Var v')=tbl_someUpdate env v' (Var v)
+  ));
+
+
+forward_declare
+	{assignPartlyEnableForms:: ((string,(int list)) htbl) ->  ((varType, expType) htbl) opt->statement  ->formula list ->((varType, expType) htbl) opt};
+
+forward_declare	
+	{statementPartlyDisableForm ::((string,(int list)) htbl) -> ((varType, expType) htbl) opt -> statement -> formula ->
+   ((varType, expType) htbl) opt};   
+
+//There exists an environment that let the assignment always make eq true
+//For instance, x:=true always make (x=true) true at any env;
+//home_share_list[i]:=home_invalidate_list[i] always make home_share_list[i]=ture by let env<-(home_invalidate_list[1]=true),
+
+let assignPartlyEnableEq  env statement eq=
+        val  (eqn vnameExp  vval ) = eq in
+        val (Var vname)=vnameExp in
+        val (assign  vname' vval') = statement in
+        let matchedLeft=(vname'= vname) in
+        let matchedRight= unifyRight env vval' vval in
+        (NOT matchedLeft  OR  matchedRight=NONE) => NONE |  //env;
+                                                    val (SOME env')=matchedRight in
+                                                      (tbl_someUpdate env' vname vnameExp);
+                                                      
+let  inverseVals typeTable vname vval=
+   let key=getVarName vname then
+   val (Const i)=vval in
+   let vals=(tbl_element typeTable key) subtract [i] then
+     vals;                                                      
+
+let  selectOneInverseVal typeTable vname vval=
+   let key=getVarName vname then
+   val (Const i)=vval in
+   let vals=(tbl_element typeTable key) subtract [i] then
+   hd vals;
+   
+   
+
+ 
+letrec assignPartlyEnableForm typeTable env  statement  (eqn vnameExp  vval )=
+       assignPartlyEnableEq env  statement (eqn vnameExp  vval )
+        
+/\     assignPartlyEnableForm  typeTable env  statement  (neg (eqn l r)  )  =
+  val (SOME tbl)= env in
+  val (assign  vname' vval') = statement  in
+  
+  let form= (eqn l r)  then
+  val (eqn vnameExp  vval ) = form in
+	val (Var vname)=vnameExp in
+   isConstExp vval'=>
+	((assignPartlyEnableForm  typeTable env statement form)	 =NONE =>
+         vname=vname'=> tbl_someUpdate tbl vname vval' |NONE
+         | NONE) 
+   | vname=vname'=>val (Var vnameOfvval') =vval' in tbl_someUpdate tbl vnameOfvval'  (Const (selectOneInverseVal typeTable vname vval)) | NONE 
+         
+///\     assignPartlyEnableForm env  statement  (neg f  )  =            
+//       statementPartlyDisableForm env S f
+         
+/\     assignPartlyEnableForm typeTable env statement    (andList formList)=NONE;
+//       assignPartlyEnableForms env  statement    formList    ;
+       
+///\     assignPartlyEnableForm env  statement    (orList formList)=
+//       assignPartlyEnableForms env  statement    formList         
+       
+///\     assignPartlyEnableForm env  statement   (implyForm ant0 cons0)=
+//       assignPartlyEnableForm env  statement  (orList [neg ant0,cons0])      ;
+
+ //checks whether an assignment makes one of formss always true  	
+  
+letrec assignPartlyEnableForms  typeTable  env S []= NONE
+
+/\  assignPartlyEnableForms  typeTable  env S (frm:frms)=
+    let result=assignPartlyEnableForm   typeTable  env S frm  in
+    result=NONE => assignPartlyEnableForms  typeTable  env S frms
+    |  result;
+    
+    
+forward_declare
+	{statementsPartlyEnableForm :: ((string,(int list)) htbl) -> ((varType, expType) htbl) opt-> statement list -> formula ->((varType, expType) htbl) opt};    
+    
+letrec statementPartlyEnableForm  typeTable  env (assign  vname' vval') frm=
+	   assignPartlyEnableForm   typeTable env (assign  vname' vval') frm
+	   
+/\   	statementPartlyEnableForm  typeTable  env (parallel statementList) frm=
+       statementsPartlyEnableForm  typeTable  env statementList frm
+       
+/\    statementPartlyEnableForm  typeTable  env (forallStatement  N PSL) frm=
+      let  SL=map PSL (down N) then
+       statementsPartlyEnableForm  typeTable  env ( SL)  frm      ;
+       
+       
+letrec statementsPartlyEnableForm  typeTable  env [] frm= NONE
+/\     statementsPartlyEnableForm   typeTable env (S :  statementList) frm=
+     let result=statementPartlyEnableForm   typeTable  env S frm in
+     result=NONE  => statementsPartlyEnableForm   typeTable  env statementList frm
+    |    result;
+
+
+
+
+
+
+
+
+
+letrec statementPartlyDisableForm  typeTable  env S (eqn vnameExp  vval )=
+   statementPartlyEnableForm  typeTable  env S (neg (eqn vnameExp  vval ))
+
+
+/\ statementPartlyDisableForm  typeTable  env S (neg f)=
+   statementPartlyEnableForm  typeTable  env S f
+
+/\ statementPartlyDisableForm  typeTable  env S (andList (frm:frmList))=
+  // print "PartlyDisable\n" fseq
+   
+   statementPartlyDisableForm  typeTable  env S frm =NONE =>
+   empty frmList =>NONE|
+   statementPartlyDisableForm  typeTable  env S (andList frmList) |
+   statementPartlyDisableForm  typeTable  env S frm
+   
+/\ statementPartlyDisableForm  typeTable  env S (forallForm N pf)=
+  let fs=map pf (down N) then
+    statementPartlyDisableForm  typeTable  env S (andList fs) ;
+   
+///\ statementPartlyDisableForm env S (orList (frmList))=   
+//   statementPartlyDisableForms env S frmList
+   
+//\ statementPartlyDisableForm env S (implyForm ant0 cons0)=   
+//   statementPartlyDisableForms env S (orList [neg ant0,cons0]); 
+   
+//letrec statementsPartlyDisableForm env [] frm= NONE
+///\     statementsPartlyDisableForm  env (S :  statementList) frm=
+//     let result=statementPartlyDisableForm  env S frm in
+//     result=NONE  => statementsPartlyDisableForm  env statementList frm
+//    |    result;   
+   
+
+letrec OnGlobals (eqn l r)=
+    val (Var v)=l in
+    case v where
+   (case (Global _)=[(eqn l r)]
+    /\case (Param _ _)=[]
+    )
+    
+/\ OnGlobals (andList frms)=flat (map OnGlobals frms)
+
+/\ OnGlobals (neg frm)= (OnGlobals frm)=[]=>[]| [neg frm]
+
+/\ OnGlobals (orList frms)=
+	(flat (map OnGlobals frms))=[]=>[]  | [orList frms] 
+	
+/\ OnGlobals (forallForm N pf)=
+  let fs=map pf (down N) then
+  flat (map OnGlobals  fs)
+	
+	;
+	
+
+       
+let tbl_element' tbl v=
+   (tbl_element tbl v) catch (Const (-1));
+   
+   //(error "not defined variable");    
+   
+forward_declare {evalFormInEnv::formula -> (varType,expType) htbl ->bool};   
+   
+letrec evalExpInEnv (Const i) env=Const i
+/\     evalExpInEnv (Var v) env=tbl_element' env v
+/\     evalExpInEnv (iteForm f e1 e2) env=
+       (evalFormInEnv f env)=>evalExpInEnv e1 env | evalExpInEnv e2 env;
+       
+letrec evalFormInEnv (eqn v vale) env= (evalExpInEnv v env) = (evalExpInEnv vale env) 
+
+/\     evalFormInEnv (neg(eqn v vale)) env= 
+                    NOT ((evalExpInEnv v env) = (evalExpInEnv vale env) )
+                    
+/\     evalFormInEnv  (andList formLs) env=
+     itlist (\item.\b.  ( evalFormInEnv item env) AND b) formLs T;      	
+	
+let conjItem2EnvItem typeTable (eqn ve vale) env=
+   let env=
+   (val (Var v) =ve in
+   tbl_member env v =>  tbl_replace env v vale
+   |(tbl_insert env v vale)) then
+   env 
+   
+/\ conjItem2EnvItem  typeTable (neg(eqn ve vale)) env=
+   let env=
+   val (Var v)=ve in
+   let vale'=(Const (selectOneInverseVal typeTable v vale)) then
+   
+   
+   tbl_member env v =>  tbl_replace env v vale'
+   //(mem (tbl_element env v) (map Const (inverseVals typeTable v vale)) =>env | tbl_replace env v vale')
+   |(tbl_insert env v vale') then
+   env ;
+   
+letrec conjs2Env  typeTable [] env=  env
+/\     conjs2Env typeTable (conjItem:conjItems) env=
+       let env=conjItem2EnvItem typeTable conjItem env then
+       let env=conjs2Env typeTable (conjItems) env then
+       env;
+
+       
+letrec  form2Env typeTable f env=
+       let fs= andList2ands f then
+       conjs2Env typeTable fs env;             
+       
+// we must consider the case where vale is a variable expression or a conditional expression   
+let assign2EnvItem (assign v vale) env= 
+   let vale'=evalExpInEnv vale env then
+   let env=( 
+    
+   (tbl_member env v =>  tbl_replace env v vale'
+   |(tbl_insert env v vale') )) then
+   env
+   ;
+   
+
+       
+letrec assigns2Env [] env=env
+/\     assigns2Env (assignItem:assignItems) env=
+       let env=assign2EnvItem assignItem env then
+       let env=assigns2Env (assignItems) env then
+       env;      
+      
+let statement2Env statement env=
+    let sts=parallelStatement2Statements statement then
+    assigns2Env sts env; 
+    
+let isUnKnown val0= (val (Const i)=val0 in (i= (- 1))); 
+
+//let tbl_element' tbl v=
+//   (tbl_element tbl v) catch (Const (-1));   
+    
+let checkItemInEnv (eqn v vale) env=
+    val (Var v)=v in
+    let vale'=(tbl_element' env v) then
+   ((vale'=vale ) AND (NOT (isUnKnown vale'))) catch F
+   
+/\ checkItemInEnv (neg(eqn v vale)) env=
+    val (Var v)=v in    
+     let vale'=(tbl_element' env v) then
+   ((vale'!=vale )  AND (NOT (isUnKnown vale'))) catch F;  
+   
+let checkItemDisabledInEnv (eqn v vale) env=
+    val (Var v)=v in
+    
+    let valV=(tbl_element' env v) then
+   ((valV!=vale ) AND (NOT (isUnKnown valV))) catch F 
+   
+/\ checkItemDisabledInEnv (neg(eqn v vale)) env=
+    val (Var v)=v in
+    let valV=(tbl_element' env v) then
+   ((valV=vale ) AND (NOT (isUnKnown valV))) catch F;
+   
+//   ((tbl_element' env v)=vale ) catch F;     
+  
+let checkConjsInEnv atoms env=
+  itlist (\item.\b.  (checkItemInEnv item env) AND b) atoms T;
+  
+let checkDisableConjsInEnv  atoms env=
+  itlist (\item.\b. ( (checkItemDisabledInEnv item env)) OR b) atoms F; 	
+
+let createOneSmtType typeNameTable enumValTab kc =
+
+	let typeName=tbl_element typeNameTable kc in
+	typeName="Bool"=>"\n"|
+        typeName="Int" =>"\n"|
+	let prefix1="(declare-datatypes () (("^typeName in
+	let createOneVal vk=" "^(tbl_element enumValTab vk)^" " in 
+  let strOfVals=itlist (\a.\b. a^b) (map createOneVal kc) "" in
+  let suffix1=")))\n" in
+  prefix1^strOfVals^suffix1;
+  
+ 
+let createSmtScalarDef typeNameTable enumValTab=
+    itlist (\k.\b.(createOneSmtType typeNameTable enumValTab k)^b) (tbl_keys typeNameTable) ""; 
+
+//here k is a string
+let createOneSmtFunc aritTable  typeTable typeNameTab k=
+   let kt=tbl_element typeTable k in
+   (print k) fseq
+   let kname=tbl_element typeNameTab kt in
+   let prefix1=" (declare-fun "^k^"  " in
+   let arit=tbl_element aritTable k in
+   let mid= (arit=1) => " (Int) " |" () " in
+   let suffix1=kname^")\n" in 
+   prefix1^mid^suffix1;
+   
+   
+let createSmtFunc  aritTable  typeTable typeNameTable=
+	itlist (\k.\b.(createOneSmtFunc aritTable typeTable typeNameTable k)^b) (tbl_keys typeTable) ""; 
+    
+    
+    
+
+  
+ 
+//****************************************************************************************************************************************** 
+//In our work, each value of a control message is encoded by a unique integer. For readability, a string is 
+//allocated to each message to illustrate its meaning.
+//For instance, I, T, C, E, TRUE, and FALSE are defined by 0 1 2 3 4 5 6 respectively. 
+//Strings  I ,  T ,  C ,  E ,  TRUE ,  FALSE  are related with them respectively. See German.fl
+//Part I: codes for printing variables, values, formulae, and statements into a string
+//****************************************************************************************************************************************** 
+
+forward_declare {formula2str::(int, string) htbl -> formula -> string}; 
+
+let var2Str  (Global v)= v
+/\   var2Str  (Param v i)= v^ "[" ^(int2str i)^ "]" ;
+
+letrec exp2str  typeval2StrTab  (Var var)=var2Str var
+/\ exp2str  typeval2StrTab  (Const i)=
+         enum2Str  typeval2StrTab i
+/\ exp2str typeval2CharacterStrTab (iteForm f e1 e2)=
+	  "("^(formula2str  typeval2CharacterStrTab f)^ " ? "^
+	   (exp2str typeval2CharacterStrTab e1)^  " : "^   
+	   (exp2str typeval2CharacterStrTab e2)^")"           
+         ;
+
+
+//let assignment2Str  typeval2StrTab (Assign v val0)
+//    =(var2Str v)^ = ^(exp2str  typeval2StrTab val0);
+
+
+letrec formula2str  typeval2StrTab (eqn l r)
+   = "( "^(exp2str  typeval2StrTab l)^ "=" ^ (exp2str  typeval2StrTab r)^") "
+
+///\ formula2str  typeval2StrTab (andList [frm])=formula2str  typeval2StrTab \\frm ^ (formula2str  typeval2StrTab frm)
+   
+/\ formula2str  typeval2StrTab (andList (frms))=
+   frms=[]=>"true"|
+   let str=(itlist (\e.\str. (formula2str  typeval2StrTab e) ^" & "^str) frms "" ) in
+   //let strs=explode str in
+   //let str=implode (
+   "( "^(str_substr str 1 (strlen str -2))^") "
+
+
+/\ formula2str  typeval2StrTab (neg frm)=
+     " (!" ^(formula2str  typeval2StrTab  frm)^") "
+    
+///\ formula2str  typeval2StrTab (andList [form])=
+//    (formula2str  typeval2StrTab form)
+    
+/\ formula2str  typeval2StrTab (orList frms)=
+   let str= itlist (\e.\str. (formula2str  typeval2StrTab e) ^" | "^str) frms  ""  in
+   "( "^ (str_substr str 1 (strlen str -2))^") "  
+
+/\  formula2str  typeval2StrTab (implyForm  f1 f2)
+   ="( "^(formula2str  typeval2StrTab f1)^" -> "^(formula2str  typeval2StrTab f2)^") "
+   
+/\ formula2str  typeval2StrTab (forallForm  N pf)
+   =formula2str  typeval2StrTab (andList (map pf (down N)))
+   
+/\formula2str  typeval2StrTab chaos="true"
+
+/\formula2str  typeval2StrTab miracle="false";
+
+
+letrec statement2Str  typeval2StrTab (assign v val0)
+    =(var2Str v)^ "=" ^(exp2str  typeval2StrTab val0)
+    
+
+    
+/\statement2Str  typeval2StrTab (parallel SL)=
+     itlist (\s.\str. (statement2Str  typeval2StrTab  s) ^" & "^str) SL  "" 
+     
+/\statement2Str  typeval2StrTab (forallStatement N PSL)=
+  let SL=map PSL (down N) then
+   statement2Str  typeval2StrTab (parallel SL);
+
+let rule2Str  typeval2StrTab  rule=
+  val (guard pre S)= rule in
+  ( formula2str  typeval2StrTab  pre)^(" ==>\n" )
+   ^(statement2Str  typeval2StrTab  S); 
+   
+
+
+//****************************************************************************************************************************************** 
+//In our work, each value of a control message is encoded by a unique integer. For readability, a string is 
+//allocated to each message to illustrate its meaning.
+//For instance, I, T, C, E, TRUE, and FALSE are defined by 0 1 2 3 4 5 6 respectively. 
+//Strings  I ,  T ,  C ,  E ,  TRUE ,  FALSE  are related with them respectively. See German.fl
+//Part I: codes for printing variables, values, formulae, and statements into a string
+
+//code for generating Isabelle definition for vars, exps, formulas, statements.
+//****************************************************************************************************************************************** 
+
+
+//let enumTypeOf enumTab name=tbl_element enumTab name;
+
+
+//let enum2Str  typeval2StrTab i=
+ //val (v,val0)=pair in
+//  let enumT=enumTypeOf  v  then
+//   print (int2str i) fseq
+//  ( tbl_element typeval2StrTab i) catch (int2str i);
+
+//definition paraCritRule::"nat \<Rightarrow> rule" where [simp]: 
+ // " paraCritRule i \<equiv>  
+ //      ( let g1= eqn (IVar (Para  ''n'' i)) (Const T) in 
+ //        let g2=  eqn (IVar (Global  ''x'' )) (Const TRUE) in
+ //        let a=   ((Para  ''n'' i), (Const C)) in
+//         let Sent2= assign  ((Global  ''x'' ), (Const FALSE)) in
+//             guard (andForm g1 g2) (parallel a  Sent2))"
+//kk;
+
+forward_declare {formula2Isabellestr::(int, string) htbl -> formula -> string}; 	
+let var2IsabelleStr  (Global v)="( Global ''"^v^"'')"
+/\   var2IsabelleStr  (Param v i)="( Para ''"^v^ "'' " ^"iInv"^(int2str i)^ ")" ;
+
+letrec exp2IsabelleStr  typeval2StrTab  (Var var)="( IVar "^(var2IsabelleStr  var)^" )"
+/\ exp2IsabelleStr  typeval2StrTab  (Const i)=
+let str=(enum2Str  typeval2StrTab i) then
+"( Const "^str^" )"
+/\ exp2IsabelleStr typeval2CharacterStrTab (iteForm f e1 e2)=
+	  "(if "^(formula2Isabellestr  typeval2CharacterStrTab f)^ " then "^
+	   (exp2IsabelleStr typeval2CharacterStrTab e1)^  " else "^   
+	   (exp2IsabelleStr typeval2CharacterStrTab e2)^")"  ;
+         
+
+
+
+
+
+letrec formula2Isabellestr  typeval2StrTab (eqn l r)
+   =  
+    "(eqn  "^(exp2IsabelleStr typeval2StrTab  l)^ "  " ^ (exp2IsabelleStr  typeval2StrTab r)^") "
+
+ 
+   
+/\ formula2Isabellestr  typeval2StrTab (andList (frms))=
+   length frms=1=>val [frm]=frms in
+     formula2Isabellestr  typeval2StrTab frm |
+   let str1=itlist (\e.\str.  "( andForm "^str ^"   "^(formula2Isabellestr  typeval2StrTab e)^" ) ") (tl frms) 
+      ( formula2Isabellestr  typeval2StrTab  (hd frms))  in str1
+
+/\ formula2Isabellestr  typeval2StrTab (neg frm)=
+     " (neg "^(formula2Isabellestr  typeval2StrTab  frm)^") "
+    
+ 
+    
+/\ formula2Isabellestr  typeval2StrTab (orList frms)=
+   length frms=1=>val [frm]=frms in formula2Isabellestr  typeval2StrTab frm |
+   let str1=itlist (\e.\str. "( orForm "^str ^"   "^(formula2Isabellestr  typeval2StrTab e)^" ) ") (tl frms) 
+      ( formula2Isabellestr  typeval2StrTab  (hd frms)) in str1
+
+
+/\  formula2Isabellestr  typeval2StrTab (implyForm  f1 f2)
+   ="(implyForm "^(formula2Isabellestr  typeval2StrTab f1)^"  "^(formula2Isabellestr  typeval2StrTab f2)^") "
+   
+/\    formula2Isabellestr  typeval2StrTab (forallForm  N pf)
+   ="let pf=%i. "^(formula2Isabellestr  typeval2StrTab (pf 1))^" in\n"^
+   "let natList=down N in\n"^
+   "(forallForm "^"natList  pf) "
+   
+/\    formula2Isabellestr  typeval2StrTab chaos="true"
+
+/\    formula2Isabellestr  typeval2StrTab false="false"    ;    
+
+
+letrec statement2IsabelleStr  typeval2StrTab (assign v val0)
+    ="  ("^(var2IsabelleStr v)^ ",  " ^(exp2IsabelleStr  typeval2StrTab val0)^" )"
+    
+
+    
+/\statement2IsabelleStr  typeval2StrTab (parallel SL)=
+     length SL=1=>
+	   val [S]=SL in "(assign "^(statement2IsabelleStr  typeval2StrTab S)^" )" |
+	   let len=length SL in
+	   let ls=1 upto len in
+	   let strLs=map 
+	   (\i. i =len => "let S_"^(int2str i)^"="^"(assign "^(statement2IsabelleStr  typeval2StrTab (el i SL))^" ) in\n"
+	         | "let S_"^(int2str i)^"="^(statement2IsabelleStr  typeval2StrTab (el i SL))^" in\n" ) ls in
+	   let SiS=map (\i. "S_"^(int2str i)) ls in
+	   let SiS'=firstn  (len - 1) SiS in
+     let str1=itlist (\e.\str.   e ^str) strLs "" in
+     let str2=itlist (\e.\str. "( parallel "^e^" "^str^")") SiS' (el len SiS)
+       in
+ 	"("^str1^str2^" )"
+ 	
+/\ statement2IsabelleStr  typeval2StrTab (forallStatement N PSL)=	
+  "let ps=%i. "^(statement2IsabelleStr  typeval2StrTab (PSL 1))^" in\n"^
+   "let natList=down N in\n"^
+   "(forallSent "^"natList  ps) ";
+ 
+let rule2IsabelleStr  typeval2StrTab  rule=
+  val (guard pre S)= rule in
+  (val (assign v val0)= S in 
+  (let strOfS= "let S=(\n assign "^(statement2IsabelleStr  typeval2StrTab  S)^ (") in \n" ) in 
+  "let g="^( formula2Isabellestr  typeval2StrTab  pre)^(" in \n" )^strOfS^ 
+  "guard g S") ) catch 
+  
+  (let strOfS= "let S=(\n"^(statement2IsabelleStr  typeval2StrTab  S)^ (") in \n" ) in 
+  "let g="^( formula2Isabellestr  typeval2StrTab  pre)^(" in \n" )^strOfS^ 
+  "guard g S"); 
+  
+  
+forward_declare {formula2ParamIsabellestr::int list->((int,string) htbl) -> formula -> string}; 
+	
+//here  paraTab is a mapping from the concrete values to a its order in the occurence of the value
+//for instance for the formula:( channel2_4[2]=grant_shared)  ->  (!( cache[1]=exclusive) )
+//2->1; 1->2
+
+let var2ParamIsabelleStr  symIndice  (Global v)="( Global ''"^v^"'')"
+/\   var2ParamIsabelleStr  symIndice  (Param v i)=
+     mem i symIndice=>"( Para ''"^v^ "'' iInv" ^(int2str (i))^ ")"
+   |(i=0) => "( Para ''"^v^ "'' Home" ^ ")"
+   | (i=indexForAll)=>"( Para ''"^v^ "'' iInvForAll"^")"
+   |"( Para ''"^v^ "'' " ^(int2str (i))^ ")" ;
+
+//forward_declare {formula2Isabellestr::(int, string) htbl -> formula -> string}; 
+
+letrec exp2ParamIsabelleStr  symIndice   typeval2StrTab     (Var var)="( IVar "^(var2ParamIsabelleStr  symIndice     var)^" )"
+
+/\ exp2ParamIsabelleStr  symIndice   typeval2StrTab     (Const i)=
+   mem i symIndice =>" (Const iInv" ^(int2str (i))^ ")"
+       | (i=indexForAll)=>"(Const    iInvForAll )"                  
+       |(i=0) => "(Const    Home)" 
+       |"( Const "^(enum2Str  typeval2StrTab i)^" )"
+       
+  //( mem i (tbl_keys typeval2StrTab))=> "( Const "^(enum2Str  typeval2StrTab i)^" )" |"i"
+  
+/\ exp2ParamIsabelleStr  symIndice   typeval2CharacterStrTab (iteForm f e1 e2)=
+	  "(iteForm "^(formula2ParamIsabellestr  symIndice   typeval2CharacterStrTab f)^ "  "^
+	   (exp2ParamIsabelleStr  symIndice   typeval2CharacterStrTab e1)^  "  "^   
+	   (exp2ParamIsabelleStr  symIndice  typeval2CharacterStrTab e2)^")"  ;;
+         
+
+
+
+
+    
+   
+//****************************************************************************************************************************************** 
+//Part II: codes for computing variables of a variable, expression, formula, and statement
+//****************************************************************************************************************************************** 
+    
+   
+let varsOfVar  x  = [x]  ;
+
+letrec  varOfExp  (Var v) =   varsOfVar v   
+/\   varOfExp   (Const j) =  [] 
+/\    varOfExp   (iteForm f e1 e2) = (varOfExp e1) union (varOfExp e2) ;
+
+
+letrec   varOfForm   (eqn e1 e2) = ( (varOfExp   e1 )  union   (varOfExp  e2))   
+/\       varOfForm   ( andList formList) = setify ( flat (map varOfForm  formList ) )   
+/\       varOfForm   (neg f1 ) = (  (varOfForm   f1 ))  
+/\       varOfForm   (orList formList) = setify ( flat (map varOfForm  formList ))   
+/\       varOfForm   (implyForm f1 f2) = (  (varOfForm  f1 )   union  (varOfForm f2 ))
+/\       varOfForm   (forallForm N pf) =   varOfForm  (andList (map pf (down N) )  ) 
+/\   varOfForm  (chaos)=[];
+
+letrec  varOfStatement  (assign v val0)=( varsOfVar  v) 
+//union (varOfExp  val0)  
+/\      varOfStatement  ( parallel sentList)= flat  (map varOfStatement  sentList) ;
+
+let onVarStr (Global str)=str
+/\ onVarStr (Param str a)=str;
+
+let onVarsStr f= setify (map   onVarStr (varOfForm f));
+   
+let paraIndexOfVar  (Param vn i)=[i]
+/\  paraIndexOfVar (Global vn)=[];
+
+forward_declare {paraIndexsOfForm::int -> formula -> int list};
+
+letrec  paraIndexsOfExp dist (Var v) =   paraIndexOfVar v   
+/\   paraIndexsOfExp   dist  (Const j)=  j<dist =>[j]| [] 
+/\  paraIndexsOfExp   dist (iteForm cond e1 e2)= (paraIndexsOfExp dist e1) union (paraIndexsOfExp dist e2) union (paraIndexsOfForm  dist cond) ;
+
+
+letrec   paraIndexsOfForm  dist (eqn e1 e2) = ( (paraIndexsOfExp dist  e1 )  union   (paraIndexsOfExp dist e2))   
+/\       paraIndexsOfForm  dist ( andList formList) = setify ( flat (map (paraIndexsOfForm  dist) formList ) )   
+/\       paraIndexsOfForm  dist (neg f1 ) = (  (paraIndexsOfForm  dist f1 ))  
+/\       paraIndexsOfForm  dist (orList formList) = setify ( flat (map (paraIndexsOfForm dist)  formList ))   
+/\       paraIndexsOfForm  dist (implyForm f1 f2) = (  (paraIndexsOfForm dist f1 )   union  (paraIndexsOfForm dist f2 )) 
+/\       paraIndexsOfForm  dist (forallForm N pf)= paraIndexsOfForm  dist (andList (map pf (down N) )  ) 
+/\       paraIndexsOfForm  dist (chaos)= []
+/\       paraIndexsOfForm  dist (miracle)= [];
+
+let parasOfInv  dist  symIndices inv=
+		let paras=paraIndexsOfForm dist inv then
+		filter (\i.   (mem i symIndices)) paras;
+
+let parasOfVar   dist  symIndices v=
+	 parasOfInv   dist  symIndices  (eqn (Var v) (Var v));
+//let paraIndexsOfForm f =setify (flat (map paraIndexOfVar (varOfForm f)));
+   
+//****************************************************************************************************************************************** 
+//The following codes call murphi to decide whether an invariant hold for a bound model
+//invariants are guessed by murphi oracle
+//The way to create new invariants depends on the induction principle
+//heuristics are invHoldForRule1, invHoldForRule3, invHoldForRule4.
+//******************************************************************************************************************************************    
+
+
+let premisesOfRule ruelInst=
+    val (guard pre s)= ruelInst in
+    andList2ands pre;
+
+letrec rec_copy fp1 fp2 =
+    let s = fgets fp1
+    then
+    (feof fp1) => ()
+    |  fputs fp2 s
+    seq
+    fflush fp2
+    seq
+    rec_copy fp1 fp2; 
+
+
+letrec checkSucFlag fp1=
+    (feof fp1)=>
+    (//print "error found\n" fseq 
+     F)
+    |let s = fgets fp1 then
+  // % print s fseq
+    
+    (str_is_prefix  "	No error found."  s=> 
+    (//print "No error found\n" fseq 
+     T)|checkSucFlag fp1);
+        
+let searchSuc fileName=     
+   let fin = fopen (fileName) "r" 
+   then let result= checkSucFlag fin then
+   (fclose fin) fseq result;
+
+
+
+let form2MurphiInv enumTab inv=
+    "ruleset i:client do\n"^ "   invariant \"coherent\" \n"^ (formula2str enumTab inv)^"\n"^"end;\n";
+
+let setTautISImpliedisInVTriple taut isImplied isInv No=(taut, isImplied, isInv,No);
+
+
+ 
+letrec dualNeg (neg f)=f 
+/\  dualNeg (andList frms) = orList (map dualNeg frms)
+/\  dualNeg (orList frms) = andList (map dualNeg frms)
+/\   dualNeg chaos=miracle
+/\  dualNeg miracle=chaos
+/\  dualNeg ( f)=neg f ;   
+ 
+   
+let  cmpForm symIndice typeval2StrTab form1 form2=
+ strcmp (formula2CharacterStr symIndice typeval2StrTab form1) (formula2CharacterStr symIndice  typeval2StrTab form2);
+	  
+let normalize symIndice typeval2StrTab formulaList=qsort  (cmpForm symIndice typeval2StrTab) formulaList;
+let getReal (SOME v)=v;   
+ 
+
+    
+    
+let unifyVar symIndice env v1 ( Global vname)=
+   let env=getReal env in
+    (case v1 where
+    (  case (Global vname')= vname=vname'=>SOME env | NONE
+     /\case (Param vname' i)=NONE
+     ))
+     
+/\ unifyVar symIndice env v1 ( Param vname i)=
+   let env=getReal env in
+   mem i symIndice=>
+   
+    (case v1 where
+    (  case (Global vname')=  NONE
+    
+     /\case (Param vname' j)
+     =(vname=vname')  =>
+         mem j (tbl_keys env) =>
+          ( tbl_element env j=i=>SOME env |NONE) 
+        | mem i (tbl_keys env) =>
+            ( tbl_element env i=j=>SOME env |NONE)
+            
+        |i=j=>SOME env 
+        |mem j symIndice=>SOME(let env=(tbl_insert env i j) then  (tbl_insert env  j i)) 
+        |NONE 
+      | NONE
+     )) 
+   |(case v1 where
+    (  case (Global vname')= vname=vname'=>SOME env | NONE
+     /\case (Param vname' j)=(i=j)=>SOME env | NONE
+     ))  ;    
+     
+let unifyLeft symIndice env exp  (Const i)=
+  (case exp  where
+    (  case (Const i')= (i=i'=>env | NONE)
+     /\case (Var v)=NONE
+     ))
+     
+/\unifyLeft symIndice env exp  (Var v)=
+  //print ((var2Str v)^"............\n") fseq
+  (case exp  where
+    (  case (Const i')=NONE
+     /\case (Var v')=unifyVar symIndice env v' v
+   )); 
+    
+forward_declare {matchForm:: int list  ->
+ (int, string) htbl -> (((int, int) htbl) opt) -> 
+  (formula # formula)  -> (((int, int) htbl) opt) };
+
+ letrec unifyLeft   symIndice  typeval2StrTab  env exp  (Const i)=
+  (case exp  where
+    (  case (Const i')= (i=i'=>env | NONE)
+     /\case (Var v)=NONE
+     ))
+     
+/\unifyLeft  symIndice   typeval2StrTab  env exp  (Var v)=
+ // print ((var2Str v)^"............\n") fseq
+  (case exp  where
+    (  case (Const i')=NONE
+     /\case (Var v')=unifyVar  symIndice  env v' v
+   ))
+/\unifyLeft   symIndice  typeval2StrTab env exp  (iteForm f e1 e2)=
+ // print ((var2Str v)^"............\n") fseq
+  (case exp  where
+    (  case (Const i')=NONE
+     /\case (Var v')=NONE
+     /\case (iteForm f' e1' e2')=
+      let env= matchForm   symIndice  typeval2StrTab  env (f, f') then
+      let env=unifyLeft  symIndice  typeval2StrTab  env e1 e1' then
+      unifyLeft  symIndice  typeval2StrTab  env e2 e2'
+   ))   ;
+   
+//forward_declare
+//	{assignPartlyEnableForms::  statement -> int list  -> formula list ->((varType #expType) list) opt};
+ 
+forward_declare {matchFormLs::  int list ->
+ (int, string) htbl -> (((int, int) htbl) opt) -> 
+  (formula # formula) list -> (((int, int) htbl) opt) };
+
+letrec matchForm    symIndice  typeval2StrTab env ((eqn l r), (eqn l' r')) =
+   // (r=r') =>	(unifyLeft   symIndice    typeval2StrTab env l l')  | NONE
+     let env'=(unifyLeft   symIndice    typeval2StrTab env l l') in 
+                    unifyLeft   symIndice  typeval2StrTab env' r r'
+   	
+/\    matchForm   symIndice  typeval2StrTab env ((neg f1), (neg f2)) = 
+   matchForm   symIndice  typeval2StrTab env (f1,f2)
+
+/\matchForm   symIndice typeval2StrTab env ((eqn l r), (neg f2)) =
+   	//matchForm typeval2StrTab env ((eqn l r),  f2)
+   	NONE
+   	
+/\matchForm  symIndice  typeval2StrTab env ((neg f1), (eqn l' r')) =
+   	//matchForm typeval2StrTab env (f1,(eqn l' r')) 
+   	NONE     	   	
+     
+/\  	matchForm  symIndice  typeval2StrTab env ( (andList formList),  (andList formList'))=
+      (length formList = length formList') =>  
+          	matchFormLs  symIndice  typeval2StrTab env  (zip formList formList')  
+         | NONE
+
+
+
+/\    matchForm  symIndice  typeval2StrTab env ( (orList formList),  (orList formList'))=
+       (length formList = length formList') =>  
+          	matchFormLs  symIndice  typeval2StrTab env  (zip formList formList')  
+         | NONE
+    		
+/\  	matchForm  symIndice typeval2StrTab  env ((implyForm ant1 cons1), (implyForm ant2 cons2)) =
+     matchForm  symIndice  typeval2StrTab env 
+     (orList (normalize symIndice typeval2StrTab [dualNeg ant1, cons1]), orList (normalize symIndice  typeval2StrTab [dualNeg ant2, cons2]))
+
+/\  	matchForm  symIndice  typeval2StrTab  env (f1, f2)=NONE
+
+;
+
+
+letrec matchFormLs  symIndice  typeval2StrTab env [] =   env
+/\	 matchFormLs  symIndice  typeval2StrTab env ((ba1,ba2): ls) = 
+	 let env'=(matchForm  symIndice  typeval2StrTab  env (  ba1,  ba2)) in
+	 env'=NONE=>NONE| 
+	 matchFormLs  symIndice typeval2StrTab env' ls;
+
+
+letrec normForm symIndice typeval2StrTab  (orList formulaList)=
+   orList (normalize symIndice typeval2StrTab formulaList)
+
+/\ normForm symIndice typeval2StrTab  (implyForm ant1 cons1) =
+   normForm symIndice typeval2StrTab (orList [dualNeg ant1, cons1])
+
+/\ normForm symIndice typeval2StrTab  (andList formulaList)=
+   andList (normalize symIndice typeval2StrTab formulaList)
+
+/\ normForm symIndice typeval2StrTab (eqn l r)=eqn l r
+
+/\ normForm symIndice typeval2StrTab (neg f)=neg f;
+  
+//For a parameterized varaible, we do not print the index 1 into the string, 
+//namely "n=C ->!n=C" is generated for the above formula;  after deciding the character string equal, 
+//we try to unify the two formulae
+//****************************************************************************************************************************************** 
+   
+forward_declare {formula2SmtStr::(int, string) htbl -> formula -> string}; 
+let var2SmtStr  (Global v)=v
+/\   var2SmtStr  (Param v i)=" ("^v^" "^(int2str i)^") " 
+;
+
+letrec exp2SmtStr  typeval2SmtStrTab  (Var var)=var2SmtStr var
+/\ exp2SmtStr  typeval2SmtStrTab  (Const i)=
+         enum2Str  typeval2SmtStrTab i
+	   
+//(ite (and (= x!1 11) (= x!2 false)) 21 0)
+/\ exp2SmtStr typeval2CharacterStrTab (iteForm f e1 e2)=
+	  "(ite "^(formula2SmtStr  typeval2CharacterStrTab f)^ "   "^
+	    "  "^(exp2SmtStr typeval2CharacterStrTab e1)^  "  "^   
+	   "  "^(exp2SmtStr typeval2CharacterStrTab e2)^" )"   ;
+
+
+//let assignment2SmtStr  typeval2SmtStrTab (Assign v val0)
+//    =(var2SmtStr v)^ = ^(exp2SmtStr  typeval2SmtStrTab val0);
+
+
+letrec formula2SmtStr  typeval2SmtStrTab (eqn l r)
+   = " (= "^(exp2SmtStr  typeval2SmtStrTab l)   ^" "^ (exp2SmtStr  typeval2SmtStrTab r)^") "
+   
+/\ formula2SmtStr  typeval2SmtStrTab (andList frms)
+   =itlist (\e.\str. " (and "^(formula2SmtStr  typeval2SmtStrTab e) ^"   "^str^") ") frms " true "  
+   
+/\ formula2SmtStr  typeval2SmtStrTab (neg frm)=
+     " (not " ^(formula2SmtStr  typeval2SmtStrTab  frm)^") "
+    
+///\ formula2SmtStr  typeval2SmtStrTab (andList [form])=
+//    (formula2SmtStr  typeval2SmtStrTab form)
+    
+/\ formula2SmtStr  typeval2SmtStrTab (orList frms)=
+    itlist (\e.\str. " (or "^(formula2SmtStr  typeval2SmtStrTab e) ^"   "^str^") ") frms " false "   
+
+/\  formula2SmtStr  typeval2SmtStrTab (implyForm  f1 f2)
+   =" (=> "^(formula2SmtStr  typeval2SmtStrTab f1)^"  "^(formula2SmtStr  typeval2SmtStrTab f2)^") "
+   
+/\ formula2SmtStr  typeval2SmtStrTab (forallForm  N pf)
+   = formula2SmtStr  typeval2SmtStrTab  (andList (map pf (down N)))
+   
+/\ formula2SmtStr  typeval2SmtStrTab (chaos)
+   = "true"  
+   
+/\   formula2SmtStr  typeval2SmtStrTab (miracle)
+   = "false"     ;
+        	
+        	
+let createThyDef aritTable  typeTable typeNameTab enumValTab fileName=
+	let enumTypeDef=createSmtScalarDef  typeNameTab enumValTab in
+	let funcDef=createSmtFunc  aritTable  typeTable typeNameTab in
+	let outf=fopen (fileName^".temp") "w" in
+	fputs outf enumTypeDef fseq
+	fputs outf funcDef fseq
+//	print "closef\n" fseq
+	fclose outf;
+	
+let substVar env ( Global vname)=Global vname
+     
+/\ substVar env ( Param vname i)=
+    mem i (tbl_keys env) => Param vname (tbl_element env i)  |( Param vname i); 
+
+let substExp env (Const i)=
+  mem i (tbl_keys env) => Const (tbl_element env i)| Const i
+     
+/\substExp env (Var v)=
+  Var (substVar env v);
+
+  
+letrec substForm   env ((eqn l r)) =
+   eqn (substExp env l) (substExp env r)
+     
+/\  	substForm   env   (andList formList) =
+      andList (map (substForm env) formList)
+
+/\    substForm   env  (neg f1)  = neg ( substForm   env  f1)
+
+/\    substForm   env ( (orList formList))=
+       orList (map (substForm env) formList)
+    		
+/\  	substForm    env (implyForm ant1 cons1) =
+     implyForm (substForm    env  ant1) (substForm    env cons1)
+     
+/\ substForm    env (forallForm N pf) =
+     andList (map  (substForm    env)  (map pf (down N)))  ;	
+
+let smtDecide enumValTab fileName inv1 inv2=
+//	  print (fileName^"\n") fseq
+	  let Inv=neg (implyForm inv1 inv2) then   
+    let invStr=formula2SmtStr  enumValTab Inv then
+    let assertStr="(assert "^invStr^")\n" in
+     print "***********\n" fseq
+    print  assertStr fseq
+    
+     print "***********\n" fseq
+    let fin = fopen (fileName^".temp") "r"    then
+    let fout = fopen (fileName^".tmp") "w"    then
+    rec_copy fin fout fseq
+    (fprintf fout "%s" assertStr) fseq
+     fputs fout "(check-sat)" fseq
+     fclose fout  fseq
+     fclose fin  fseq
+    // let cmd=(sprintf "z3 -smt2 %s.tmp > %s.result" (fileName, fileName)) in
+    
+     let cmd=(sprintf "%s -smt2 %s.tmp > %s.result" (z3PathName, fileName, fileName)) in
+		// print "call z3 to do ...\n" fseq
+		 val (ret,msgs) = exec cmd in
+     print ((int2str ret) ^"\n") fseq
+     let fresult=fopen (fileName^".result") "r" in
+     let str=fgets fresult in
+      print (str^"\n") fseq
+   //   fgetc stdin fseq
+   (str_is_prefix  "unsat" str) OR (str_is_prefix  "sat" str)=>
+		 let unsat=str_is_prefix  "unsat"  str then
+		 fclose fresult fseq
+		 unsat
+   |error str;
+
+let satisfiable enumValTab fileName inv =
+      let invStr=formula2SmtStr  enumValTab inv then
+    let assertStr="(assert "^invStr^")\n" in
+     print "***********\n" fseq
+    print  assertStr fseq
+    
+     print "***********\n" fseq
+    let fin = fopen (fileName^".temp") "r"    then
+    let fout = fopen (fileName^".tmp") "w"    then
+    rec_copy fin fout fseq
+    (fprintf fout "%s" assertStr) fseq
+     fputs fout "(check-sat)" fseq
+     fclose fout  fseq
+     fclose fin  fseq
+    // let cmd=(sprintf "z3 -smt2 %s.tmp > %s.result" (fileName, fileName)) in
+    
+     let cmd=(sprintf "%s -smt2 %s.tmp > %s.result" (z3PathName, fileName, fileName)) in
+		// print "call z3 to do ...\n" fseq
+		 val (ret,msgs) = exec cmd in
+     print ((int2str ret) ^"\n") fseq
+     let fresult=fopen (fileName^".result") "r" in
+     let str=fgets fresult in
+      print (str^"\n") fseq
+   //   fgetc stdin fseq
+   (str_is_prefix  "unsat" str) OR (str_is_prefix  "sat" str)=>
+		 let sat=str_is_prefix  "sat"  str then
+		 fclose fresult fseq
+		 sat
+   |error str;
+
+letrec perm A = (length A ) < 1 => [A] |
+      let sub i A = map (\s.([i]@s)) (perm (filter (\item.(item != i))
+A)) in
+       flat (map (\i.(sub i A)) A);
+
+
+letrec invImplyCheckOnes typeval2StrTab tempName inv2 inv1 parasOfInv1 (p:ps)=
+          let subLists=zip parasOfInv1 (firstn  (length parasOfInv1) p) then 
+   //       let subLists=(zip parasOfInv1 p) catch error "zip\n" then 
+    let env=tbl_insert_assoc_list (tbl_create 3) subLists then 
+    let inv1'=substForm env inv1 then 
+    print ("inv1'="^(formula2str typeval2StrTab inv1')^"\n") fseq 
+    print ("inv2="^(formula2str typeval2StrTab inv2)^"\n") fseq
+         printStrList (map int2str p) fseq
+ 	( smtDecide typeval2StrTab tempName  inv1' inv2)=> (T,SOME env)
+   | invImplyCheckOnes typeval2StrTab tempName inv2 inv1 parasOfInv1 (ps)
+
+/\invImplyCheckOnes typeval2StrTab tempName inv2 inv1 parasOfInv []=(F,NONE);
+
+
+let strLess str str2=(strcmp str str2);
+
+let intLess' i1 i2=(i1<i2)=> (- 1) |1;
+ 	
+
+let invImply  dist symIndice typeval2StrTab tempName oldInv newInv=
+ //  print "enter invImply\n" fseq
+  //let oldInv=normForm symIndice typeval2StrTab oldInv in
+//  let newInv=normForm symIndice typeval2StrTab newInv in
+  
+ 
+  //print (formula2str typeval2StrTab oldInv) fseq
+ //  print "<------->\n" fseq
+ // print (formula2str typeval2StrTab newInv) fseq
+///	print "?-------\n" fseq
+ // let env=SOME (tbl_create 100) in
+ // let env=matchForm   symIndice  typeval2StrTab env (oldInv, newInv) in
+ // env=NONE => F|
+ // let env=getReal env in
+ // let oldInv=substForm env oldInv in
+ // smtDecide typeval2StrTab tempName oldInv newInv;
+
+
+//(qsort strLess (onVarsStr oldInv) )=(qsort strLess  (onVarsStr  newInv) )=>
+  
+// (let parasOfoldInv= (setify (parasOfInv  dist   symIndice oldInv)) then
+// let parasOfnewInv= (setify  ( parasOfInv  dist   symIndice newInv)) then
+//  (length parasOfoldInv)=(length parasOfnewInv) =>
+ // (length parasOfoldInv)=0=>
+//    smtDecide typeval2StrTab tempName oldInv newInv |
+ //    let  perms=perm parasOfnewInv then
+ //          invImplyCheckOnes typeval2StrTab tempName newInv oldInv parasOfoldInv perms 
+ //       |F)
+//|F;
+
+(let parasOfoldInv= (setify (parasOfInv  dist   symIndice oldInv)) then
+let parasOfnewInv= (setify  ( parasOfInv  dist   symIndice newInv)) then
+let varsOfoldInv=(qsort strLess (onVarsStr oldInv) ) then
+let varsOfnewInv=(qsort strLess  (onVarsStr  newInv) ) then
+
+varsOfoldInv=varsOfnewInv =>
+  
+ 
+ ((length parasOfoldInv)=0=>
+    (smtDecide typeval2StrTab tempName oldInv newInv=T=>(T,SOME (tbl_create 3))| (F, NONE)) |
+   (length parasOfoldInv) <= (length parasOfnewInv) =>
+     let  perms=perm parasOfnewInv then
+    // let  perms=(map (firstn (length parasOfoldInv)) perms)  then
+           invImplyCheckOnes typeval2StrTab tempName newInv oldInv parasOfoldInv perms
+        |(F,NONE))
+
+|empty (varsOfoldInv subtract varsOfnewInv )=>
+ ((length parasOfoldInv)=0=>
+   (smtDecide typeval2StrTab tempName oldInv newInv=T=>(T,SOME (tbl_create 3))| (F, NONE) ) |
+   (length parasOfoldInv) <= (length parasOfnewInv) =>
+     let  perms=perm parasOfnewInv then
+   //  let  perms=(map (firstn (length parasOfoldInv)) perms)  then
+           invImplyCheckOnes typeval2StrTab tempName newInv oldInv parasOfoldInv perms
+        |(F,NONE))
+|(F,NONE)) catch (error "wrong perms\n");
+  
+
+//let isimpliedByOldInv  symIndice  typeval2StrTab tempName inv invs=
+//  let oldInvs=filter (\inv'. invImply  symIndice  typeval2StrTab tempName inv' inv) invs then
+//  let noemptyR=NOT (empty oldInvs) then
+//  noemptyR =>
+//	(SOME (hd oldInvs))|NONE;
+	
+
+let isimpliedByOldInv   dist symIndice   typeval2StrTab tempName inv invs=
+  let j=find_first0 (\inv'. fst (invImply dist  symIndice  typeval2StrTab tempName inv' inv) ) invs then
+     j!=0=>
+  let oldInv=el j invs then
+  let symRel=snd (invImply  dist symIndice typeval2StrTab tempName oldInv inv) then
+	( T,  SOME oldInv, 	 symRel)
+	|(F,NONE,NONE)	;
+	
+//let implySomeOldInv dist symIndice 	typeval2StrTab tempName inv invs=
+//	filter (\inv'. invImply dist symIndice  typeval2StrTab tempName inv inv') invs;
+	
+	
+let tautlogy typeval2StrTab tempName inv=
+(  val (implyForm inv1 inv2) =inv in
+  //let inv1=normForm typeval2StrTab inv1 in
+  //let inv2=normForm typeval2StrTab inv2 in
+ // print ("tautlogy inv1:="^(formula2str  typeval2StrTab inv1)^"\n") fseq
+  
+ // print ("tautlogy inv2:="^(formula2str  typeval2StrTab inv2)^"\n") fseq
+
+  smtDecide typeval2StrTab tempName inv1 inv2) catch
+smtDecide typeval2StrTab tempName chaos inv ;	
+
+let decide dist  symIndice   fileName smtTemp enumTab  invsLib inv=
+	  tautlogy enumTab smtTemp inv=> (T,F,T,0,chaos,NONE) |
+	   val (found, oldInvOpt,envOpt)=  isimpliedByOldInv dist  symIndice  enumTab smtTemp inv invsLib in
+     //let found= ( ) then
+         (found )
+         => 
+        val (SOME inv'')=oldInvOpt in
+        val (SOME symRel)=envOpt in
+         //(taut, isImplied, isInv,No,pre)
+        (F,T,T , 0,inv'',envOpt ) |
+    
+  //  print (fileName^"\n") fseq
+    let fin = fopen (fileName^".m") "r"    then
+    let fout = fopen (fileName^".tmp.m") "w"    then
+    (rec_copy fin fout fseq
+    (fprintf fout "%s" (form2MurphiInv enumTab inv)) fseq
+  //   print ("|--------------"^(form2MurphiInv enumTab inv)^"------------------\n") fseq
+     fclose fout  fseq
+     fclose fin  fseq
+     
+     let cmd=(sprintf "%s  %s.tmp.m" (cmurphiDir,fileName)) in
+    // let cmd=(sprintf "/home/lyj/cmurphi5.4.9/src/mu  %s.tmp.m" fileName) in
+  //   print ("\n"^cmd^"\n") fseq
+     val (ret,msgs) = exec cmd in
+     ret != 0 => eprintf "mu failed with message(s):\n%S\n" msgs |
+      print ("\n"^(int2str ret)^"\n") fseq
+     let cmd=(sprintf "make" ) in
+  //   print ("\n"^cmd^"\n") fseq
+     val (ret,msgs) = exec cmd in
+     ret != 0 => eprintf "make\n" msgs |  
+     let cmd=sprintf  " ./%s > %s.result "  (fileName,fileName) in
+     val (ret,msgs) = exec cmd in
+      // ret != 0 =>  error "cache failed with message(s):\n%S\n" msgs |() fseq
+      print (int2str ret) fseq
+     let fresult=searchSuc (fileName^".result") in
+      (F,F,fresult,0,chaos,NONE));
+
+let form2MurphiInv enumTab inv=
+    "ruleset i:client do\n"^ "   invariant \"coherent\" \n"^ (formula2str enumTab inv)^"\n"^"end;\n";
+
+forward_declare {formula2SmvStr::(int, string) htbl -> formula -> string};
+
+let var2SmvStr  (Global v)=v
+/\   var2SmvStr  (Param v i)="Node[" ^(int2str i)^ "]."^v ;
+
+letrec exp2SmvStr  typeval2StrTab  (Var var)=var2SmvStr  var
+/\ exp2SmvStr  typeval2StrTab  (Const i)=
+        
+       let str=  enum2Str  typeval2StrTab i then
+        (str="true") => "TRUE"
+        |(str="false") => "FALSE"
+        |str
+// add ite expression to smv format
+/\ exp2SmvStr typeval2StrTab (iteForm f e1 e2) =
+    "(" ^ (formula2SmvStr typeval2StrTab f) ^ " ? " ^
+    (exp2SmvStr typeval2StrTab e1) ^ " : " ^ 
+    (exp2SmvStr typeval2StrTab e2) ^ ")";
+
+letrec formula2SmvStr  typeval2StrTab (eqn l r)
+   = "( "^(exp2SmvStr typeval2StrTab l)^ "=" ^ (exp2SmvStr   typeval2StrTab r)^") "
+
+///\ formula2SmvStr  typeval2StrTab (andList [frm])=formula2SmvStr  typeval2StrTab \\frm ^ (formula2SmvStr  typeval2StrTab frm)
+   
+/\ formula2SmvStr  typeval2StrTab (andList (frms))=
+   frms=[]=>"TRUE"|
+   let str=(itlist (\e.\str. (formula2SmvStr  typeval2StrTab e) ^" & "^str) frms "" ) in
+   //let strs=explode str in
+   //let str=implode (
+   "( "^(str_substr str 1 (strlen str -2))^") "
+
+
+/\ formula2SmvStr  typeval2StrTab (neg frm)=
+     " (!" ^(formula2SmvStr  typeval2StrTab  frm)^") "
+    
+///\ formula2SmvStr  typeval2StrTab (andList [form])=
+//    (formula2SmvStr  typeval2StrTab form)
+    
+/\ formula2SmvStr  typeval2StrTab (orList frms)=
+   let str= itlist (\e.\str. (formula2SmvStr  typeval2StrTab e) ^" | "^str) frms  ""  in
+   "( "^ (str_substr str 1 (strlen str -2))^") "  
+
+/\  formula2SmvStr  typeval2StrTab (implyForm  f1 f2)
+   ="( "^(formula2SmvStr  typeval2StrTab f1)^" -> "^(formula2SmvStr  typeval2StrTab f2)^") "
+   
+/\ formula2SmvStr  typeval2StrTab (forallForm  N pf)
+   =formula2SmvStr  typeval2StrTab (andList (map pf (down N)))
+   
+/\formula2SmvStr  typeval2StrTab chaos="TRUE"
+
+/\  formula2SmvStr typeval2StrTab miracle = "FALSE"
+
+/\ formula2SmvStr  typeval2StrTab (orList frms)=
+     frms = [] => "FALSE" |
+    let str= itlist (\e.\str. (formula2SmvStr  typeval2StrTab e) ^" |
+"^str)      frms  ""  in
+    "( "^ (str_substr str 1 (strlen str -2))^") "
+;
+
+ letrec existResultFileAndDel fileName=
+   print ("--Now open "^fileName^"\n") fseq
+	let fresult= (SOME (fopen fileName "r" )  catch NONE) then
+	fresult =NONE =>
+	  (//let cmd=("sleep 1") then 
+     //val (ret,msgs) = exec cmd in 
+	   //ret fseq 
+    existResultFileAndDel fileName)
+
+	| val (SOME fp)=fresult in
+	  // let cmd=("sleep 1 ") then 
+    // val (ret,msgs) = exec cmd in 
+	  // ret fseq
+     let result=feof fp =>"NULL"|fgets fp then 
+     print result fseq
+     fclose fp fseq
+     let cmd=("rm "^ fileName) then 
+     val (ret,msgs) = exec cmd in 
+     ret != 0 => eprintf "rm  failed with message(s):\n%S\n" msgs |
+     print ("rm succedd "^fileName^"\n")  fseq SOME result ;
+
+letrec existResultFile  fileName=
+   print ("--Now open "^fileName^"\n") fseq
+	let fresult= (SOME (fopen fileName "r" )  catch NONE) then
+	fresult =NONE =>
+	  (//let cmd=("sleep 1") then 
+     //val (ret,msgs) = exec cmd in 
+	   //ret fseq 
+    existResultFileAndDel fileName)
+
+	| val (SOME fp)=fresult in
+	  // let cmd=("sleep 1 ") then 
+    // val (ret,msgs) = exec cmd in 
+	  // ret fseq
+     let result=feof fp =>"NULL"|fgets fp then 
+     print result fseq
+     fclose fp fseq SOME result ;
+
+non_lazy existResultFileAndDel;
+non_lazy existResultFile;
+
+let del fileName=
+let cmd=("rm "^ fileName) then 
+     val (ret,msgs) = exec cmd in 
+     ret != 0 => eprintf "rm  failed with message(s):\n%S\n" msgs |
+     print ("rm succedd "^fileName^"\n") ;
+
+non_lazy del;
+
+let decideBySmv dist symIndice fileName smtTemp enumTab invsLib inv=
+
+tautlogy enumTab smtTemp inv=> (T,F,T,0,chaos,NONE) |
+	   val (found, oldInvOpt,envOpt)=  isimpliedByOldInv  dist symIndice  enumTab smtTemp inv invsLib in
+     //let found= ( ) then
+         (found )
+         => 
+        val (SOME inv'')=oldInvOpt in
+        val (SOME symRel)=envOpt in
+         //(taut, isImplied, isInv,No,pre)
+        (F,T,T , 0,inv'',envOpt ) |
+    
+   let fout = fopen ("cand_inv") "w"    then
+    
+
+    //1. generating the invariant description in SMV format, added into murphi code
+    (fprintf fout "%s" (formula2SmvStr enumTab inv)) fseq
+     print ("|--------------"^(formula2SmvStr  enumTab inv)^"---"^(formula2SmvStr enumTab inv)^"------------------\n") fseq
+     fclose fout  fseq
+
+//let cmd=("./transinv.sh") then  
+ //   val (ret,msgs) = exec cmd in  
+  //   ret != 0 => eprintf "trans  failed with message(s):\n%S\n" msgs |
+  //   print "trans succedd\n"   fseq
+
+
+let fout = fopen ("cand_lock") "w"    then
+
+     
+     print ("|-------------- create lock file ------------------\n") fseq
+     fclose fout  fseq
+
+     
+     // 2. system call expect to check property
+
+	  let result=existResultFileAndDel "res_lock" then
+      val (SOME result)=result in
+      print ("res_lock="^result) fseq
+     
+     let result=existResultFileAndDel "res_inv" then
+		
+	   val (SOME result)=result in
+      print ("res_inv="^result) fseq
+
+    (str_is_prefix      "Error" result)=>
+     // del "res_lock" fseq
+       error "not legal result"
+          |
+	   let fresult=str_is_prefix  "Is_Inv" result then
+     // del "res_lock" fseq
+      (F,F,fresult,0,chaos,NONE);
+
+
+letrec  chooseOne dist  symIndice   template smtTemp enumTab invsLib cons0 (pre:pres)=
+ 
+  val (taut, isImplied, isInv,No,oldInv,symRelOpt)= 
+   //decide   symIndice  template smtTemp enumTab invsLib (implyForm pre cons0)  in
+     decideBySmv dist symIndice   template smtTemp enumTab invsLib (implyForm pre cons0) in
+  	
+  isInv =>SOME (taut, isImplied, isInv,No,oldInv,symRelOpt,pre)
+   |  chooseOne dist  symIndice    template smtTemp enumTab invsLib cons0 pres
+    
+/\  chooseOne dist  symIndice   template smtTemp enumTab invsLib  cons0 []=
+   NONE;
+
+letrec removeOne  dist symIndice  template smtTemp enumTab invsLib  cons0 (pre:pres) necessary=
+   val (taut, isImplied, isInv,No,oldInv,symRelOpt)= 
+
+  decideBySmv dist  symIndice  template smtTemp enumTab invsLib  (implyForm (andList (pres@necessary)) cons0) in
+
+   isInv=>
+
+    removeOne  dist symIndice   template smtTemp enumTab invsLib  cons0 (pres) necessary
+
+    | removeOne  dist symIndice   template smtTemp enumTab invsLib  cons0 (pres) (necessary@[pre])
+
+/\ removeOne  dist symIndice   template smtTemp enumTab invsLib   cons0 [] necessary=
+   val (taut, isImplied, isInv,No,oldInv,symRelOpt)= decideBySmv dist  symIndice   template smtTemp enumTab invsLib (implyForm (andList (necessary)) cons0) in
+  	
+  isInv =>SOME (taut, isImplied, isInv,No,oldInv,symRelOpt,(andList necessary)) |NONE;
+
+//inv=home_current_command=emptyC => !channel2_4[1]=invalidate
+//home_current_client=2 & rule=  home_current_command = req_shared
+//      & !home_exclusive_granted & channel2_4[home_current_client] = emptyC
+// ==>
+//      begin
+//       home_sharer_list[home_current_client] := true;
+//       home_current_command := emptyC;
+//       channel2_4[home_current_client] := grant_shared;
+//      end;
+
+let policy1   symIndice  dist template smtTemp enumTab invsLib cons0 pres=
+   let parasIncons0=parasOfInv  dist  symIndice cons0 in
+   let parasInPres=flat (map (parasOfInv dist symIndice ) pres) in
+   empty (  parasIncons0 intersect parasInPres)=>
+   let presOnGlobal=   filter (\f. empty (parasOfInv dist symIndice  f)) pres in
+   let inv=implyForm (andList presOnGlobal) cons0 in
+   val (taut, isImplied, result,No,oldInv,symRelOpt)= decideBySmv  dist  symIndice  template smtTemp enumTab invsLib  inv in 
+   result =>SOME (taut, isImplied, result,No,oldInv,symRelOpt,(andList presOnGlobal))| NONE  
+   |NONE ;
+
+let assign2Form (assign v val0)=
+    eqn (Var v) val0; 
+
+
+//
+let policy2  dist symIndice  template  smtTemp enumTab invsLib  cons0 pres  assignOnGlobal=
+  //chooseOne dist  symIndice   template smtTemp enumTab invsLib cons0 (pre:pres)
+   let enhancedPres=map (\f. andList [f ,assignOnGlobal]) pres in
+   chooseOne  dist  symIndice   template smtTemp enumTab invsLib  cons0 enhancedPres;
+
+
+
+//inv=home_current_command=req_shared & home_exclusive_granted=false  ->  (!channel2_4[2]=invalidate) *****
+//rule=channel3[3]=invalidate_ack &  (!home_current_command=emptyC)   ==>
+//channel3[3]=emptyC & home_sharer_list[3]=false & home_exclusive_granted=false &
+//one example need policy2
+
+//inv=( ( ( channel3[3]=invalidate_ack)  &  (!( home_exclusive_granted=false) )  )  ->  (!( channel2_4[2]=invalidate) ) ) *****
+//rule=( ( channel2_4[3]=invalidate)  & ( channel3[3]=emptyC)  )  ==>
+//channel2_4[3]=emptyC & channel3[3]=invalidate_ack & cache[3]=invalid &
+//let policy3
+	
+//1.make the form to a normal form---, which satisfies that
+//(a)the symmetry between two assertion
+//channel2_4[1]=grant_exclusive -> !cache[2]=shared   =
+// 	channel2_4[2]=grant_exclusive -> !cache[1]=shared
+ 	
+//channel2_4[1]=grant_exclusive -> !cache[2]=shared   =
+// 	cache[2]=shared  -> !channel2_4[1]=grant_exclusive 	
+//(b)For implication
+// channel2_4[1]=grant_exclusive -> cache[2]=invalid
+//  channel2_4[1]=grant_exclusive -> !cache[2]=shared
+  
+//our strategy , first normalize, then unify the quantifier by only match the left side
+//invsLib:Invariants has been checked pllus inv itself
+//newInvs:Invs has not been checked
+//We construct new invariants according to policies as follows:
+//inputs: a consequent cons0, a list of premises: pres, 
+//outputs: an formula ant' such that ant' --> cons0 is also a new invariant 
+//ant' is a conjunction, conjunctals of ant' <= pres;
+//policy1: the simplest one, select one premise from pres as ant'
+//for instance1: cons0=( home_sharer_list[1]=true); pres=[(channel2_4[cl] = grant_shared)]statement2Env statement env
+//we directly select (channel2_4[cl] = grant_shared) as ant' ;
+
+//policy3:delete some unnecessary pre-conditions:
+//for instance2:
+//pres=[ home_current_command = req_shared, !home_exclusive_granted, channel2_4[1] = empty,home_current_client=1];
+//cons=Neg ( channel3[1]=invalidate_ack) ;
+
+
+let choose dist  symIndice  template  smtTemp enumTab invsLib  cons0 pres statements ant=
+   //print "\nenter policy choose\n" fseq
+//policy1
+   let preOnStatements=map assign2Form (filter (\S. val (assign v val0) =S in
+                                           empty (  (paraIndexOfVar v) intersect (parasOfInv dist symIndice ant))  ) statements ) then 
+   let assignStatementOnGlobals=filter (\S. val (assign v val0) =S in
+                                            empty (paraIndexOfVar v) ) statements then
+   let globalAnts=                                        
+         assignStatementOnGlobals=[]=>[]|
+        // val [assignStatementOnGlobal]=assignStatementOnGlobals in
+         map  neg  (map assign2Form assignStatementOnGlobals) then                                       
+   let result=chooseOne  dist symIndice   template   smtTemp enumTab invsLib  cons0 (pres@globalAnts)  then
+   (result!=NONE) =>result|
+//policy2
+    let result=policy1   symIndice   dist   template   smtTemp enumTab invsLib   cons0 pres then
+      (result!=NONE) =>result|
+     //  print "\nenter policy2 \n" fseq
+       let result=
+         (globalAnts=  []=>NONE |
+         let globalAnt=hd globalAnts  in
+         policy2 dist  symIndice   template  smtTemp enumTab invsLib   cons0 pres globalAnt) catch NONE in
+      result!=NONE => result
+      |let ants=andList2ands ant then
+       let ants=filter (\f. empty (parasOfInv dist symIndice  f)) ants then
+       let result=(ants=[])=>NONE|
+       val [antOnGlobal]= ants in
+           policy2 dist  symIndice   template  smtTemp enumTab invsLib   cons0 pres antOnGlobal then
+       (result!=NONE) =>result| removeOne dist  symIndice    template  smtTemp enumTab invsLib  cons0 pres [];
+
+
+
+letrec tbl_deletes tbl []=tbl
+/\tbl_deletes tbl (k:ks)=
+   let tbl' =((tbl_delete tbl k)  catch tbl) then tbl_deletes tbl' ks;
+
+
+//here f must be a andList form or eqn
+let statementEnableForm1  typeTable  typeval2StrTab tempName statement f preCond=
+    //  print ((formula2str typeval2StrTab f) ^"enable\n") fseq
+      
+      let setOff=setify (varOfForm f)  then
+    //  let setOfS=setify (varOfStatement statement) then
+      let env=SOME (tbl_create 20) then
+      let env=statementPartlyEnableForm  typeTable  env statement f then
+      env=NONE =>(F,NONE)|
+      let changedVars=tbl_keys (getReal env) then
+  //    printStrList (map  (formula2str typeval2StrTab)    (andList2ands f)) fseq
+      let isNotDeciseEqn form= val [( vname)]= varOfForm  form in 
+                                  NOT (mem vname changedVars) then
+      let undecideForms=filter isNotDeciseEqn (andList2ands f) then
+      let decide=    smtDecide typeval2StrTab tempName preCond (andList undecideForms) then
+      print (bool2str 10 decide) fseq
+     // val (SOME env)=env in
+     // let env=tbl_deletes env  setOff then
+      (decide,  env);
+      
+//here f must be a andList form or eqn
+ let statementEnableForm  typeTable  typeval2StrTab tempName statement f preCond=    
+   let env= (tbl_create 20) then
+    let env=form2Env typeTable preCond env then
+    let env=statement2Env statement env then
+    let cond=checkConjsInEnv (andList2ands f) env then
+    (cond, SOME env);
+
+let impInvNorm inv=
+//   let recover s=print
+   (val (implyForm ant cons0)=inv in
+   val (neg (andList conjunctals ))=cons0 in
+   length conjunctals >1 => implyForm (andList conjunctals ) (neg ant) 
+   | inv) catch inv;
+
+let statementDisableForm1  typeTable  typeval2StrTab tempName   statement f preCond=
+     let setOff=setify (varOfForm f)  then
+    //  let setOfS=setify (varOfStatement statement) then
+      let env=SOME (tbl_create 20) then
+      print "disable\n" fseq
+      let env=statementPartlyDisableForm  typeTable  env statement f then
+      env!=NONE =>(T,env)| 
+       let setOfS=setify (varOfStatement statement) then
+       let isNotDeciseEqn form= val [( vname)]= varOfForm  form in 
+                                  NOT (mem vname setOfS) then
+      let undecideForms=filter isNotDeciseEqn (andList2ands f) then
+       let decide=    smtDecide typeval2StrTab tempName preCond (neg (andList undecideForms)) then
+      
+       print (bool2str 10 decide) fseq
+     //  val (SOME env)=env in
+     //  let env=tbl_deletes env setOff then
+      (decide, env);
+      
+let statementDisableForm  typeTable  typeval2StrTab tempName statement f preCond=    
+   let env= (tbl_create 20) then
+   let env=form2Env typeTable preCond env then
+   let env=statement2Env statement env then
+   let cond=checkDisableConjsInEnv (andList2ands f) env then
+  (cond, SOME env);      
+
+
+let var2ByPramNormlize  symIndices  paraTab (Global v) =(Global v)
+/\   var2ByPramNormlize  symIndices   paraTab (Param v i)= 
+  let mf (i,j)=(int2str i)^(int2str j) then
+ printStrList (map mf (tbl_values paraTab)) fseq
+(mem i symIndices => 
+  NOT(mem i (tbl_keys paraTab))=> (Param v i) |
+  (Param v (tbl_element paraTab i)) | (Param v i));
+//catch ( error (v^(int2str i)));
+
+forward_declare {formula2ByPramNormlize ::int-> int list ->(int, int) htbl -> formula -> formula};
+
+letrec exp2ByPramNormlize  dist  symIndices   paraTab  (Var var)=Var (var2ByPramNormlize  symIndices   paraTab  var)
+
+/\ exp2ByPramNormlize dist  symIndices   paraTab (Const i) =    
+	(i< dist) AND (mem i symIndices) => (Const (tbl_element paraTab i)) |    (Const i)
+
+/\ exp2ByPramNormlize  dist  symIndices   paraTab (iteForm f e1 e2)=
+  iteForm (formula2ByPramNormlize  dist  symIndices   paraTab f) (exp2ByPramNormlize  dist  symIndices    paraTab e1) (exp2ByPramNormlize  dist  symIndices   paraTab e2);
+
+
+//let assignment2ByPramNormlize  dist  paraTab (Assign v val0)
+//    =(var2ByPramNormlize paraTab v)^ = ^(exp2ByPramNormlize  paraTab val0);
+
+
+letrec formula2ByPramNormlize  dist  symIndices    paraTab (eqn l r)
+   = eqn (exp2ByPramNormlize  dist  symIndices    paraTab l)  (exp2ByPramNormlize  dist   symIndices   paraTab r)
+   
+/\ formula2ByPramNormlize  dist  symIndices   paraTab (andList frms)
+   =andList (map (formula2ByPramNormlize  dist  symIndices   paraTab  )   frms ) 
+   
+//please note that the formulae will be only allowed when negation is at the    nested level
+/\ formula2ByPramNormlize  dist  symIndices   paraTab (neg frm)=
+      neg (formula2ByPramNormlize  dist  symIndices   paraTab  frm)
+    
+ 
+    
+/\ formula2ByPramNormlize  dist  symIndices   paraTab (orList frms)
+    =orList (map (formula2ByPramNormlize  dist  symIndices   paraTab  )   frms )   
+
+/\  formula2ByPramNormlize  dist  symIndices   paraTab (implyForm  f1 f2)
+   =implyForm  (formula2ByPramNormlize  dist  symIndices     paraTab f1) (formula2ByPramNormlize  dist  symIndices   paraTab f2)
+   
+/\  formula2ByPramNormlize  dist  symIndices   paraTab (forallForm  N pf)=
+   andList (map  (formula2ByPramNormlize  dist  symIndices   paraTab) (map pf  (down N))) 
+
+/\ formula2ByPramNormlize  dist  symIndices paraTab  miracle=miracle
+/\ formula2ByPramNormlize  dist  symIndices paraTab chaos=chaos ;
+   
+
+
+letrec statement2ByPramNormlize  dist  symIndices   paraTab (assign v val0)
+    =assign (var2ByPramNormlize  symIndices      paraTab v) (exp2ByPramNormlize  dist  symIndices  paraTab val0) 
+
+    
+/\statement2ByPramNormlize  dist  symIndices   paraTab (parallel SL)=
+  parallel (map  (statement2ByPramNormlize  dist  symIndices   paraTab) SL) 
+  
+/\statement2ByPramNormlize  dist  symIndices  paraTab (forallStatement N PSL)=
+  parallel (map  (statement2ByPramNormlize  dist  symIndices   paraTab) (map PSL (down N)));
+
+
+
+let rule2ByParamNormlize  dist  symIndices  paraTab (guard f S)=
+   guard (formula2ByPramNormlize dist  symIndices  paraTab f) (statement2ByPramNormlize dist  symIndices  paraTab S);
+   
+
+letrec list2Tab  [] tab i=tab
+/\ list2Tab (x:xs) tab i=list2Tab xs (tbl_insert tab x i)   (i + 1);
+
+let swapPair (a,b)=(b,a);
+    
+let paraNormlize dist symIndices inv0=
+  let paras=parasOfInv dist symIndices inv0 then
+  let symParas=filter (\i.mem i symIndices) symIndices then  
+  let symRel=(list2Tab  paras (tbl_create 2) 1) then
+  let symRelInv=tbl_insert_assoc_list (tbl_create 2) ( (tbl_values symRel)) then
+   (formula2ByPramNormlize dist  symIndices  symRel inv0,  symRelInv);   
+   
+ // (length symParas)<2 =>inv0 |
+//   formula2ByPramNormlize  dist  symIndices  (list2Tab  paras (tbl_create 2) 1) inv0;
+   
+   
+//let paraNormlize  inv0=
+//  let paras=paraIndexsOfForm dist inv0 then
+//  let symRel=(list2Tab  paras (tbl_create 2) 1) then
+  //el 1 paras=1=>inv0 |
+  //  let symRel=(tbl_length symRel)=1=>(tbl_elemnt tbl 1=1) => tbl_insert symRel 2 2|tbl_insert symRel (tbl_element symRel  ) 
+ // let symRelInv=tbl_insert_assoc_list (tbl_create 2) (map swapPair (tbl_values symRel)) then
+//   (formula2ByPramNormlize  symRel inv0,symRelInv);   
+
+
+//let casualRel=causal   (paraRule paras inv invParas ruleType DisableOrEnable inv' ant')
+lettype disAbleOrEnableType=Enable | Disable;
+
+lettype ruleType=invHoldForRule1 disAbleOrEnableType | 
+                 invHoldForRule2 |
+                 invHoldForRule3 formula formula  |
+                 invHoldForRule4 formula formula formula bool bool   |
+                 invHoldForRule5 formula  ;
+
+  
+ 
+
+//forward_declare
+//	{keyWithfiveTuple2Strs:: int -> int list -> (string, int) htbl -> stream -> (int, string) htbl ->
+//(string # (*a -> rule # *a # formula # *b # ruleType) list) -> void};
+
+let isConst val0=( val (Const vc)= val0 in T) catch F;
+
+let envItem2Str enumTab (v,val0)=(var2Str v)^(exp2str enumTab val0);
+
+let printEnv enumTab  env=
+   printStrList (map (envItem2Str  enumTab ) (tbl_values env));
+
+//chooses   symIndice   template smtTemp  enumTab invsLib' (setify ((map dualNeg ( ant'))@[dualNeg (andList ant')]) )
+  //                          (setify (guardOfRule @pres0@gConds)) statements (andList [])  
+
+
+   
+letrec  chooses  dist  symIndice   template  smtTemp enumTab invsLib  [] premises statements ant= NONE
+/\  chooses  dist symIndice   template smtTemp enumTab invsLib (cons0:consS) premises statements ant= 
+     fputs fdebug ( "chosses cons0="^(formula2str enumTab cons0)^"*****\n")  fseq  
+     let try1=(choose dist  symIndice   template  smtTemp enumTab invsLib  (cons0) premises statements ant) catch error ( "chosses cons0="^(formula2str enumTab cons0)^"*****\n") then
+       try1= NONE => 
+        print ("chosses cons0="^(formula2str enumTab cons0)^" fail *****\n")  fseq  chooses dist  symIndice   template smtTemp enumTab invsLib (consS) premises statements ant |
+       print ("chosses cons0="^(formula2str enumTab cons0)^" sucessful *****\n") fseq SOME (cons0, getReal try1);
+
+letrec sel L 0 = [[]]
+  /\  sel [] n = []
+   /\  sel (l:L) n =
+       n > (length L) + 1 => []
+    |
+     let subset1 = sel L (n - 1) then
+    let subset2 = sel L n then
+     (map (\i.(l:i)) subset1)@subset2;
+
+letrec selAndChoose dist  symIndice   template  smtTemp enumTab invsLib  conss premises statements ant i=
+    i>length conss =>NONE|
+	    let conssList=sel conss i then
+     let conss'= (i=1)=>map (\L.hd L) conssList | map (\L.orList L) conssList then
+     let result= chooses  dist  symIndice   template  smtTemp enumTab invsLib  conss' premises statements ant then
+     result=NONE => selAndChoose  dist symIndice   template  smtTemp enumTab invsLib  conss premises statements ant (i+1) |
+     result;
+
+letrec selChooses dist symIndice   template  smtTemp enumTab invsLib  conss premises statements ant=
+         selAndChoose dist  symIndice   template  smtTemp enumTab invsLib  conss premises statements ant 1;
+       
+letrec //simpTaut (eqn (Const i) (Const j))= (i=j)=>[] |[miracle]
+
+simpTaut (eqn l r)= l=r=>[ ]| 
+                           (isConstExp l) AND (isConstExp r)=> [miracle] |  [(eqn l r)]
+/\ simpTaut (andList frms)= 
+   let mid=(filter (\f. (f!=chaos))  (flat (map simpTaut frms))) then mid
+   //mem miracle mid=>[miracle]
+ 
+/\ simpTaut (neg frm)=
+   let mid=(simpTaut frm) then
+   mid=[miracle]=> [] | map neg  mid
+/\ simpTaut chaos=[]
+/\ simpTaut (orList  forms)=[orList  (flat (map simpTaut  forms))]
+/\ simpTaut (forallForm N fl)=flat (map simpTaut (map fl (down N)));
+///\ simpTaut (forallForm N fl)=[];       
+       
+ 
+      
+//case 2, when statement does not change any variable in inv, then does not add any new invariants
+letrec dealWithCase2 ruleTable  enumTab fiveTuple ((g,inv):obligations) (newInvs,relLib) =
+       
+	      val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+	       let paraRule=tbl_element ruleTable paraRuleName then
+         let hdTab=(paraRuleName, paras,g, inv0, invParas, invHoldForRule2) then  
+         fputs fdebug "branch 2 " fseq     
+          fputs fdebug   ("******************************************************\n") fseq
+         fputs fdebug ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+         fputs fdebug  (paraRuleName^"--"^"rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq
+         fputs fdebug ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+         fputs fdebug   ("******************************************************\n\n\n") fseq  
+         let midResult=  (newInvs, relLib@[hdTab])  then
+         
+         dealWithCase2  ruleTable   enumTab  fiveTuple ( obligations) midResult
+ /\   dealWithCase2 ruleTable  enumTab  fiveTuple [] (newInvs,relLib) =   (   newInvs,relLib);
+
+//case when enabled consequent or disable antecedent              
+letrec dealWithCase1 ruleTable  enumTab fiveTuple ((g,inv):obligations) (newInvs,relLib) =
+ 
+	      val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+	      
+	       let paraRule=tbl_element ruleTable paraRuleName then
+         let hdTab=(paraRuleName, paras,g, inv0, invParas, invHoldForRule1 Enable) then
+         let midResult=  (newInvs, relLib@[hdTab]) then
+         fputs fdebug "branch 1 " fseq 
+         fputs fdebug   ("******************************************************\n") fseq
+         fputs fdebug ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+         fputs fdebug  (paraRuleName^"--"^"rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq
+         fputs fdebug ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+         fputs fdebug   ("******************************************************\n\n\n") fseq
+         dealWithCase1  ruleTable   enumTab fiveTuple ( obligations) midResult
+         
+ /\   dealWithCase1 ruleTable  enumTab fiveTuple [] (newInvs,relLib) =   (newInvs,relLib);
+ 
+//case when enabled consequent or disable antecedent              
+letrec dealWithCase3  ruleTable  dist  symIndice statement template smtTemp enumTab invsLib guardOfRule fiveTuple ((g,inv):obligations) (newInvs,relLib) =   
+	     val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+	     
+	       let paraRule=tbl_element ruleTable paraRuleName then
+       let statements=parallelStatement2Statements statement then
+       val (implyForm pres0 cons0)=inv in 
+       
+       let pres0=simpTaut pres0 then     
+       let pres0=filter (\f. f !=chaos) pres0 then
+       let pres0=flat (map andList2ands pres0) then
+       let pres0=setify (flat (map andList2ands pres0)) then 
+       let invsLib'=(setify ((inv0:newInvs)@invsLib)) then
+       let gConds=andList2ands (andList (simpTaut g)) then
+       print ("pres0=\n") fseq
+       printStrList (map (formula2str enumTab) (setify ( pres0))) fseq
+       print ("gConds=\n") fseq
+       printStrList (map (formula2str enumTab) (setify (gConds))) fseq
+       let result= getReal (choose dist  symIndice    template smtTemp  enumTab invsLib' cons0 (setify ( guardOfRule @pres0@gConds))    statements  (andList []) ) catch 
+                (print  ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+                 print ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+                 print  ("rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq 
+                                             printStrList (map (formula2str  enumTab) invsLib) fseq
+                 fclose fdebug fseq
+                 fclose fdebug2 fseq
+                 error "debug")    
+                 then
+       val ( (taut, isImplied, isInv,No, oldInv,symRelOpt,pre))=result in
+       let inv'= (implyForm pre cons0) in
+       fputs fdebug "branch 3\n " fseq
+       fputs fdebug   ("******************************************************\n") fseq
+       fputs fdebug ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+        fputs fdebug ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+       fputs fdebug  (paraRuleName^"--"^"rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq
+       fputs fdebug ("inv':="^(formula2str  enumTab inv')^"\n") fseq
+        fputs fdebug   ("******************************************************\n\n\n") fseq
+        //let emptyTab=tbl_create 2 then
+        let hdTab= (paraRuleName, paras, g, inv0, invParas, invHoldForRule3 inv' pre  ) then
+        let midResult=
+        taut => 
+        
+        let hdTab= (paraRuleName, paras, g, inv0, invParas, invHoldForRule3 inv pre) then (newInvs, relLib@[hdTab]) |
+        isImplied => 
+        val (SOME symRel)=symRelOpt in 
+        let symRel=(  symId symRel symIndice  ) then
+        let inv'=(formula2ByPramNormlize  dist symIndice  symRel oldInv) then
+        let hdTab= (paraRuleName, paras,g, inv0, invParas, invHoldForRule3 inv' pre ) then
+        ( newInvs, relLib@[hdTab])  |
+        val (inv'',symRel)=  paraNormlize dist  symIndice   (impInvNorm inv') then   
+        let inv'=(formula2ByPramNormlize  dist symIndice  symRel inv'') then
+        let hdTab= (paraRuleName, paras,g, inv0, invParas, invHoldForRule3 inv' pre ) then
+       // let inv''=  paraNormlize dist  symIndice  (impInvNorm inv') then
+         (newInvs@[inv''], relLib@[hdTab])  then
+         
+      dealWithCase3 ruleTable  dist symIndice  statement template smtTemp enumTab invsLib  guardOfRule  fiveTuple obligations midResult
+                
+ /\   dealWithCase3 ruleTable  dist   symIndice  statement template smtTemp enumTab invsLib   guardOfRule  fiveTuple [] (newInvs,relLib) =   (   newInvs,relLib);
+ 
+          
+letrec dealWithCase4 ruleTable  dist symIndice  statement template smtTemp enumTab invsLib guardOfRule fiveTuple ((g,inv):obligations) (newInvs,relLib) =   
+	     let statements =parallelStatement2Statements statement then 
+	      val (implyForm ant' cons0)=inv in 
+       val (implyForm ant1' cons1)=inv in 
+        val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+        
+	       let paraRule=tbl_element ruleTable paraRuleName then
+        let pres0=simpTaut cons0 then    
+       //  let pres0=simpTaut cons1 then   
+        let pres0=filter (\f. f !=chaos) pres0 then
+        let pres0=setify (flat (map andList2ands pres0)) then 
+        let pres0=map dualNeg pres0 then
+        //let pres0=filter (\f. f !=chaos) pres0 then              
+        let ant'=simpTaut ant' then        
+        let invsLib'=(setify ((inv0:newInvs)@invsLib)) then
+        let gConds= (let mid=simpTaut g then (mid=[])=>[]| mid) then
+        let result=getReal ( selChooses  dist symIndice   template smtTemp  enumTab invsLib' (setify ((map dualNeg ( ant'))) )
+                            
+                            (setify (guardOfRule @pres0@gConds)) statements (andList [])  
+                           )   catch 
+                (print  ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+                 print ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+               //     printStrList (map formula2str  enumTab (setify (guardOfRule @pres0@gConds))) fseq
+                 print paraRuleName fseq
+                 print  (" rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq 
+                printStrList             (map (formula2str  enumTab)                 (setify ((map dualNeg ( ant'))@[dualNeg (andList ant')]) )) fseq
+                 print("----------------the above is ants---------------\n") fseq
+                 printStrList (map (formula2str  enumTab) invsLib) fseq
+                 fclose fdebug fseq
+                 fclose fdebug2 fseq
+                 error "debug")           
+                           
+                             then
+         //val  (cons', (taut, isImplied, isInv,No, pre))=result in    
+         val  (cons', (taut, isImplied, isInv,No, oldInv,symRelOpt,pre))=result in    
+         
+        let inv'= (implyForm pre cons') then
+        fputs fdebug "branch 4 " fseq
+        fputs fdebug ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+        fputs fdebug ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+        fputs fdebug  (paraRuleName^"--"^"rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq
+        fputs fdebug ("inv':="^(formula2str  enumTab inv')^"\n") fseq 
+       // print ("invLengths="^(int2str (length invsLib))^"\n") fseq
+        val (paraRuleName, paras, g',inv0, invParas, _)=fiveTuple in   
+        let hdTab= (paraRuleName, paras, g,inv0, invParas, invHoldForRule4 inv' pre (dualNeg cons') F F) then
+           fputs fdebug "enter snd condition step\n"  fseq
+        let midResult=
+        (taut =>  
+               
+          let hdTab= (paraRuleName, paras, g',inv0, invParas, invHoldForRule4 inv' pre (dualNeg cons') T F) then 
+          ( newInvs, relLib@[hdTab])
+           
+        |isImplied => 
+       
+        val (SOME symRel)=symRelOpt in 
+                     
+        let symRel=(symId symRel symIndice) then
+        let strs=map (\pair.(int2str (fst pair))^(int2str (snd pair))) (tbl_values symRel) then
+        print  ("oldinv:="^(formula2str  enumTab oldInv)^"\n") fseq
+        print ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+        printStrList strs fseq
+        let inv'=(formula2ByPramNormlize  dist symIndice  symRel oldInv) catch 
+                (print  ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+                 print ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+                 print paraRuleName fseq
+                 print  (" rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq 
+                printStrList             (map (formula2str  enumTab)                 (setify ((map dualNeg ( ant'))@[dualNeg (andList ant')]) )) fseq
+                 print("----------------the above is ants---------------\n") fseq
+                 printStrList (map (formula2str  enumTab) invsLib) fseq
+                 fclose fdebug fseq
+                 fclose fdebug2 fseq
+                 error "debug")        then
+          let hdTab= (paraRuleName, paras, g,inv0, invParas, invHoldForRule4 inv' pre (dualNeg cons') F T) then
+          (newInvs, relLib@[hdTab]) 
+        |
+        fputs fdebug "enter 5th step\n"  fseq
+        fputs fdebug ("inv'FromNewInv:="^(formula2str  enumTab inv')^"\n") fseq
+        let inv''= paraNormlize dist  symIndice   (impInvNorm inv') then
+         val (inv'',symRel)=  paraNormlize dist  symIndice   (impInvNorm inv') then   
+        let inv'=(formula2ByPramNormlize  dist symIndice  symRel inv'') then         
+        let hdTab= (paraRuleName, paras, g,inv0, invParas, invHoldForRule4 inv' pre (dualNeg cons') F F) then
+          (newInvs@[inv''], relLib@[hdTab]) )    then
+         
+      dealWithCase4 ruleTable  dist   symIndice  statement template smtTemp enumTab invsLib guardOfRule fiveTuple obligations midResult
+                
+ /\   dealWithCase4 ruleTable  dist  symIndice  statement template smtTemp enumTab invsLib guardOfRule fiveTuple [] (newInvs,relLib) =   (   newInvs,relLib);
+ 
+ 
+ letrec dealWithCase5 ruleTable  dist   symIndice   statement template smtTemp enumTab invsLib guardOfRule fiveTuple ((g,inv):obligations) (newInvs,relLib) = 
+       
+       val  (implyForm preAnt preCons)=inv in
+       val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+	       let paraRule=tbl_element ruleTable paraRuleName then
+       let  preAnt=  (simpTaut preAnt) then
+       let preCons=andList (simpTaut preCons) then
+       let gConds=simpTaut   g then
+        let ants=setify(preAnt@gConds@guardOfRule) then
+       let inv'= (implyForm (andList ants) preCons) then
+        fputs fdebug "branch 5 " fseq
+        fputs fdebug  (paraRuleName^"--"^"rule="^(rule2Str enumTab ((paraRule (el 1 paras) (el 2 paras))))^"*****\n") fseq
+        fputs fdebug ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+        fputs fdebug ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+        fputs fdebug ("inv':="^(formula2str  enumTab inv')^"\n") fseq 
+       //let invsLib'=(setify ((inv0:newInvs)@invsLib)) then
+      
+       //let result=decideBySmv   symIndice   template smtTemp  enumTab invsLib'  inv' then
+         let result  = getReal     (   removeOne   dist  symIndice   template smtTemp enumTab invsLib   preCons [] ants) then
+      // val (  (taut, isImplied, isInv,No ))=result in 
+      val ( (taut, isImplied, isInv,No, oldInv,symRelOpt,pre))=result in
+
+       let inv'= (implyForm pre preCons) in
+    let hdTab= (paraRuleName, paras, g,inv0, invParas, invHoldForRule5 inv'  ) then
+       let midResult=
+      	(taut =>
+      	   
+      	    let hdTab= (paraRuleName, paras, g,inv0, invParas, invHoldForRule5 inv'  ) then
+      	 
+           fputs fdebug ("inv'tautlogy:="^(formula2str  enumTab inv')^"\n") fseq
+          
+            (newInvs, relLib@[hdTab])
+        | 
+        isImplied => 
+          
+         
+         let hdTab= (paraRuleName, paras,g, inv0, invParas, invHoldForRule5 inv'  ) then
+         (newInvs,relLib@[hdTab])
+  |isInv => 
+        fputs fdebug "enter 5th step\n"  fseq
+        fputs fdebug ("inv'FromNewInv:="^(formula2str  enumTab inv')^"\n") fseq
+        val (inv'',symRel)= paraNormlize dist  symIndice   (impInvNorm inv') in 
+        
+          (newInvs@[inv''], relLib@[hdTab])  
+  |print  ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+                 print ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+                 print paraRuleName fseq
+                 print  (" rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq 
+                 printStrList (map (formula2str  enumTab) invsLib) fseq
+                 fclose fdebug fseq
+                 fclose fdebug2 fseq 
+   error "case 5")  then
+  dealWithCase5 ruleTable  dist  symIndice  statement template smtTemp enumTab invsLib guardOfRule fiveTuple obligations midResult
+                
+ /\   dealWithCase5 ruleTable  dist symIndice  statement template smtTemp enumTab invsLib guardOfRule fiveTuple [] (newInvs,relLib) =   (   newInvs,relLib);          
+
+let obligation2Str enumTab (g,inv)=
+   ("g="^(formula2str enumTab g)^"***** ")^
+   ("inv="^(formula2str enumTab inv)^"*****\n")      ;
+
+   
+      
+let findInvsFromRule' ruleTable dist  symIndice   typeTable  template smtTemp enumTab inv rule fiveTuple newInvs invsLib relLib=
+ //   print ("enter findInvsFromRule\n") fseq
+   // let fiveTuple=
+   //  val (paraRuleNameF, parasF,gF', inv0F, invParasF, invHoldTF)=fiveTuple in
+   //  (tbl_element ruleTable paraRuleNameF,parasF,gF', inv0F, invParasF, invHoldTF) then
+	  val (guard form  statement)=rule in 
+	  val (implyForm ant cons0)=inv in
+	  let obligations=setify (preCond inv statement) then
+	  print ("obligation=") fseq
+	  printStrList (map (obligation2Str  enumTab) obligations) fseq
+	  fputs fdebug1 (itlist (defix ^) (map (obligation2Str  enumTab) obligations) "------------------\n") fseq
+	  
+      // val (newInvs,fiveTupleTab)=newInvsPlusfiveTupleTab in
+       
+        fputs fdebug   ("******************************************************\n") fseq
+        fputs fdebug  ("inv="^(formula2str enumTab inv)^"*****\n") fseq
+        fputs fdebug  ("rule="^(rule2Str enumTab rule)^"*****\n") fseq
+        fputs fdebug   ("******************************************************\n") fseq
+       
+       let flagStr=(rule2Str enumTab rule)^";"^
+	                 (formula2str enumTab inv)  then
+	    // fputs fdebug flagStr fseq         
+       //fputs fdebug  ("******************************************************\n") fseq  
+       //let env=SOME (tbl_create 20) in
+       //(test1 enumTab fiveTuple => 
+      // fputs fdebug ("inv="^(formula2str enumTab inv)) |()) fseq
+       
+   //delete uunchanged inv
+   
+   let obligations2= (filter (\(g,inv').  (inv =inv')) obligations) then
+   print ("obligations2=") fseq
+	  printStrList (map (obligation2Str  enumTab) obligations2) fseq
+	  
+   let midResult=dealWithCase2 ruleTable enumTab  fiveTuple (obligations2) (newInvs,relLib) then
+   
+    let remainder=  (obligations subtract obligations2) then 
+    
+    remainder =[] =>midResult|
+   
+   //delete enabled consequent or disable antecedent 
+   
+   let enableCheckCons0 (g,inv')=tautlogy enumTab smtTemp (implyForm (andList [form, g]) inv')  then   
+   
+   let obligations1=(filter enableCheckCons0 remainder) then
+   // print ("obligations1=") fseq
+	 // printStrList (map (obligation2Str  enumTab) obligations1) fseq
+   
+   let midResult=dealWithCase1 ruleTable enumTab fiveTuple (obligations1) midResult then 
+   
+   let remainder=remainder subtract obligations1 then
+   
+   remainder =[] =>midResult|
+   
+   let antIsTrue (g,(implyForm ants0 cons1))= tautlogy enumTab smtTemp (implyForm (andList [form, g]) ants0) then //let consNotChange (g,(implyForm ants0 cons1))=(cons0 =cons1) then
+   
+   let obligations3=filter antIsTrue  remainder then  //filter consNotChange remainder then
+   //print ("obligations3=") fseq
+	 // printStrList (map (obligation2Str  enumTab) obligations3) fseq
+    
+   
+   let midResult=dealWithCase3 ruleTable dist   symIndice  statement template smtTemp enumTab invsLib  (andList2ands form) fiveTuple (obligations3) midResult then 
+   
+    let remainder=remainder subtract obligations3 then
+    
+    remainder =[] =>midResult|
+    
+    let consIsFlase (g,(implyForm ants0 cons1))=  tautlogy enumTab smtTemp (implyForm (andList [form, g]) (neg cons1)) then    //antNotChange (g,(implyForm ants0 cons1))=(ants0 =ant) then
+    
+    let obligations4=filter consIsFlase remainder then
+    
+    print ("obligations4=") fseq
+	  printStrList (map (obligation2Str  enumTab) obligations4) fseq
+    
+    let midResult=dealWithCase4 ruleTable  dist  symIndice  statement template smtTemp enumTab invsLib  (andList2ands form) fiveTuple (obligations4) midResult then 
+
+    let remainder=remainder subtract obligations4 then
+    
+    remainder =[] =>midResult|
+
+    let consNotChange (g,(implyForm ants0 cons1))=(cons0 =cons1) then
+   
+   let obligations3= filter consNotChange remainder then
+    print ("obligations3=") fseq
+	   printStrList (map (obligation2Str  enumTab) obligations3) fseq
+
+  let midResult=dealWithCase3 ruleTable dist   symIndice  statement template smtTemp enumTab invsLib  (andList2ands form) fiveTuple (obligations3) midResult then 
+
+   let remainder=remainder subtract obligations3 then
+    
+    remainder =[] =>midResult|
+    
+    let   antNotChange (g,(implyForm ants0 cons1))=(ants0 =ant) then
+    
+    let obligations4=filter antNotChange remainder then
+    
+    print ("obligations4=") fseq
+	  printStrList (map (obligation2Str  enumTab) obligations4) fseq
+    
+    let midResult=dealWithCase4 ruleTable  dist  symIndice  statement template smtTemp enumTab invsLib  (andList2ands form) fiveTuple (obligations4) midResult then 
+   
+   
+      
+    
+    let remainder=remainder subtract obligations4 then
+   
+    remainder =[] =>midResult|
+    
+    dealWithCase5 ruleTable dist   symIndice  statement template smtTemp enumTab invsLib  (andList2ands form) fiveTuple remainder midResult;
+        
+//non_lazy findInvsFromRule';       
+ 
+// let findInvsFromRule template smtTemp enumTab inv rule fiveTuple newInvs invsLib relLib        
+         
+letrec findInvsFromRules ruleTable dist   symIndice   typeTable  template smtTemp enumTab inv []  fiveTuples newInvs  invsLib relLib=(newInvs,relLib)
+/\    findInvsFromRules  ruleTable dist    symIndice  typeTable  template smtTemp enumTab inv (r:rs)  fiveTuples newInvs   invsLib relLib=
+        //val (paraRule, paras, inv, paraOfInvs,methodPat)=hd fiveTuples in
+        
+      	val (newInvs',relLib')=findInvsFromRule'  ruleTable dist  symIndice   typeTable  template smtTemp enumTab inv r (hd fiveTuples)  newInvs  invsLib relLib in             
+	      findInvsFromRules  ruleTable dist   symIndice   typeTable  template smtTemp enumTab inv  rs (tl fiveTuples) (newInvs') (setify (invsLib@newInvs')) relLib'; 
+
+letrec imaxOf [i] =i
+/\	 imaxOf (i:j:is)=imax i (imaxOf (j:is));
+
+
+
+
+//let instantiate paraRule inv paraLs parasOfInv=
+ //      let construct paraL=
+ //      	 let fiveTuple=(paraRule, paraL, inv, parasOfInv, invHoldForRule2) in	
+ //      	 (paraRule (el 1 paraL) (el 2 paraL), fiveTuple)  in
+//	map (construct ) paraLs;
+	
+//let parasOfInv  dist  symIndices inv=
+//		let paras=paraIndexsOfForm dist inv then
+	//	filter (\i.   (mem i symIndices)) paras;
+	
+//let newParas  dist symIndices inv ruleParaNums=
+//  let paraNum=	length ( parasOfInv  dist  symIndices inv) then
+ // (ruleParaNums = 0 OR paraNum =0) =>[[1,2]]
+ // |(paraNum =1) AND (ruleParaNums=1) => [[1,1],[2,1]]
+ // |(paraNum =2) AND (ruleParaNums=1) => [[1,1],[2,1],[3,1]]
+ // |(paraNum =1) AND (ruleParaNums=2) => [[1,2],[2,1],[3,2]] | 
+  //    [[1,2], [1,3],[3,2],[2,3]];
+
+
+let instantiate ruleTable paraRuleName inv paraLs parasOfInv=
+       let paraRule=tbl_element ruleTable paraRuleName then
+       let construct paraL=
+       	 let fiveTuple=(paraRuleName, paraL, chaos, inv, parasOfInv, invHoldForRule2) in	
+       	 (paraRule (el 1 paraL) (el 2 paraL), fiveTuple)  in
+	map (construct ) paraLs;
+	
+
+	
+let newParas  dist symIndices inv ruleParaNums=
+  let paraNum=	length ( parasOfInv  dist  symIndices inv) then
+  (ruleParaNums = 0 OR paraNum =0) =>[[1,2]]
+  |(paraNum =1) AND (ruleParaNums=1) => [[1,1],[2,1]]
+  |(paraNum =2) AND (ruleParaNums=1) => [[1,1],[2,1],[3,1]]
+  |(paraNum =1) AND (ruleParaNums=2) => [[1,2],[2,1],[3,2]] | 
+      [[1,2], [1,3],[3,2],[2,3]];
+
+		
+//newParasMethod=newParas  dist symIndice        ;
+//parasOfInvMethod=parasOfInv  dist  symIndice ;
+
+let findInvsFromParaRule  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRuleName newInvs invsLib relLib=
+  print paraRuleName fseq
+  let ruleParaNums=tbl_element ruleParasTable paraRuleName then   
+  //let paraRule=tbl_element ruleTable paraRule then
+	let paras=parasOfInvMethod inv in
+	let paraLs=newParasMethod inv ruleParaNums then
+	let ruleAndFiveTuples = (instantiate ruleTable paraRuleName inv  paraLs paras) in 
+	let rs=map fst ruleAndFiveTuples in 
+	let fiveTuples=map snd ruleAndFiveTuples in
+	findInvsFromRules ruleTable  dist   symIndice   typeTable  template smtTemp enumTab inv rs  fiveTuples newInvs invsLib relLib;   
+	
+	
+
+		
+letrec findInvsFromParaRulesByInv  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  
+ inv (paraRule:paraRules)  (newInvs)  invsLib relLib=
+        
+	val (newInvs',relLib') =findInvsFromParaRule  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRule  newInvs invsLib relLib in
+         findInvsFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv (paraRules)  newInvs'  invsLib relLib'
+ 
+/\findInvsFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice      typeTable  allParaSet template smtTemp enumTab inv  []  
+  newInvs invsLib relLib = (newInvs,relLib);
+
+ //( channel2_4[1]=invalidate)  ->  (!( ( home_exclusive_granted=false)  & ( home_current_command=req_shared)  ) ) ) 
+
+
+
+
+letrec findInvsFromParaRulesByInvs  dist ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable   allParaSet template smtTemp enumTab   [] (paraRules)      invsLib	  relLib =(invsLib,relLib)
+
+/\ findInvsFromParaRulesByInvs dist   ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab   (inv:Invs) (paraRules)     invsLib	 relLib =
+    
+     
+    
+    let invsLib=inv:invsLib then
+  (length invsLib%40=0=>printStrList (map (formula2SmvStr  enumTab) invsLib) 
+   |
+   () )fseq
+   
+     print ("****************invLengths="^(int2str (length invsLib))^"*******************\n") fseq
+    val (newInvs', rels)=findInvsFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRules (Invs)  (setify(invsLib@[inv]@Invs)) relLib in
+        findInvsFromParaRulesByInvs  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet  template smtTemp enumTab   newInvs' (paraRules)    (setify(invsLib@newInvs'))   rels   ;
+
+
+//create definition for one enumerating values as follows:
+//definition TRUE::"nat"  where [simp]: "TRUE\<equiv>  1"
+let createOneEnumVal  enumValTab val0=
+	let valName=tbl_element enumValTab val0 in
+	sprintf "definition %s::\"nat\"  where [simp]: \"%s\\<equiv>  %d\"   \n" (valName, valName,val0);
+
+//create all defs of this type
+//definition xDomain::"nat set" where [simp]: "Bool \<equiv> {TRUE, FALSE}"
+//definition xDomain::"nat set" where [simp]: "Bool \<equiv> {TRUE, FALSE}"
+let createOneEnumType oneType typeName enumValTab=
+	let defs=map (createOneEnumVal  enumValTab) oneType in
+	let enumValDefStr=itlist (defix ^)  defs "" in
+	let allVluesInStr=itlist (\a. \b. a^","^b)  (map (\val0. tbl_element enumValTab val0) oneType) ""  in
+        let Str=str_substr allVluesInStr 1 (strlen allVluesInStr - 1) in
+        let domainDef=sprintf "definition %s::\"nat set\" where [simp]: \"%s \\<equiv> {%s}\"\n" (typeName, typeName,Str) in
+	enumValDefStr^domainDef;
+	
+letrec statementPartlyEnableForm1 typeTable env S (neg (eqn l r))=
+    statementPartlyEnableForm  typeTable	env S (neg (eqn l r) )
+    
+/\ statementPartlyEnableForm1  typeTable env S (neg f)=
+   val (andList flist) =f in
+   statementPartlyDisableForm 	 typeTable env S (hd flist) =NONE =>
+   length (tl flist)=1 => statementPartlyDisableForm  typeTable	env S (el 1 (tl flist))
+   |statementPartlyEnableForm1  typeTable env S (neg (andList (tl flist)))
+   |statementPartlyDisableForm 	 typeTable env S (hd flist)
+   
+/\statementPartlyEnableForm1  typeTable env S f=statementPartlyEnableForm  typeTable env S f;
+
+
+   
+   
+letrec removeOne' dist  symIndice  template smtTemp enumTab invsLib (cub:cubs) necessary=
+   val (taut, isImplied, isInv,No,oldInv,symRelOpt)= 
+
+  decideBySmv  dist   symIndice  template smtTemp enumTab invsLib  (neg (andList (cubs@necessary))) in
+
+   isInv=>
+
+    removeOne' dist  symIndice   template smtTemp enumTab invsLib  cubs necessary
+
+    | removeOne'  dist symIndice   template smtTemp enumTab invsLib  cubs (necessary@[cub])
+
+/\ removeOne' dist  symIndice   template smtTemp enumTab invsLib    [] necessary=necessary;
+
+
+letrec removeTestOne dist   symIndice  template smtTemp enumTab invsLib  (cubs:listOfcubs)  =
+        val (taut, isImplied, isInv,No,oldInv,symRelOpt)= 
+        decideBySmv  dist   symIndice  template smtTemp enumTab invsLib (neg (andList cubs)) in
+        isInv => (SOME cubs)|  removeTestOne dist   symIndice  template smtTemp enumTab invsLib  (listOfcubs)
+/\ removeTestOne dist   symIndice  template smtTemp enumTab invsLib []=NONE;
+
+letrec removeOne' dist  symIndice  template smtTemp enumTab invsLib cubs=
+    let listOfCubs=sel cubs ((length cubs ) - 1) then
+    let result=      removeTestOne  dist   symIndice  template smtTemp enumTab invsLib listOfCubs then
+          result=NONE => cubs | removeOne' dist  symIndice  template smtTemp enumTab invsLib (getReal result);
+
+
+letrec dealWithCase2' ruleTable  enumTab fiveTuple ((g,inv):obligations) (newInvs,relLib) =
+       
+	      val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+	       let paraRule=tbl_element ruleTable paraRuleName then
+         let hdTab=(paraRuleName, paras,g, inv0, invParas, invHoldForRule2) then  
+         fputs fdebug "branch 2 " fseq     
+          fputs fdebug   ("******************************************************\n") fseq
+         fputs fdebug ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+         fputs fdebug  (paraRuleName^"--"^"rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq
+         fputs fdebug ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+         fputs fdebug   ("******************************************************\n\n\n") fseq  
+         let midResult=  (newInvs, relLib@[hdTab])  then
+         
+         dealWithCase2'  ruleTable   enumTab  fiveTuple ( obligations) midResult
+
+ /\   dealWithCase2' ruleTable  enumTab  fiveTuple [] (newInvs,relLib) =   (   newInvs,relLib);
+
+
+
+//case when enabled consequent or disable antecedent              
+letrec dealWithCase1' ruleTable  enumTab fiveTuple ((g,inv):obligations) (newInvs,relLib) =
+ 
+	      val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+	      
+	       let paraRule=tbl_element ruleTable paraRuleName then
+         let hdTab=(paraRuleName, paras,g, inv0, invParas, invHoldForRule1 Enable) then
+         let midResult=  (newInvs, relLib@[hdTab]) then
+         fputs fdebug "branch 1 " fseq 
+         fputs fdebug   ("******************************************************\n") fseq
+         fputs fdebug ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+         fputs fdebug  (paraRuleName^"--"^"rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq
+         fputs fdebug ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+         fputs fdebug   ("******************************************************\n\n\n") fseq
+         dealWithCase1  ruleTable   enumTab fiveTuple ( obligations) midResult
+         
+ /\   dealWithCase1' ruleTable  enumTab fiveTuple [] (newInvs,relLib) =   (newInvs,relLib);
+
+
+
+
+        
+letrec dealWithCase3'   ruleTable  dist  symIndice statement template smtTemp enumTab invsLib guardOfRule fiveTuple ((g,inv):obligations) (newInvs,relLib) =
+       val (paraRuleName, paras,g', inv0, invParas, _)=fiveTuple in
+      
+	     
+	           
+	       let paraRule=tbl_element ruleTable paraRuleName then
+                   print  ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+                 print ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+                 print  ("rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq 
+                                             printStrList (map (formula2str  enumTab) invsLib) fseq
+                print ("dealCase3\n") fseq  
+       let statements=parallelStatement2Statements statement then
+       let cubic'=simpTaut inv in
+       let g'=simpTaut g in
+                 
+       let result= (choose  dist symIndice    template smtTemp  enumTab (map dualNeg (newInvs@(inv0:invsLib))) (neg (andList cubic')) (setify ( guardOfRule @g'))    statements  (andList []) ) then
+       print "choose finish\n" fseq
+       let result = getReal result catch 
+                (print (paraRuleName^"\n") fseq print  ("inv:="^(formula2str  enumTab inv)^"\n") fseq
+                 print ("inv0:="^(formula2str  enumTab inv0)^"\n") fseq
+                 print  ("rule="^(rule2Str enumTab (paraRule (el 1 paras) (el 2 paras)))^"*****\n") fseq 
+                                             printStrList (map (formula2str  enumTab) invsLib) fseq
+                 fclose fdebug fseq
+                 fclose fdebug2 fseq
+                 error "debug")    
+                 then
+       print "getResult\n" fseq
+       val ( (taut, isImplied, isInv,No, oldInv,symRelOpt, pre))=result in
+       let midResult=
+        taut => 
+        print "taut\n" fseq
+        let hdTab= (paraRuleName, paras, g, inv0, invParas, invHoldForRule3 inv pre) then 
+            (newInvs, relLib@[hdTab]) 
+
+        |isImplied => 
+        print "isImplied \n" fseq
+        val (SOME symRel)=symRelOpt in 
+        let symRel=(  symId symRel symIndice  ) then
+        let inv'=(formula2ByPramNormlize  dist symIndice  symRel oldInv) then
+        let hdTab= (paraRuleName, paras,g, inv0, invParas, invHoldForRule3 inv' chaos ) then
+        ( newInvs, relLib@[hdTab])  
+
+        | 
+        let newCubics= ( flat (map andList2ands cubic'))@(andList2ands pre) in
+        print ("removed cubics:="^(formula2str  enumTab (andList newCubics))^"\n") fseq
+        let necessary=(removeOne'  dist symIndice  template smtTemp enumTab (map dualNeg (newInvs@(inv0:invsLib))) newCubics  ) catch (error "remove error") in
+        let inv'=andList necessary in 
+                     
+         val (inv'',symRel)=  paraNormlize dist  symIndice    inv' then   
+       // let normInv=(formula2ByPramNormlize  dist symIndice  symRel inv'') then
+        //let normResult=            paraNormlize dist symIndice inv' then
+        let hdTab= (paraRuleName, paras,g, inv0, invParas, invHoldForRule3 inv' chaos) then
+        // print "add new Invariants \n" fseq 
+        //print (formula2SmvStr  enumTab inv') fseq
+        printStrList (map (formula2SmvStr  enumTab) invsLib) fseq
+          print "end \n" fseq
+          fputs fdebug2           ( (formula2SmvStr  enumTab inv'')^"\n") fseq
+         (newInvs@[inv''], relLib@[hdTab])  then
+         
+      //dealWithCase3'  ruleTable  dist symIndice  statement template smtTemp enumTab ((invsLib@(fst midResult)))  guardOfRule  fiveTuple obligations midResult
+     dealWithCase3'  ruleTable  dist symIndice  statement template smtTemp enumTab invsLib guardOfRule  fiveTuple obligations midResult
+                
+ /\   dealWithCase3' ruleTable  dist   symIndice  statement template smtTemp enumTab invsLib   guardOfRule  fiveTuple [] (newInvs,relLib) =   (   newInvs,relLib);
+ 
+
+
+let tabExpans ruleTable dist symIndice typeTable template smtTemp enumTab cubic rule fiveTuple newInvs invsLib relLib=
+
+val (guard form statement)=rule in
+
+let obligations=setify (preCond cubic statement) then
+let obligations2= (filter (\(g,cubic'). (cubic =cubic')) obligations) then
+let midResult=dealWithCase2' ruleTable enumTab fiveTuple (obligations2) (newInvs,relLib) then
+let remainder= (obligations subtract obligations2) then
+remainder =[] =>midResult|
+
+//delete enabled consequent or disable antecedent
+let enableCheckCons0 (g,cubic')=tautlogy enumTab smtTemp (implyForm ( andList [form, g]) (neg cubic')) then
+
+let obligations1=(filter enableCheckCons0 remainder) then
+let midResult=dealWithCase1' ruleTable enumTab fiveTuple (obligations1) midResult then
+let remainder=remainder subtract obligations1 then
+let result=
+dealWithCase3' ruleTable dist   symIndice  statement template smtTemp enumTab invsLib  (andList2ands form) fiveTuple remainder midResult then
+result;
+ //( (printStrList (map (formula2SmvStr  enumTab) (fst result)) fseq print "result=\n" fseq result)) ;
+  
+  
+    
+letrec tabularFromRules ruleTable dist   symIndice   typeTable  template smtTemp enumTab inv []  fiveTuples newInvs  invsLib relLib=(newInvs,relLib)
+
+/\    tabularFromRules  ruleTable dist    symIndice  typeTable  template smtTemp enumTab inv (r:rs)  fiveTuples newInvs   invsLib relLib=
+        //val (paraRule, paras, inv, paraOfInvs,methodPat)=hd fiveTuples in
+        
+      	val (newInvs',relLib')=tabExpans   ruleTable dist  symIndice   typeTable  template smtTemp enumTab inv r (hd fiveTuples)  newInvs  invsLib relLib in  
+     //              newInvs' fseq
+     // (  printStrList (map (formula2SmvStr  enumTab) newInvs')) fseq (print ("tabExpans------is newInvs'----"^(int2str (length newInvs'))^"\n") )  fseq    
+               tabularFromRules  ruleTable dist   symIndice   typeTable  template smtTemp enumTab inv  rs (tl fiveTuples) (newInvs') invsLib relLib';
+	     // tabularFromRules  ruleTable dist   symIndice   typeTable  template smtTemp enumTab inv  rs (tl fiveTuples) (newInvs') (setify(invsLib@newInvs')) relLib'; 
+ 
+
+let tabularFromParaRule  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRuleName newInvs invsLib relLib=
+  print paraRuleName fseq
+  let ruleParaNums=tbl_element ruleParasTable paraRuleName then   
+  //let paraRule=tbl_element ruleTable paraRule then
+	let paras=parasOfInvMethod inv in
+	let paraLs=newParasMethod inv ruleParaNums then
+	let ruleAndFiveTuples = (instantiate ruleTable paraRuleName inv  paraLs paras) in 
+	let rs=map fst ruleAndFiveTuples in 
+	let fiveTuples=map snd ruleAndFiveTuples in
+	tabularFromRules ruleTable  dist   symIndice   typeTable  template smtTemp enumTab inv rs  fiveTuples newInvs invsLib relLib;   
+	
+	
+
+		
+letrec tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  
+ inv (paraRule:paraRules)  (newInvs)  invsLib relLib=
+        
+	val (newInvs',relLib') =tabularFromParaRule  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRule  newInvs invsLib relLib in
+     // (  printStrList (map (formula2SmvStr  enumTab) newInvs')) fseq (print "tabularFromParaRule------is newInvs'\n" )  fseq
+
+      //   tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv (paraRules)  newInvs'  (setify (newInvs'@invsLib)) relLib'
+ tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv (paraRules)  newInvs'  invsLib relLib'
+ 
+/\tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice      typeTable  allParaSet template smtTemp enumTab inv  []  
+  newInvs invsLib relLib = (newInvs,relLib);
+
+ //( channel2_4[1]=invalidate)  ->  (!( ( home_exclusive_granted=false)  & ( home_current_command=req_shared)  ) ) ) 
+
+
+
+letrec tabularFromParaRulesByInvs  dist ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable   allParaSet template smtTemp enumTab   [] (paraRules)      invsLib	  relLib count=(invsLib,relLib)
+
+/\ tabularFromParaRulesByInvs dist   ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab   (inv:Invs) (paraRules)     invsLib	 relLib count=
+ let invsLib'=(invsLib@[inv]) then
+      
+ ((length invsLib') < count ) =>
+   //  print ("****************invLengths="^(int2str (length invsLib))^"*******************\n") fseq
+   // val (newInvs', rels)=tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRules (Invs)  invsLib' relLib in
+   //     tabularFromParaRulesByInvs  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet  template smtTemp enumTab   newInvs' (paraRules)    (setify(invsLib'@newInvs'))   rels  count
+ 
+     val (newInvs', rels)=tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRules Invs  invsLib' relLib in
+ 
+  tabularFromParaRulesByInvs  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet  template smtTemp enumTab   (newInvs') (paraRules)    (invsLib')   rels  count 
+
+   | let fdebug3=fopen "fInvs" "a" then
+   fputs fdebug3 "now invariants\n" fseq
+   let strs=itlist (\str1.\str2.str1^"\n"^str2) (map (formula2SmvStr  enumTab) invsLib) "\n" then
+   fputs fdebug3 strs fseq
+     fclose fdebug3 fseq
+  val (newInvs', rels)=tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRules Invs  invsLib' relLib in
+ 
+  tabularFromParaRulesByInvs  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet  template smtTemp enumTab   (newInvs') (paraRules)    (invsLib')   rels  (count + 5);
+
+    //    val (newInvs', rels)=tabularFromParaRulesByInv  dist  ruleTable parasOfInvMethod newParasMethod ruleParasTable symIndice   typeTable  allParaSet template smtTemp enumTab  inv paraRules (Invs)  invsLib' relLib in
+    //    tabularFromParaRulesByInvs  dist  ruleTable parasOfInvMethod  newParasMethod ruleParasTable symIndice   typeTable  allParaSet  template smtTemp enumTab   newInvs' (paraRules)    (setify(invsLib'@newInvs'))   rels   (count + 50);
+
+      
+   // length invsLib>40=>(printStrList (map (formula2SmvStr  enumTab) invsLib) fseq fclose fdebug fseq error "debug")
+  // |
+// fputs fdebug ((formula2str enumTab   inv)^"\n") fseq
+
+
+
+
+letrec formula2ParamIsabellestr   symIndice    typeval2StrTab    (eqn l r)
+   =  
+    "( eqn "^(exp2ParamIsabelleStr   symIndice    typeval2StrTab  l)^ "  " ^ (exp2ParamIsabelleStr   symIndice    typeval2StrTab  r)^") "
+
+ 
+   
+/\ formula2ParamIsabellestr   symIndice    typeval2StrTab    (andList (frms))=
+ 
+   length frms=1=>val [frm]=frms in
+     formula2ParamIsabellestr   symIndice    typeval2StrTab    frm |
+   let str1=itlist (\e.\str.  "( andForm "^str ^"   "^(formula2ParamIsabellestr   symIndice    typeval2StrTab    e)^" ) ") (tl frms) 
+      ( formula2ParamIsabellestr   symIndice    typeval2StrTab     (hd frms))  in str1
+
+/\ formula2ParamIsabellestr   symIndice    typeval2StrTab    (neg frm)=
+     " (neg "^(formula2ParamIsabellestr   symIndice    typeval2StrTab     frm)^") "
+    
+ 
+    
+/\ formula2ParamIsabellestr   symIndice    typeval2StrTab    (orList frms)=
+   length frms=1=>val [frm]=frms in formula2ParamIsabellestr   symIndice    typeval2StrTab    frm |
+   let str1=itlist (\e.\str. "( orForm "^str ^"   "^(formula2ParamIsabellestr   symIndice    typeval2StrTab    e)^" ) ") (tl frms) 
+      ( formula2ParamIsabellestr   symIndice    typeval2StrTab     (hd frms)) in str1
+
+
+/\  formula2ParamIsabellestr   symIndice    typeval2StrTab    (implyForm  f1 f2)
+   ="(implyForm "^(formula2ParamIsabellestr   symIndice    typeval2StrTab    f1)^"  "^(formula2ParamIsabellestr   symIndice    typeval2StrTab    f2)^") "
+   
+/\   formula2ParamIsabellestr   symIndice    typeval2StrTab    (forallForm  N  pf) =
+	print ("enter printing forallFor\n") fseq
+  let pfStr=formula2ParamIsabellestr   symIndice    typeval2StrTab (pf indexForAll) then
+  let str1=sprintf "\n(    let natList=down N in \n    let paraForm=\\<lambda>iInvForAll. %s in\n       forallForm natList paraForm)\n"    pfStr then
+   str1
+      
+ //  formula2ParamIsabellestr   symIndice    typeval2StrTab  (andList (map pf (down N)))
+   
+/\   formula2ParamIsabellestr   symIndice    typeval2StrTab  chaos= "chaos "   
+
+;
+
+
+letrec statement2ParamIsabelleStr   symIndice    typeval2StrTab     (assign v val0)
+    ="assign  ("^(var2ParamIsabelleStr   symIndice     v)^ ",  " ^(exp2ParamIsabelleStr   symIndice    typeval2StrTab    val0)^" )"
+    
+
+    
+/\statement2ParamIsabelleStr   symIndice    typeval2StrTab    (parallel SL)=
+     length SL=1=>
+	   val [S]=SL in "( "^(statement2ParamIsabelleStr   symIndice    typeval2StrTab    S)^" )" |
+	   let len=length SL in
+	   let ls=1 upto len in
+	  // let strLs=map 
+	  // (\i. statementContainForall (el i SL)=>
+    //   "let S_"^(int2str i)^"="^"( "^(statement2ParamIsabelleStr   symIndice     typeval2StrTab    (el i SL))^" ) in\n"  
+    //   |i =len => "let S_"^(int2str i)^"="^"(assign "^(statement2ParamIsabelleStr   symIndice    typeval2StrTab    (el i SL))^" ) in\n"
+	    //     | "let S_"^(int2str i)^"="^"(assign "^(statement2ParamIsabelleStr   symIndice     typeval2StrTab    (el i SL))^" ) in\n" ) ls in
+	  // let SiS=map (\i. "S_"^(int2str i)) ls in
+    let item2Str S i= "let S_"^(int2str i)^"="^"( "^(statement2ParamIsabelleStr   symIndice     typeval2StrTab    (el i SL))^" ) in\n" then
+    let strLs=map (item2Str S) ls in
+        
+    let SiS=map (\i. "S_"^(int2str i)^",") ls in                        
+	   let SiS'=firstn  (len - 1) SiS in
+
+     let strOnDefs=itlist (\e.\str.   e ^str) strLs "" in
+     let theLast=(el len SiS) in
+     let last=str_substr theLast  1 ((strlen theLast) - 1) then
+     let listDef ="parallelList ["^(itlist (defix ^) SiS' last )^"]\n\n" in
+              strOnDefs^listDef
+
+   /\ statement2ParamIsabelleStr   symIndice    typeval2StrTab    (forallStatement N PSL)=	
+   "(let ps=% iInvForAll. "^(statement2ParamIsabelleStr  symIndice  typeval2StrTab (PSL indexForAll))^" in\n"^
+   "let natList=down N in\n"^
+   "(forallSent "^"natList  ps) )";
+
+
+let rule2ParamIsabelleStr   symIndice    typeval2StrTab     rule=
+  val (guard pre S)= rule in
+ // (val (assign v val0)= S in 
+ // (let strOfS= "let S=(\n assign "^(statement2ParamIsabelleStr symIndice typeval2StrTab     S)^ (") in \n" ) in 
+ // "let g="^( formula2ParamIsabellestr  symIndice  typeval2StrTab    pre)^(" in \n" )^strOfS^ 
+ // "guard g S") ) catch 
+  
+  (let strOfS= "let S=(\n"^(statement2ParamIsabelleStr   symIndice    typeval2StrTab    S)^ (") in \n" ) in 
+  "let g="^( formula2ParamIsabellestr   symIndice    typeval2StrTab     pre)^(" in \n" )^strOfS^ 
+  "guard g S");      

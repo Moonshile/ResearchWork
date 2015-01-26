@@ -1,0 +1,79 @@
+let printTab tb=
+  let keys=tbl_keys tb  then
+  foreach [k|keys]. print ((  k)^"----->"^(tbl_element tb k)^"\n");
+
+letrec makInd fp1 tbl=
+    (feof fp1)=> (tbl)
+    | let s = fgets fp1 then
+    let  pat="([^ ]*)([ \t]*)([^ \r]*)" in
+      print ("str="^s^"\n") fseq
+     val [src, sp, target]=str_reg_extract pat s in
+     print (src^"-->") fseq  print (target^"\n") fseq
+     (src="" ) =>makInd fp1 tbl 
+     | makInd fp1  (tbl_insert tbl src target) ;
+
+
+
+let makIndByRef str=
+    
+    let fp=fopen  (str) "r" in
+   let result=  makInd fp (tbl_create 30) then
+    (fclose fp fseq result) fseq
+  print "----------------------\n" fseq
+	printTab result fseq
+   result;
+
+letrec repOnce [] tb line=line
+/\      repOnce (k:keys) tb line=
+	let pat=k in
+	let repl=tbl_element tb k in
+	repOnce keys tb (string_replace_substring_all line pat repl);
+
+
+letrec repLine infp outfp tb =
+ 	(feof infp)=> ()
+    | let line = fgets infp then
+      let  pats=tbl_keys tb in
+      let result=repOnce pats tb line in
+       fputs outfp result fseq
+     print (line^"-->") fseq  print (result^"\n") fseq
+     repLine infp outfp tb  ;
+
+letrec repLineBound infp outfp tb bound=
+      ( (feof infp) OR bound =0 )=> ()
+    | let line = fgets infp then
+      let  pats=tbl_keys tb in
+      let result=repOnce pats tb line in
+       fputs outfp result fseq
+     print (line^"-->") fseq  print (result^"\n") fseq
+     repLineBound  infp outfp tb  (bound - 1);
+
+let repFile src dest tb=
+	let infp=fopen src "r" in
+	let outfp=fopen dest "w" in
+	repLine infp outfp tb fseq
+	fclose infp fseq
+	fclose outfp;
+
+let repFileBound src dest tb bd=
+	let infp=fopen src "r" in
+	let outfp=fopen dest "w" in
+	repLineBound infp outfp tb bd fseq
+	fclose infp fseq
+	fclose outfp;
+
+let tb=makIndByRef "map.txt" in
+//repFile "temp.tex" "dest.tex" tb;
+
+repFileBound  "flash.thy" "flash1.thy" tb 5000;
+kk;
+str_is_substr pat target;
+
+string_replace_substring_all target pat repl
+
+
+
+
+
+string_replace_substring
+	

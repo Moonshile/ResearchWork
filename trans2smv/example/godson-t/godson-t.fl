@@ -538,7 +538,8 @@ let LCW i j a d l =
         let p m = 
             let inPro = eqn (left->(Var (para2d "lock.inProtection" m a))) (Const True) in
             let same = eqn (Const m) (Const l) in
-            implyForm inPro same
+            //implyForm inPro same
+            andList [inPro, neg same]
         in
         forallForm LockNum p
     in
@@ -567,7 +568,8 @@ let LNCW i a d l dummy1 =
         let p m = 
             let inPro = eqn (left->(Var (para2d "lock.inProtection" m a))) (Const True) in
             let same = eqn (Const m) (Const l) in
-            implyForm inPro same
+            //implyForm inPro same
+            andList [inPro, neg same]
         in
         forallForm LockNum p
     in
@@ -746,7 +748,7 @@ createMakefile "godson-t";
 
 //************************************** Invariants ***************************************
 
-let DeadlockFree i dummy1 dummy2 dummy3 dummy4 = 
+let DeadlockFree i dummy1 dummy2 = 
     let ant =
         let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
         let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
@@ -787,7 +789,7 @@ let dlf m n =
     andList [beUsed1, beUsed2, cons];
 // dlf
 
-let Coherence i j a dummy1 dummy2 =
+let Coherence i j a =
     let ant =
         let state = eqn (left->(Var (Global "replace"))) (right->(Const NON)) in
         let lock = eqn (left->(Var (Param "node.hasLock" i))) (right->(Const True)) in
@@ -797,7 +799,8 @@ let Coherence i j a dummy1 dummy2 =
         andList [state, lock, notFirstRead, valid, addr]
     in
     let cons = eqn (left->(Var (para2d "node.cache.data" i j))) (right->(Var (Param "memory.data" a))) in
-    implyForm ant cons;
+    //implyForm ant cons;
+    andList [ant, neg cons];
 // Coherence
 
 //************************************** generate SMV **********************************
@@ -844,12 +847,12 @@ let invTable =
 
 let invTypeTable =
     let tab0 = tbl_create 2 in
-    let tab0 = tbl_insert tab0 "DeadlockFree" [NodeType, [], [], [], []] in
-    let tab0 = tbl_insert tab0 "Coherence" [NodeType, CacheType, AddrType, [], []] in
+    let tab0 = tbl_insert tab0 "DeadlockFree" [NodeType, [], []] in
+    let tab0 = tbl_insert tab0 "Coherence" [NodeType, CacheType, AddrType] in
     tab0;
 // invTypeTable
 
-let invFuncMap inv [a, b, c, d, e] = inv a b c d e;
+let invFuncMap inv [a, b, c] = inv a b c;
 
 load "trans2smv.fl";
 
@@ -881,7 +884,7 @@ let instantiatedRuleTable ruleTable paraTypeTable ruleFuncMap =
 
 load "tbl.fl";
 
-let symIndice = [1, 2] then
+let symIndice = [1, 2, 3] then
 let newParasMethod = newParas dist symIndice then
 let parasOfInvMethod = parasOfInv dist symIndice then
 val (ruleTable, paraNumTable) = instantiatedRuleTable ruleTable paraTypeTable ruleFuncMap then
@@ -889,10 +892,10 @@ let result=existResultFileAndDel "res_lock" then
 let result=existResultFileAndDel "res_inv" then
 //find invariants
 val (invs, relLib) = tabularFromParaRulesByInvs dist ruleTable parasOfInvMethod newParasMethod paraNumTable symIndice
-typeTable [1, 2] "godson-t" "godson-t" enumValTab [dlf 1 2] (tbl_keys ruleTable)  [] [] 5 in
+typeTable [1, 2, 3] "godson-t" "godson-t" enumValTab [dlf 1 2, Coherence 1 1 1] (tbl_keys ruleTable)  [] [] 5 in
 //show invariants
 printStrList (map (formula2str enumValTab) invs) fseq
-//printTable invs relLib fseq
+printTable invs relLib fseq
 fclose fdebugGCR fseq
 fclose fdebug fseq
 fclose fdebug2;
