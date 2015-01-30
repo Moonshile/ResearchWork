@@ -1,2 +1,6 @@
 *.zip
 *.rar
+*~
+*.cmo
+*.cmi
+*.out
