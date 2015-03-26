@@ -33,12 +33,13 @@ type const =
 
 (** Variables
     + Global variables referenced by name
-    + Parameterized variables referenced by name and actual parameters
+    + Array variables referenced by name and actual parameters
+    + Parameters
 *)
 type var =
   | Global of string
   | Array of string * exp list
-  | Param of string * exp list
+  | Param of string
 (** Represents expressions, including
     + Constans of basic_types
     + Global variables of basic_types, with their own names
@@ -103,8 +104,67 @@ type protocol = {
 (*----------------------------- Exceptions ----------------------------------*)
 
 exception Wrong_parameter
+exception Wrong_function_call
 
 (*----------------------------- Functions ---------------------------------*)
+
+(* Convert a typedef to a list of tupels, which contain name and consts
+    e.g., `IntEnum("a", [1;2])` is to `("a", [Intc 1; Intc 2])`
+*)
+let type_range_to_const typedef =
+  match typedef with
+  | IntEnum(name, ints) -> (name, List.map ~f:(fun x -> Intc x) ints)
+  | StrEnum(name, strs) -> (name, List.map ~f:(fun x -> Strc x) strs)
+
+(* Associate name of `vardef`s with their types *)
+let assoc_vardef_with_type_exn vardefs types =
+  let t_consts = List.map ~f:type_range_to_const types in
+  let find_t tname =
+    match List.Assoc.find t_consts tname with
+    | None -> raise Wrong_parameter
+    | Some x -> x
+  in
+  List.map vardefs ~f:(fun vardef ->
+    match vardef with
+    | Vardef(n, t) | Arraydef(n, _, t) -> (n, find_t t)
+  )
+
+(* Generate combination of all possible values of a `vardef` set *)
+let combine_params_exn vardefs types =
+  (* Firstly, check if every vardef in `vardefs` is constructed by `Vardef` *)
+  let is_vardef var =
+    match var with
+    | Vardef(_) -> true
+    | Arraydef(_) -> false
+  in
+  let all_vardef =
+    vardefs
+    |> List.map ~f:is_vardef
+    |> List.fold ~init:true ~f:(fun res x -> res && x)
+  in
+  match all_vardef with
+  | false -> raise Wrong_parameter
+  | true -> 
+  (* Secondly, generate the combination *)
+    assoc_vardef_with_type_exn vardefs types
+    |> List.map ~f:(fun (n, ts) -> List.map ~f:(fun t -> (n, t)) ts)
+    |> combination
+
+(* Translate array to global var.
+    Need instantiate rules first.
+*)
+let trans_array_exn array =
+  match array with
+  | Array(name, ilist) ->
+    let attach str i =
+      match i with
+      | Const(Intc(c)) -> sprintf "%s_%d" str c
+      | Const(Strc(c)) -> str ^ "_" ^ c
+      | _ -> raise Wrong_parameter
+    in
+    Global(List.fold ~init:name ~f:attach ilist)
+  | Global(x) -> Global(x)
+  | Param(_) -> raise Wrong_function_call
 
 (** Translate language of Loach to Paramecium
 

@@ -31,12 +31,13 @@ type const =
 
 (** Variables
     + Global variables referenced by name
-    + Parameterized variables referenced by name and actual parameters
+    + Array variables referenced by name and actual parameters
+    + Parameters
 *)
 type var =
   | Global of string
   | Array of string * exp list
-  | Param of string * exp list
+  | Param of string
 (** Represents expressions, including
     + Constans of basic_types
     + Global variables of basic_types, with their own names
@@ -101,6 +102,7 @@ type protocol = {
 (*----------------------------- Exceptions ----------------------------------*)
 
 exception Wrong_parameter
+exception Wrong_function_call
 
 (*----------------------------- Functions ---------------------------------*)
 
