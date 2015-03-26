@@ -6,10 +6,16 @@
 
 (*------------------------------ Types ---------------------------------*)
 
-(** Basic types available, including integers and enumerations *)
-type basic_type =
-  | IntEnum of int list
-  | StrEnum of string list
+(** Basic types available, including integers and enumerations.
+    Types are defined by their names and range.
+*)
+type typedef =
+  | IntEnum of string * int list
+  | StrEnum of string * string list
+
+(** Variable definitions, each with its name and name of its type*)
+type vardef =
+  | Vardef of string * string
 
 (** Constants *)
 type const =
@@ -18,7 +24,7 @@ type const =
 
 (** Variables *)
 type var =
-  | Global of string * basic_type
+  | Global of string
 
 (** Represents expressions, including
     + Constans of basic_types
@@ -62,7 +68,9 @@ type prop =
 
 (** Represents the whole protocol *)
 type protocol = {
-  init: statement;
+  types: typedef list;
+  vars: var list;
+  init: statement list;
   rules: rule list;
   properties: prop list;
 }

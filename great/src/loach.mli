@@ -7,18 +7,22 @@
 
 open Core.Std
 
-open Utils
-
 (*------------------------------ Types ---------------------------------*)
 
-(** Parameters for variables, rules, invariants, and so on *)
-type param =
-  | Param of string * int list
+(** Basic types available, including integers and enumerations.
+    Types are defined by their names and range.
+*)
+type typedef =
+  | IntEnum of string * int list
+  | StrEnum of string * string list
 
-(** Basic types available, including integers and enumerations *)
-type basic_type =
-  | IntEnum of int list
-  | StrEnum of string list
+(** Variable definitions
+    + Var: each with its name and name of its type
+    + Array var: each with its name, names list of its array-types and name of its type
+*)
+type vardef =
+  | Vardef of string * string
+  | Arraydef of string * string list * string
 
 (** Constants *)
 type const =
@@ -26,14 +30,13 @@ type const =
   | Strc of string
 
 (** Variables
-    + Global variables
-    + Local variables
-    + Parameterized variables
+    + Global variables referenced by name
+    + Parameterized variables referenced by name and actual parameters
 *)
 type var =
-  | Global of string * basic_type
-  | Local of string
-  | Paramed of string * param
+  | Global of string
+  | Array of string * exp list
+  | Param of string * exp list
 (** Represents expressions, including
     + Constans of basic_types
     + Global variables of basic_types, with their own names
@@ -48,8 +51,7 @@ and exp =
     + Equation expression
     + Other basic logical operations, including negation,
       conjuction, disjuction, and implication
-    + Forall, i.e., true for all formulae parameterized by params
-    + Exists, i.e., exists a true in all formulae parameterized
+    + Abstract formula, which is parameterized its definition with parameters
 *)
 and formula =
   | True
@@ -59,37 +61,39 @@ and formula =
   | And of formula list
   | Or of formula list
   | Imply of formula * formula
-  | Forall of param * formula
-  | Exists of param * formula
+  | AbsForm of formula * vardef list
 
 (** Assignment statements, including
     + Single assignment
     + Parallel assignment
-    + For statement, i.e., for all assignment parameterized, do sth
-    + If statement, equal to `if <condition> do <statement> end`
-    + Ifelse statement, equal to 
-      `if <condition> do <statement> else do <statement> end`
+    + Abstract statement, which is parameterized its definition with parameters
 *)
 type statement =
   | Assign of var * exp
   | Parallel of statement list
-  | For of param * statement
-  | If of formula * statement
-  | Ifelse of formula * statement * statement
+  | AbsAssign of statement * vardef list
 
-(** Represents rules which consists of guard and assignments *)
-type rule =
+(** Represents rules which consists of guard and assignments
+    + Rule with its name, guard and assigments
+    + Abstract rule, which is parameterized its definition with parameters
+*)
+type rule = 
   | Rule of string * formula * statement
-  | ParamedRule of string * param * formula * statement
+  | AbsRule of rule * vardef list
 
-(** Represents properties which could be parameterized *)
+(** Represents properties
+    + Property with its name and formula
+    + Abstract property, which is parameterized its definition with parameters
+*)
 type prop =
   | Prop of string * formula
-  | ParamedProp of string * param * formula
+  | AbsProp of prop * vardef list
 
 (** Represents the whole protocol *)
 type protocol = {
-  init: statement;
+  types: typedef list;
+  vars: var list;
+  init: statement list;
   rules: rule list;
   properties: prop list;
 }
