@@ -4,3 +4,6 @@
 *.cmo
 *.cmi
 *.out
+*.byte
+*.native
+_build
