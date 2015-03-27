@@ -9,10 +9,10 @@ let types = [
 
 (* Variables *)
 let vars = [
-  Vardef("x", "bool");
-  Vardef("n1", "state");
-  Vardef("n2", "state");
-  Vardef("n3", "state");
+  Singledef("x", "bool");
+  Singledef("n1", "state");
+  Singledef("n2", "state");
+  Singledef("n3", "state");
 ]
 
 (* Initialization *)

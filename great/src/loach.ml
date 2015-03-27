@@ -22,7 +22,7 @@ type typedef =
     + Array var: each with its name, names list of its array-types and name of its type
 *)
 type vardef =
-  | Vardef of string * string
+  | Singledef of string * string
   | Arraydef of string * string list * string
 
 (** Constants *)
@@ -94,8 +94,8 @@ type prop =
 (** Represents the whole protocol *)
 type protocol = {
   types: typedef list;
-  vars: var list;
-  init: statement list;
+  vars: vardef list;
+  init: statement;
   rules: rule list;
   properties: prop list;
 }
@@ -121,15 +121,15 @@ let assoc_vardef_with_type_exn vardefs types =
   let find_t tname = List.Assoc.find_exn t_consts tname in
   List.map vardefs ~f:(fun vardef ->
     match vardef with
-    | Vardef(n, t) | Arraydef(n, _, t) -> (n, find_t t)
+    | Singledef(n, t) | Arraydef(n, _, t) -> (n, find_t t)
   )
 
 (* Generate combination of all possible values of a `vardef` set *)
 let combine_params_exn vardefs types =
-  (* Firstly, check if every vardef in `vardefs` is constructed by `Vardef` *)
+  (* Firstly, check if every vardef in `vardefs` is constructed by `Singledef` *)
   let is_vardef var =
     match var with
-    | Vardef(_) -> true
+    | Singledef(_) -> true
     | Arraydef(_) -> false
   in
   let all_vardef =
@@ -160,6 +160,27 @@ let apply_array_exn arr =
     Global(List.fold ~init:name ~f:attach ilist)
   | Global(x) -> Global(x)
   | Param(_) -> raise Wrong_function_call
+
+(* Translate arraydefs to a set of vardefs *)
+let trans_vardef vardefs types =
+  let t_consts = List.map ~f:type_range_to_const types in
+  let rec attach str i =
+    match i with
+    | Intc(c) -> sprintf "%s[%d]" str c
+    | Strc(c) -> sprintf "%s[%s]" str c
+  in
+  let apply_arraydef name params = List.fold ~init:name ~f:attach params in
+  let apply_vardef vardef =
+    match vardef with
+    | Singledef(name, t) -> [Singledef(name, t)]
+    | Arraydef(name, index, t) ->
+      index 
+      |> List.map ~f:(fun x -> List.Assoc.find_exn t_consts x)
+      |> combination
+      |> List.map ~f:(apply_arraydef name)
+      |> List.map ~f:(fun x -> Singledef(x, t))
+  in
+  List.concat (List.map ~f:apply_vardef vardefs)
 
 (* Apply a combination of parameters to a exp *)
 let rec apply_exp exp ~param =
@@ -207,16 +228,30 @@ and instantiate_rule rule vardefs ~types =
   let actual_params = combine_params_exn vardefs types in
   List.concat (List.map ~f:(fun p -> apply_rule rule ~param:p ~types) actual_params)
 
+(* Apply a combination of parameters to a property *)
+let rec apply_property prop ~param ~types =
+  match prop with
+  | Prop(name, form) -> [Prop(name, apply_form form ~param ~types)]
+  | AbsProp(p, vardefs) -> instantiate_property p vardefs ~types
+(* Instantiate an abstract property *)
+and instantiate_property prop vardefs ~types =
+  let actual_params = combine_params_exn vardefs types in
+  List.concat (List.map ~f:(fun p -> apply_property prop ~param:p ~types) actual_params)
+
 (** Translate language of Loach to Paramecium
 
     @param loach cache coherence protocol written in Loach
     @return the protocol in Paramecium
 *)
 let translate ~loach:{types; vars; init; rules; properties} =
+  let new_vars = trans_vardef vars types in
+  let new_init = apply_statement init ~param:[] ~types in
+  let new_rules = List.concat (List.map ~f:(apply_rule ~param:[] ~types) rules) in
+  let new_properties = List.concat (List.map ~f:(apply_property ~param:[] ~types) properties) in
   let state_type = Paramecium.StrEnum("state", ["I"; "T"; "C"; "E"]) in
   { Paramecium.types = [state_type];
     vars = [];
-    init = [Assign(Global("x"), Const(Strc("I")))];
+    init = Assign(Global("x"), Const(Strc("I")));
     rules = [];
     properties = [];
   }

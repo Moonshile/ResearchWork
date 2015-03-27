@@ -18,7 +18,7 @@ type typedef =
     + Array variable
 *)
 type vardef =
-  | Vardef of string * string
+  | Singledef of string * string
 
 (** Constants *)
 type const =
@@ -72,8 +72,8 @@ type prop =
 (** Represents the whole protocol *)
 type protocol = {
   types: typedef list;
-  vars: var list;
-  init: statement list;
+  vars: vardef list;
+  init: statement;
   rules: rule list;
   properties: prop list;
 }
