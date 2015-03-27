@@ -72,7 +72,7 @@ and formula =
 type statement =
   | Assign of var * exp
   | Parallel of statement list
-  | AbsAssign of statement * vardef list
+  | AbsStatement of statement * vardef list
 
 (** Represents rules which consists of guard and assignments
     + Rule with its name, guard and assigments

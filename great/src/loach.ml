@@ -4,10 +4,9 @@
     @author Yongjian Li <lyj238@gmail.com>
     @author Kaiqiang Duan <duankq@ios.ac.cn>
 *)
+open Utils
 
 open Core.Std
-
-open Utils
 
 (*------------------------------ Types ---------------------------------*)
 
@@ -74,7 +73,7 @@ and formula =
 type statement =
   | Assign of var * exp
   | Parallel of statement list
-  | AbsAssign of statement * vardef list
+  | AbsStatement of statement * vardef list
 
 (** Represents rules which consists of guard and assignments
     + Rule with its name, guard and assigments
@@ -119,11 +118,7 @@ let type_range_to_const typedef =
 (* Associate name of `vardef`s with their types *)
 let assoc_vardef_with_type_exn vardefs types =
   let t_consts = List.map ~f:type_range_to_const types in
-  let find_t tname =
-    match List.Assoc.find t_consts tname with
-    | None -> raise Wrong_parameter
-    | Some x -> x
-  in
+  let find_t tname = List.Assoc.find_exn t_consts tname in
   List.map vardefs ~f:(fun vardef ->
     match vardef with
     | Vardef(n, t) | Arraydef(n, _, t) -> (n, find_t t)
@@ -150,21 +145,67 @@ let combine_params_exn vardefs types =
     |> List.map ~f:(fun (n, ts) -> List.map ~f:(fun t -> (n, t)) ts)
     |> combination
 
-(* Translate array to global var.
+(* Apply a combination of parameters to an array, generating a global var.
     Need instantiate rules first.
 *)
-let trans_array_exn array =
-  match array with
+let apply_array_exn arr =
+  match arr with
   | Array(name, ilist) ->
-    let attach str i =
+    let rec attach str i =
       match i with
-      | Const(Intc(c)) -> sprintf "%s_%d" str c
-      | Const(Strc(c)) -> str ^ "_" ^ c
+      | Const(Intc(c)) -> sprintf "%s[%d]" str c
+      | Const(Strc(c)) -> sprintf "%s[%s]" str c
       | _ -> raise Wrong_parameter
     in
     Global(List.fold ~init:name ~f:attach ilist)
   | Global(x) -> Global(x)
   | Param(_) -> raise Wrong_function_call
+
+(* Apply a combination of parameters to a exp *)
+let rec apply_exp exp ~param =
+  match exp with
+  | Cond(form, exp1, exp2) -> Cond(form, apply_exp exp1 ~param, apply_exp exp2 ~param)
+  | Var(Array(name, exps)) -> Var(Array(name, List.map ~f:(apply_exp ~param) exps))
+  | Var(Param(name)) -> Const(List.Assoc.find_exn param name)
+  | Var(Global(name)) -> Var(Global(name))
+  | Const(x) -> Const(x)
+
+(* Apply a combination of parameters to a fomula *)
+let rec apply_form formula ~param ~types =
+  match formula with
+  | True -> True
+  | False -> False
+  | Eqn(exp1, exp2) -> Eqn(apply_exp exp1 ~param, apply_exp exp2 ~param)
+  | Neg(x) -> Neg(apply_form x ~param ~types)
+  | And(x) -> And(List.map ~f:(apply_form ~param ~types) x)
+  | Or(x) -> Or(List.map ~f:(apply_form ~param ~types) x)
+  | Imply(x, y) -> Imply(apply_form x ~param ~types, apply_form y ~param ~types)
+  | AbsForm(x, vardefs) -> instantiate_form x vardefs ~types
+(* Instantiate an abstract formula *)
+and instantiate_form formula vardefs ~types =
+  let actual_params = combine_params_exn vardefs types in
+  And(List.map ~f:(fun p -> apply_form formula ~param:p ~types) actual_params)
+
+(* Apply a combination of parameters to a statement *)
+let rec apply_statement statement ~param ~types =
+  match statement with
+  | Assign(var, exp) -> Assign(var, apply_exp exp ~param)
+  | Parallel(statements) -> Parallel(List.map ~f:(apply_statement ~param ~types) statements)
+  | AbsStatement(statement, vardefs) -> instantiate_statement statement vardefs ~types
+(* Instantiate an abstract statement *)
+and instantiate_statement statement vardefs ~types =
+  let actual_params = combine_params_exn vardefs types in
+  Parallel(List.map ~f:(fun p -> apply_statement statement ~param:p ~types) actual_params)
+
+(* Apply a combination of parameters to a rule *)
+let rec apply_rule rule ~param ~types =
+  match rule with
+  | Rule(name, form, s) -> [Rule(name, apply_form form ~param ~types, apply_statement s ~param ~types)]
+  | AbsRule(rule, vardefs) -> instantiate_rule rule vardefs ~types
+(* Instantiate an abstract rule *)
+and instantiate_rule rule vardefs ~types =
+  let actual_params = combine_params_exn vardefs types in
+  List.concat (List.map ~f:(fun p -> apply_rule rule ~param:p ~types) actual_params)
 
 (** Translate language of Loach to Paramecium
 
