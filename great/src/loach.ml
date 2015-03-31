@@ -181,16 +181,21 @@ let apply_array_exn arr =
     Global(List.fold ~init:name ~f:attach ilist)
   | Global(_) | Param(_) -> raise Wrong_function_call
 
-(* Apply a combination of parameters to a exp *)
-let rec apply_exp exp ~param =
-  match exp with
-  | Cond(form, exp1, exp2) -> Cond(form, apply_exp exp1 ~param, apply_exp exp2 ~param)
-  | Var(Array(name, exps)) ->
+(* Apply a combination of parameters to a var *)
+let rec apply_var var ~param =
+  match var with
+  | Global(name) -> Global(name)
+  | Array(name, exps) ->
     let exp_inst = List.map ~f:(apply_exp ~param) exps in
     let arr_inst = Array(name, exp_inst) in
-    Var(apply_array_exn arr_inst)
+    apply_array_exn arr_inst
+  | Param(_) -> raise Wrong_function_call
+(* Apply a combination of parameters to a exp *)
+and apply_exp exp ~param =
+  match exp with
+  | Cond(form, exp1, exp2) -> Cond(form, apply_exp exp1 ~param, apply_exp exp2 ~param)
   | Var(Param(name)) -> Const(List.Assoc.find_exn param name)
-  | Var(Global(name)) -> Var(Global(name))
+  | Var(x) -> Var(apply_var x ~param)
   | Const(x) -> Const(x)
 
 (* Apply a combination of parameters to a fomula *)
@@ -212,7 +217,7 @@ and instantiate_form formula vardefs ~types =
 (* Apply a combination of parameters to a statement *)
 let rec apply_statement statement ~param ~types =
   match statement with
-  | Assign(var, exp) -> Assign(var, apply_exp exp ~param)
+  | Assign(var, exp) -> Assign(apply_var var ~param, apply_exp exp ~param)
   | Parallel(statements) -> Parallel(List.map ~f:(apply_statement ~param ~types) statements)
   | AbsStatement(statement, vardefs) -> instantiate_statement statement vardefs ~types
 (* Instantiate an abstract statement *)
@@ -304,10 +309,12 @@ module Trans = struct
       @return the protocol in Paramecium
   *)
   let act ~loach:{types; vardefs; init; rules; properties} =
+    printf "Start to translate from Loach to Paramecium...\n";
     let new_vardefs = instantiate_vardef vardefs types in
     let new_init = apply_statement init ~param:[] ~types in
     let new_rules = List.concat (List.map ~f:(apply_rule ~param:[] ~types) rules) in
     let new_properties = List.concat (List.map ~f:(apply_property ~param:[] ~types) properties) in
+    printf "Done\n";
     { Paramecium.types = List.map ~f:trans_typedef types;
       vardefs = List.map ~f:trans_vardef new_vardefs;
       init = trans_statement new_init;
