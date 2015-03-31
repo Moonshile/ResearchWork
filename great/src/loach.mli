@@ -93,7 +93,7 @@ type prop =
 (** Represents the whole protocol *)
 type protocol = {
   types: typedef list;
-  vars: vardef list;
+  vardefs: vardef list;
   init: statement;
   rules: rule list;
   properties: prop list;
@@ -104,11 +104,18 @@ type protocol = {
 exception Wrong_parameter
 exception Wrong_function_call
 
-(*----------------------------- Functions ---------------------------------*)
+(*----------------------------- Translate module ---------------------------------*)
 
-(** Translate language of Loach to Paramecium
+module Trans : sig
 
-    @param loach cache coherence protocol written in Loach
-    @return the protocol in Paramecium
-*)
-val translate : loach:protocol -> Paramecium.protocol
+  exception Unexhausted_instantiation
+
+  (** Translate language of Loach to Paramecium
+
+      @param loach cache coherence protocol written in Loach
+      @return the protocol in Paramecium
+  *)
+  val act : loach:protocol -> Paramecium.protocol
+
+end
+

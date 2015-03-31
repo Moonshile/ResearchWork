@@ -94,7 +94,7 @@ type prop =
 (** Represents the whole protocol *)
 type protocol = {
   types: typedef list;
-  vars: vardef list;
+  vardefs: vardef list;
   init: statement;
   rules: rule list;
   properties: prop list;
@@ -145,26 +145,10 @@ let combine_params_exn vardefs types =
     |> List.map ~f:(fun (n, ts) -> List.map ~f:(fun t -> (n, t)) ts)
     |> combination
 
-(* Apply a combination of parameters to an array, generating a global var.
-    Need instantiate rules first.
-*)
-let apply_array_exn arr =
-  match arr with
-  | Array(name, ilist) ->
-    let rec attach str i =
-      match i with
-      | Const(Intc(c)) -> sprintf "%s[%d]" str c
-      | Const(Strc(c)) -> sprintf "%s[%s]" str c
-      | _ -> raise Wrong_parameter
-    in
-    Global(List.fold ~init:name ~f:attach ilist)
-  | Global(x) -> Global(x)
-  | Param(_) -> raise Wrong_function_call
-
 (* Translate arraydefs to a set of vardefs *)
 let instantiate_vardef vardefs types =
   let t_consts = List.map ~f:type_range_to_const types in
-  let rec attach str i =
+  let attach str i =
     match i with
     | Intc(c) -> sprintf "%s[%d]" str c
     | Strc(c) -> sprintf "%s[%s]" str c
@@ -182,11 +166,29 @@ let instantiate_vardef vardefs types =
   in
   List.concat (List.map ~f:apply_vardef vardefs)
 
+(* Apply a combination of parameters to an array, generating a global var.
+    Need instantiate rules first.
+*)
+let apply_array_exn arr =
+  match arr with
+  | Array(name, ilist) ->
+    let attach str i =
+      match i with
+      | Const(Intc(c)) -> sprintf "%s[%d]" str c
+      | Const(Strc(c)) -> sprintf "%s[%s]" str c
+      | _ -> raise Wrong_parameter
+    in
+    Global(List.fold ~init:name ~f:attach ilist)
+  | Global(_) | Param(_) -> raise Wrong_function_call
+
 (* Apply a combination of parameters to a exp *)
 let rec apply_exp exp ~param =
   match exp with
   | Cond(form, exp1, exp2) -> Cond(form, apply_exp exp1 ~param, apply_exp exp2 ~param)
-  | Var(Array(name, exps)) -> Var(Array(name, List.map ~f:(apply_exp ~param) exps))
+  | Var(Array(name, exps)) ->
+    let exp_inst = List.map ~f:(apply_exp ~param) exps in
+    let arr_inst = Array(name, exp_inst) in
+    Var(apply_array_exn arr_inst)
   | Var(Param(name)) -> Const(List.Assoc.find_exn param name)
   | Var(Global(name)) -> Var(Global(name))
   | Const(x) -> Const(x)
@@ -238,20 +240,79 @@ and instantiate_property prop vardefs ~types =
   let actual_params = combine_params_exn vardefs types in
   List.concat (List.map ~f:(fun p -> apply_property prop ~param:p ~types) actual_params)
 
-(** Translate language of Loach to Paramecium
 
-    @param loach cache coherence protocol written in Loach
-    @return the protocol in Paramecium
-*)
-let translate ~loach:{types; vars; init; rules; properties} =
-  let new_vars = instantiate_vardef vars types in
-  let new_init = apply_statement init ~param:[] ~types in
-  let new_rules = List.concat (List.map ~f:(apply_rule ~param:[] ~types) rules) in
-  let new_properties = List.concat (List.map ~f:(apply_property ~param:[] ~types) properties) in
-  let state_type = Paramecium.StrEnum("state", ["I"; "T"; "C"; "E"]) in
-  { Paramecium.types = [state_type];
-    vars = [];
-    init = Assign(Global("x"), Const(Strc("I")));
-    rules = [];
-    properties = [];
-  }
+module Trans = struct
+
+  exception Unexhausted_instantiation
+
+  (* Translate data structures from Loach to Paramecium *)
+  let trans_typedef typedef =
+    match typedef with
+    | IntEnum(s, l) -> Paramecium.IntEnum(s, l)
+    | StrEnum(s, l) -> Paramecium.StrEnum(s, l)
+
+  let trans_vardef vardef =
+    match vardef with
+     | Singledef(s, t) -> Paramecium.Singledef(s, t)
+     | Arraydef(_) -> raise Unexhausted_instantiation
+
+  let trans_const const =
+    match const with
+    | Intc(i) -> Paramecium.Intc(i)
+    | Strc(s) -> Paramecium.Strc(s)
+
+  let trans_var var =
+    match var with
+    | Global(s) -> Paramecium.Global(s)
+    | Array(_) | Param(_) -> raise Unexhausted_instantiation
+
+  let rec trans_exp exp =
+    match exp with
+    | Const(c) -> Paramecium.Const(trans_const c)
+    | Var(v) -> Paramecium.Var(trans_var v)
+    | Cond(f, e1, e2) -> Paramecium.Cond(trans_formula f, trans_exp e1, trans_exp e2)
+  and trans_formula formula =
+    match formula with
+    | True -> Paramecium.True
+    | False -> Paramecium.False
+    | Eqn(e1, e2) -> Paramecium.Eqn(trans_exp e1, trans_exp e2)
+    | Neg(f) -> Paramecium.Neg(trans_formula f)
+    | And(flist) -> Paramecium.And(List.map ~f:trans_formula flist)
+    | Or(flist) -> Paramecium.Or(List.map ~f:trans_formula flist)
+    | Imply(f1, f2) -> Paramecium.Imply(trans_formula f1, trans_formula f2)
+    | AbsForm(_) -> raise Unexhausted_instantiation
+
+  let rec trans_statement statement =
+    match statement with
+    | Assign(v, e) -> Paramecium.Assign(trans_var v, trans_exp e)
+    | Parallel(slist) -> Paramecium.Parallel(List.map ~f:trans_statement slist)
+    | AbsStatement(_) -> raise Unexhausted_instantiation
+
+  let trans_rule rule =
+    match rule with
+    | Rule(n, f, s) -> Paramecium.Rule(n, trans_formula f, trans_statement s)
+    | AbsRule(_) -> raise Unexhausted_instantiation
+
+  let trans_prop prop =
+    match prop with
+    | Prop(n, f) -> Paramecium.Prop(n, trans_formula f)
+    | AbsProp(_) -> raise Unexhausted_instantiation
+
+  (** Translate language of Loach to Paramecium
+
+      @param loach cache coherence protocol written in Loach
+      @return the protocol in Paramecium
+  *)
+  let act ~loach:{types; vardefs; init; rules; properties} =
+    let new_vardefs = instantiate_vardef vardefs types in
+    let new_init = apply_statement init ~param:[] ~types in
+    let new_rules = List.concat (List.map ~f:(apply_rule ~param:[] ~types) rules) in
+    let new_properties = List.concat (List.map ~f:(apply_property ~param:[] ~types) properties) in
+    { Paramecium.types = List.map ~f:trans_typedef types;
+      vardefs = List.map ~f:trans_vardef new_vardefs;
+      init = trans_statement new_init;
+      rules = List.map ~f:trans_rule new_rules;
+      properties = List.map ~f:trans_prop new_properties;
+    }
+
+end

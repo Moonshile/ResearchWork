@@ -8,7 +8,7 @@ let types = [
 ]
 
 (* Variables *)
-let vars = [
+let vardefs = [
   Singledef("x", "bool");
   Arraydef("n", ["Parameter"], "state");
 ]
@@ -93,10 +93,10 @@ AbsProp(coherence, params)
 
 let protocol = {
   types;
-  vars;
+  vardefs;
   init;
   rules;
   properties;
 };;
 
-translate ~loach:protocol
+Trans.act ~loach:protocol

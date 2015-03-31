@@ -72,7 +72,7 @@ type prop =
 (** Represents the whole protocol *)
 type protocol = {
   types: typedef list;
-  vars: vardef list;
+  vardefs: vardef list;
   init: statement;
   rules: rule list;
   properties: prop list;
