@@ -162,7 +162,7 @@ let apply_array_exn arr =
   | Param(_) -> raise Wrong_function_call
 
 (* Translate arraydefs to a set of vardefs *)
-let trans_vardef vardefs types =
+let instantiate_vardef vardefs types =
   let t_consts = List.map ~f:type_range_to_const types in
   let rec attach str i =
     match i with
@@ -244,7 +244,7 @@ and instantiate_property prop vardefs ~types =
     @return the protocol in Paramecium
 *)
 let translate ~loach:{types; vars; init; rules; properties} =
-  let new_vars = trans_vardef vars types in
+  let new_vars = instantiate_vardef vars types in
   let new_init = apply_statement init ~param:[] ~types in
   let new_rules = List.concat (List.map ~f:(apply_rule ~param:[] ~types) rules) in
   let new_properties = List.concat (List.map ~f:(apply_property ~param:[] ~types) properties) in
