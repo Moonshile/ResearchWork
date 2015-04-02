@@ -173,8 +173,6 @@ type protocol = {
 
 (*----------------------------- Exceptions ----------------------------------*)
 
-exception Wrong_index
-exception Wrong_function_call
 
 (*----------------------------- Functions ----------------------------------*)
 
@@ -186,4 +184,5 @@ val str_consts : string list -> const list
 val bool_consts : bool list -> const list
 
 (*----------------------------- Translate module ---------------------------------*)
+
 

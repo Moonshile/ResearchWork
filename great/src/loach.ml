@@ -174,8 +174,6 @@ type protocol = {
 
 (*----------------------------- Exceptions ----------------------------------*)
 
-exception Wrong_index
-exception Wrong_function_call
 
 (*----------------------------- Functions ----------------------------------*)
 
@@ -196,9 +194,110 @@ let name2type ~tname ~types =
   let Enum(_, consts) = List.find_exn types ~f:(fun (Enum(n, _)) -> n = tname) in
   consts
 
-(* Generate combination of all possible values of a `indexdef` set *)
+(* Generate combination of all possible values of a `indexdef` set
+    Result is like [[Boolc true; Intc 1]; [Boolc false; Intc 1]]
+*)
 let combine_params indexdefs types =
   indexdefs
   |> List.map ~f:(fun (Indexdef(_, tname)) -> name2type ~tname ~types)
   |> combination
+
+(* Generate combination of all possible values of a `indexdef` set
+    Each value in each set with its index name
+    Result is like [[("x", Boolc true); ("n", Intc 1)]; [("x", Boolc false); ("n", Intc 1)]]
+*)
+let combine_params_with_name indexdefs types =
+  indexdefs
+  |> List.map ~f:(fun (Indexdef(n, tname)) -> (n, name2type ~tname ~types))
+  |> List.map ~f:(fun (n, t) -> List.map t ~f:(fun x -> (n, x)))
+  |> combination
+
+(* attach const i to string name *)
+let attach name i =
+  match i with
+  | Strc(x) -> sprintf "%s[%s]" name x
+  | Intc(x) -> sprintf "%s[%d]" name x
+  | Boolc(x) -> sprintf "%s[%b]" name x
+
+(* attach consts i to string name *)
+let attach_list name i_list =
+  List.fold i_list ~init:name ~f:attach
+
+(* Instantiate vardef *)
+let inst_vardef vardef ~types =
+  match vardef with
+  | Singledef(n, t) -> [singledef n t]
+  | Arraydef(n, p, i, t) ->
+    combine_params i types
+    |> List.map ~f:(fun x -> arraydef (attach_list n x) p [] t)
+
+(* Apply indexref with index *)
+let apply_indexref (Indexref x) ~index =
+  List.Assoc.find_exn index x
+
+(* Apply the indexref to var *)
+let apply_var var ~index =
+  match var with
+  | Single(s) -> Single(s)
+  | Array(s, params, indexrefs) ->
+    let i_list = List.map indexrefs ~f:(apply_indexref ~index) in
+    array (attach_list s i_list) params []
+
+(* Apply exp with index *)
+let rec apply_exp exp ~index ~types =
+  match exp with
+  | Var(x) -> var (apply_var x ~index)
+  | Cond(f, exp1, exp2) ->
+    cond (apply_form f ~index ~types) (apply_exp exp1 ~index ~types) (apply_exp exp2 ~index ~types)
+  | Index(x) -> const (apply_indexref x ~index)
+  | Const(_)
+  | Param(_) -> exp
+(* Apply formula with index *)
+and apply_form form ~index ~types =
+  match form with
+  | Eqn(exp1, exp2) -> eqn (apply_exp exp1 ~index ~types) (apply_exp exp2 ~index ~types)
+  | Neg(x) -> neg (apply_form x ~index ~types)
+  | AndList(x) -> andList (List.map x ~f:(apply_form ~index ~types))
+  | OrList(x) -> orList (List.map x ~f:(apply_form ~index ~types))
+  | Imply(f1, f2) -> imply (apply_form f1 ~index ~types) (apply_form f2 ~index ~types)
+  | AbsForm(x, indexdefs) ->
+    inst_form x indexdefs ~types
+  | Chaos
+  | Miracle -> form
+(* Instantiate formulae *)
+and inst_form form indexdefs ~types =
+  let actual_index = combine_params_with_name indexdefs types in
+  andList (List.map actual_index ~f:(fun index -> apply_form form ~index ~types))
+
+(* Apply statement with index *)
+let rec apply_statement statement ~index ~types =
+  match statement with
+  | Assign(v, e) -> assign (apply_var v ~index) (apply_exp e ~index ~types)
+  | Parallel(x) -> parallel (List.map x ~f:(apply_statement ~index ~types))
+  | AbsStatement(s, indexdefs) -> inst_statement s indexdefs ~types
+(* Instantiate statement *)
+and inst_statement statement indexdefs ~types =
+  let actual_index = combine_params_with_name indexdefs types in
+  parallel (List.map actual_index ~f:(fun index -> apply_statement statement ~index ~types))
+
+(* Apply rule with index *)
+let rec apply_rule r ~index ~types =
+  match r with
+  | Rule(n, p, f, s) ->
+    [rule n p (apply_form f ~index ~types) (apply_statement s ~index ~types)]
+  | AbsRule(x, indexdefs) -> inst_rule x indexdefs ~types
+(* Instantiate rule *)
+and inst_rule r indexdefs ~types =
+  let actual_index = combine_params_with_name indexdefs types in
+  List.concat (List.map actual_index ~f:(fun index -> apply_rule r ~index ~types))
+
+(* Apply property with index *)
+let rec apply_prop p ~index ~types =
+  match p with
+  | Prop(n, p, f) -> [prop n p (apply_form f ~index ~types)]
+  | AbsProp(x, indexdefs) -> inst_prop x indexdefs ~types
+(* Instantiate property *)
+and inst_prop p indexdefs ~types =
+  let actual_index = combine_params_with_name indexdefs types in
+  List.concat (List.map actual_index ~f:(fun index -> apply_prop p ~index ~types))
 

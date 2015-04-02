@@ -7,6 +7,11 @@ let types = [
   Enum("node", int_consts [1; 2; 3]);
 ]
 
+let indexdefs = [
+  indexdef "x" "bool";
+  indexdef "n" "node";
+]
+
 (* Variables *)
 let vardefs = [
   Singledef("x", "bool");
