@@ -33,12 +33,12 @@ type paramdef =
 val paramdef : string -> string -> paramdef
 
 (** Parameter references
-    + Param, name
+    + Paramref, name
 *)
-type param =
-  | Param of string
+type paramref =
+  | Paramref of string
 
-val param : string -> param
+val paramref : string -> paramref
 
 (** Variable definitions, each with its name and name of its type
     + Array var: name, param definitions, type name
@@ -50,19 +50,21 @@ val arraydef : string -> paramdef list -> string -> vardef
 
 (** Variable reference *)
 type var =
-  | Array of string * param list
+  | Array of string * paramref list
 
-val array : string -> param list -> var
+val array : string -> paramref list -> var
 
 (** Represents expressions, including
     + Constants
     + Variable references
     + Condition expressions
+    + Parameter
 *)
 type exp =
   | Const of const
   | Var of var
   | Cond of formula * exp * exp
+  | Param of paramref
 (** Boolean expressions, including
     + Boolean constants, Chaos as True, Miracle as false
     + Equation expression
@@ -81,6 +83,7 @@ and formula =
 val const : const -> exp
 val var : var -> exp
 val cond : formula -> exp -> exp -> exp
+val param : paramref -> exp
 
 val chaos : formula
 val miracle : formula

@@ -10,86 +10,158 @@ open Core.Std
 
 (*------------------------------ Types ---------------------------------*)
 
-(** Basic types available, including integers and enumerations.
-    Types are defined by their names and range.
-*)
-type typedef =
-  | IntEnum of string * int list
-  | StrEnum of string * string list
-
-(** Variable definitions
-    + Var: each with its name and name of its type
-    + Array var: each with its name, names list of its array-types and name of its type
-*)
-type vardef =
-  | Singledef of string * string
-  | Arraydef of string * string list * string
-
 (** Constants *)
 type const =
   | Intc of int
   | Strc of string
+  | Boolc of bool
 
-(** Variables
-    + Global variables referenced by name
-    + Array variables referenced by name and actual parameters
-    + Parameters
+let intc i = Intc i
+let strc s = Strc s
+let boolc b = Boolc b
+
+(** Basic types available, including integers and enumerations.
+    Types are defined by their names and range.
+*)
+type typedef =
+  | Enum of string * const list
+
+let enum name letues = Enum(name, letues)
+
+(** Parameter definitions
+    + paramdef, name and typename
+*)
+type paramdef =
+  | Paramdef of string * string
+
+let paramdef name typename = Paramdef(name, typename)
+
+(** Parameter references
+    + Paramref, name
+*)
+type paramref =
+  | Paramref of string
+
+let paramref name = Paramref name
+
+(** Index definitions, for abstract components
+    + Indexdef: name, type name
+*)
+type indexdef =
+  | Indexdef of string * string
+
+let indexdef name tname = Indexdef(name, tname)
+
+(** Index reference
+    + Indexref: name
+*)
+type indexref =
+  | Indexref of string
+
+let indexref name = Indexref name
+
+(** Variable definitions, each with its name and name of its type
+    + Arraydef: name, param definitions, index definitions, type name
+    + Singledef: name, type name
+*)
+type vardef =
+  | Arraydef of string * paramdef list * indexdef list * string
+  | Singledef of string * string
+
+let arraydef name paramdef indexdef typename = Arraydef(name, paramdef, indexdef, typename)
+let singledef name typename = Singledef(name, typename)
+
+(** Variable reference
+    + Array: name, paramref, indexref
+    + Single: name
 *)
 type var =
-  | Global of string
-  | Array of string * exp list
-  | Param of string
+  | Array of string * paramref list * indexref list
+  | Single of string
+
+let array name paramref indexref = Array(name, paramref, indexref)
+let single name = Single name
+
 (** Represents expressions, including
-    + Constans of basic_types
-    + Global variables of basic_types, with their own names
+    + Constants
+    + Variable references
     + Condition expressions
+    + Parameter
+    + Index
 *)
-and exp =
+type exp =
   | Const of const
   | Var of var
   | Cond of formula * exp * exp
+  | Param of paramref
+  | Index of indexref
 (** Boolean expressions, including
-    + Boolean constants
+    + Boolean constants, Chaos as True, Miracle as false
     + Equation expression
     + Other basic logical operations, including negation,
       conjuction, disjuction, and implication
-    + Abstract formula, which is parameterized its definition with parameters
+    + Abstract formulae, a set of formulae which has conjunction relation
 *)
 and formula =
-  | True
-  | False
+  | Chaos
+  | Miracle
   | Eqn of exp * exp
   | Neg of formula
-  | And of formula list
-  | Or of formula list
+  | AndList of formula list
+  | OrList of formula list
   | Imply of formula * formula
-  | AbsForm of formula * vardef list
+  | AbsForm of formula * indexdef list
+
+let const c = Const c
+let var v = Var v
+let cond f e1 e2 = Cond(f, e1, e2)
+let param paramref = Param paramref
+let index indexref = Index indexref
+
+let chaos = Chaos
+let miracle = Miracle
+let eqn e1 e2 = Eqn(e1, e2)
+let neg f = Neg f
+let andList fs = AndList fs
+let orList fs = OrList fs
+let imply f1 f2 = Imply(f1, f2)
+let absForm f indexdefs = AbsForm(f, indexdefs)
 
 (** Assignment statements, including
     + Single assignment
     + Parallel assignment
-    + Abstract statement, which is parameterized its definition with parameters
+    + AbsStatement: a set of statements which has Parallel relation
 *)
 type statement =
   | Assign of var * exp
   | Parallel of statement list
-  | AbsStatement of statement * vardef list
+  | AbsStatement of statement * indexdef list
+
+let assign v e = Assign(v, e)
+let parallel statements = Parallel statements
+let absStatement s indexdefs = AbsStatement(s, indexdefs)
 
 (** Represents rules which consists of guard and assignments
-    + Rule with its name, guard and assigments
-    + Abstract rule, which is parameterized its definition with parameters
+    + Rule: name, parameters, guard, assignments
+    + AbsRule: a list of rules
 *)
 type rule = 
-  | Rule of string * formula * statement
-  | AbsRule of rule * vardef list
+  | Rule of string * paramdef list * formula * statement
+  | AbsRule of rule * indexdef list
+
+let rule name paramdef f s = Rule(name, paramdef, f, s)
+let absRule r indexdefs = AbsRule(r, indexdefs)
 
 (** Represents properties
-    + Property with its name and formula
-    + Abstract property, which is parameterized its definition with parameters
+    + Prop: name, parameters, formula
+    + AbsProp: a list of properties
 *)
 type prop =
-  | Prop of string * formula
-  | AbsProp of prop * vardef list
+  | Prop of string * paramdef list * formula
+  | AbsProp of prop * indexdef list
+
+let prop name paramdef f = Prop(name, paramdef, f)
+let absProp p indexdefs = AbsProp(p, indexdefs)
 
 (** Represents the whole protocol *)
 type protocol = {
@@ -102,224 +174,31 @@ type protocol = {
 
 (*----------------------------- Exceptions ----------------------------------*)
 
-exception Wrong_parameter
+exception Wrong_index
 exception Wrong_function_call
 
-(*----------------------------- Functions ---------------------------------*)
+(*----------------------------- Functions ----------------------------------*)
 
-(* Convert a typedef to a list of tupels, which contain name and consts
-    e.g., `IntEnum("a", [1;2])` is to `("a", [Intc 1; Intc 2])`
+(** Convert a int list to const list *)
+let int_consts ints = List.map ints ~f:intc
+(** Convert a string list to const list *)
+let str_consts strs = List.map strs ~f:strc
+(** Convert a boolean list to const list *)
+let bool_consts bools = List.map bools ~f:boolc
+
+(** Find the letues range of a type by its name
+
+    @param name: name of the type
+    @param types: list of type definitions
+    @return the concrete type, i.e., const list
 *)
-let type_range_to_const typedef =
-  match typedef with
-  | IntEnum(name, ints) -> (name, List.map ~f:(fun x -> Intc x) ints)
-  | StrEnum(name, strs) -> (name, List.map ~f:(fun x -> Strc x) strs)
+let name2type ~tname ~types =
+  let Enum(_, consts) = List.find_exn types ~f:(fun (Enum(n, _)) -> n = tname) in
+  consts
 
-(* Associate name of `vardef`s with their types *)
-let assoc_vardef_with_type_exn vardefs types =
-  let t_consts = List.map ~f:type_range_to_const types in
-  let find_t tname = List.Assoc.find_exn t_consts tname in
-  List.map vardefs ~f:(fun vardef ->
-    match vardef with
-    | Singledef(n, t) | Arraydef(n, _, t) -> (n, find_t t)
-  )
+(* Generate combination of all possible values of a `indexdef` set *)
+let combine_params indexdefs types =
+  indexdefs
+  |> List.map ~f:(fun (Indexdef(_, tname)) -> name2type ~tname ~types)
+  |> combination
 
-(* Generate combination of all possible values of a `vardef` set *)
-let combine_params_exn vardefs types =
-  (* Firstly, check if every vardef in `vardefs` is constructed by `Singledef` *)
-  let is_vardef var =
-    match var with
-    | Singledef(_) -> true
-    | Arraydef(_) -> false
-  in
-  let all_vardef =
-    vardefs
-    |> List.map ~f:is_vardef
-    |> List.fold ~init:true ~f:(fun res x -> res && x)
-  in
-  match all_vardef with
-  | false -> raise Wrong_parameter
-  | true -> 
-  (* Secondly, generate the combination *)
-    assoc_vardef_with_type_exn vardefs types
-    |> List.map ~f:(fun (n, ts) -> List.map ~f:(fun t -> (n, t)) ts)
-    |> combination
-
-(* Translate arraydefs to a set of vardefs *)
-let instantiate_vardef vardefs types =
-  let t_consts = List.map ~f:type_range_to_const types in
-  let attach str i =
-    match i with
-    | Intc(c) -> sprintf "%s[%d]" str c
-    | Strc(c) -> sprintf "%s[%s]" str c
-  in
-  let apply_arraydef name params = List.fold ~init:name ~f:attach params in
-  let apply_vardef vardef =
-    match vardef with
-    | Singledef(name, t) -> [Singledef(name, t)]
-    | Arraydef(name, index, t) ->
-      index 
-      |> List.map ~f:(fun x -> List.Assoc.find_exn t_consts x)
-      |> combination
-      |> List.map ~f:(apply_arraydef name)
-      |> List.map ~f:(fun x -> Singledef(x, t))
-  in
-  List.concat (List.map ~f:apply_vardef vardefs)
-
-(* Apply a combination of parameters to an array, generating a global var.
-    Need instantiate rules first.
-*)
-let apply_array_exn arr =
-  match arr with
-  | Array(name, ilist) ->
-    let attach str i =
-      match i with
-      | Const(Intc(c)) -> sprintf "%s[%d]" str c
-      | Const(Strc(c)) -> sprintf "%s[%s]" str c
-      | _ -> raise Wrong_parameter
-    in
-    Global(List.fold ~init:name ~f:attach ilist)
-  | Global(_) | Param(_) -> raise Wrong_function_call
-
-(* Apply a combination of parameters to a var *)
-let rec apply_var var ~param =
-  match var with
-  | Global(name) -> Global(name)
-  | Array(name, exps) ->
-    let exp_inst = List.map ~f:(apply_exp ~param) exps in
-    let arr_inst = Array(name, exp_inst) in
-    apply_array_exn arr_inst
-  | Param(_) -> raise Wrong_function_call
-(* Apply a combination of parameters to a exp *)
-and apply_exp exp ~param =
-  match exp with
-  | Cond(form, exp1, exp2) -> Cond(form, apply_exp exp1 ~param, apply_exp exp2 ~param)
-  | Var(Param(name)) -> Const(List.Assoc.find_exn param name)
-  | Var(x) -> Var(apply_var x ~param)
-  | Const(x) -> Const(x)
-
-(* Apply a combination of parameters to a fomula *)
-let rec apply_form formula ~param ~types =
-  match formula with
-  | True -> True
-  | False -> False
-  | Eqn(exp1, exp2) -> Eqn(apply_exp exp1 ~param, apply_exp exp2 ~param)
-  | Neg(x) -> Neg(apply_form x ~param ~types)
-  | And(x) -> And(List.map ~f:(apply_form ~param ~types) x)
-  | Or(x) -> Or(List.map ~f:(apply_form ~param ~types) x)
-  | Imply(x, y) -> Imply(apply_form x ~param ~types, apply_form y ~param ~types)
-  | AbsForm(x, vardefs) -> instantiate_form x vardefs ~types
-(* Instantiate an abstract formula *)
-and instantiate_form formula vardefs ~types =
-  let actual_params = combine_params_exn vardefs types in
-  And(List.map ~f:(fun p -> apply_form formula ~param:p ~types) actual_params)
-
-(* Apply a combination of parameters to a statement *)
-let rec apply_statement statement ~param ~types =
-  match statement with
-  | Assign(var, exp) -> Assign(apply_var var ~param, apply_exp exp ~param)
-  | Parallel(statements) -> Parallel(List.map ~f:(apply_statement ~param ~types) statements)
-  | AbsStatement(statement, vardefs) -> instantiate_statement statement vardefs ~types
-(* Instantiate an abstract statement *)
-and instantiate_statement statement vardefs ~types =
-  let actual_params = combine_params_exn vardefs types in
-  Parallel(List.map ~f:(fun p -> apply_statement statement ~param:p ~types) actual_params)
-
-(* Apply a combination of parameters to a rule *)
-let rec apply_rule rule ~param ~types =
-  match rule with
-  | Rule(name, form, s) -> [Rule(name, apply_form form ~param ~types, apply_statement s ~param ~types)]
-  | AbsRule(rule, vardefs) -> instantiate_rule rule vardefs ~types
-(* Instantiate an abstract rule *)
-and instantiate_rule rule vardefs ~types =
-  let actual_params = combine_params_exn vardefs types in
-  List.concat (List.map ~f:(fun p -> apply_rule rule ~param:p ~types) actual_params)
-
-(* Apply a combination of parameters to a property *)
-let rec apply_property prop ~param ~types =
-  match prop with
-  | Prop(name, form) -> [Prop(name, apply_form form ~param ~types)]
-  | AbsProp(p, vardefs) -> instantiate_property p vardefs ~types
-(* Instantiate an abstract property *)
-and instantiate_property prop vardefs ~types =
-  let actual_params = combine_params_exn vardefs types in
-  List.concat (List.map ~f:(fun p -> apply_property prop ~param:p ~types) actual_params)
-
-
-module Trans = struct
-
-  exception Unexhausted_instantiation
-
-  (* Translate data structures from Loach to Paramecium *)
-  let trans_typedef typedef =
-    match typedef with
-    | IntEnum(s, l) -> Paramecium.IntEnum(s, l)
-    | StrEnum(s, l) -> Paramecium.StrEnum(s, l)
-
-  let trans_vardef vardef =
-    match vardef with
-     | Singledef(s, t) -> Paramecium.Singledef(s, t)
-     | Arraydef(_) -> raise Unexhausted_instantiation
-
-  let trans_const const =
-    match const with
-    | Intc(i) -> Paramecium.Intc(i)
-    | Strc(s) -> Paramecium.Strc(s)
-
-  let trans_var var =
-    match var with
-    | Global(s) -> Paramecium.Global(s)
-    | Array(_) | Param(_) -> raise Unexhausted_instantiation
-
-  let rec trans_exp exp =
-    match exp with
-    | Const(c) -> Paramecium.Const(trans_const c)
-    | Var(v) -> Paramecium.Var(trans_var v)
-    | Cond(f, e1, e2) -> Paramecium.Cond(trans_formula f, trans_exp e1, trans_exp e2)
-  and trans_formula formula =
-    match formula with
-    | True -> Paramecium.True
-    | False -> Paramecium.False
-    | Eqn(e1, e2) -> Paramecium.Eqn(trans_exp e1, trans_exp e2)
-    | Neg(f) -> Paramecium.Neg(trans_formula f)
-    | And(flist) -> Paramecium.And(List.map ~f:trans_formula flist)
-    | Or(flist) -> Paramecium.Or(List.map ~f:trans_formula flist)
-    | Imply(f1, f2) -> Paramecium.Imply(trans_formula f1, trans_formula f2)
-    | AbsForm(_) -> raise Unexhausted_instantiation
-
-  let rec trans_statement statement =
-    match statement with
-    | Assign(v, e) -> Paramecium.Assign(trans_var v, trans_exp e)
-    | Parallel(slist) -> Paramecium.Parallel(List.map ~f:trans_statement slist)
-    | AbsStatement(_) -> raise Unexhausted_instantiation
-
-  let trans_rule rule =
-    match rule with
-    | Rule(n, f, s) -> Paramecium.Rule(n, trans_formula f, trans_statement s)
-    | AbsRule(_) -> raise Unexhausted_instantiation
-
-  let trans_prop prop =
-    match prop with
-    | Prop(n, f) -> Paramecium.Prop(n, trans_formula f)
-    | AbsProp(_) -> raise Unexhausted_instantiation
-
-  (** Translate language of Loach to Paramecium
-
-      @param loach cache coherence protocol written in Loach
-      @return the protocol in Paramecium
-  *)
-  let act ~loach:{types; vardefs; init; rules; properties} =
-    printf "Start to translate from Loach to Paramecium...\n";
-    let new_vardefs = instantiate_vardef vardefs types in
-    let new_init = apply_statement init ~param:[] ~types in
-    let new_rules = List.concat (List.map ~f:(apply_rule ~param:[] ~types) rules) in
-    let new_properties = List.concat (List.map ~f:(apply_property ~param:[] ~types) properties) in
-    printf "Done\n";
-    { Paramecium.types = List.map ~f:trans_typedef types;
-      vardefs = List.map ~f:trans_vardef new_vardefs;
-      init = trans_statement new_init;
-      rules = List.map ~f:trans_rule new_rules;
-      properties = List.map ~f:trans_prop new_properties;
-    }
-
-end

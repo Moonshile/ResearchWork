@@ -2,15 +2,15 @@ open Loach
 
 (* Self-defined types *)
 let types = [
-  StrEnum("state", ["I"; "T"; "C"; "E"]);
-  StrEnum("bool", ["True"; "False"]);
-  IntEnum("Parameter", [1; 2; 3]);
+  Enum("state", str_consts ["I"; "T"; "C"; "E"]);
+  Enum("bool", bool_consts [true; false]);
+  Enum("node", int_consts [1; 2; 3]);
 ]
 
 (* Variables *)
 let vardefs = [
   Singledef("x", "bool");
-  Arraydef("n", ["Parameter"], "state");
+  Arraydef("n", [paramdef "i" "node"], "state");
 ]
 
 (* Initialization *)

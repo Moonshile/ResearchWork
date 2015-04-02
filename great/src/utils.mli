@@ -13,3 +13,11 @@
     @return the generated combinations
 *)
 val combination : 'a list list -> 'a list list
+
+(** Judge if all elements in list satisfy function f
+
+    @param the list
+    @param f a function maps elements in list to bool
+    @return true if satisfy else false
+*)
+val all : 'a list -> f:('a -> bool) -> bool

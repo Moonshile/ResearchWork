@@ -22,4 +22,14 @@ let combination list =
   in
   List.fold ~init:[] ~f:com_next list
 
+(** Judge if all elements in list satisfy function f
+
+    @param the list
+    @param f a function maps elements in list to bool
+    @return true if satisfy else false
+*)
+let all list ~f =
+  list
+  |> List.map ~f
+  |> List.fold ~f:(fun res x -> res && x) ~init:true
 

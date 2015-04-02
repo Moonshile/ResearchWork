@@ -33,12 +33,12 @@ type paramdef =
 let paramdef name typename = Paramdef(name, typename)
 
 (** Parameter references
-    + Param, name
+    + Paramref, name
 *)
-type param =
-  | Param of string
+type paramref =
+  | Paramref of string
 
-let param name = Param name
+let paramref name = Paramref name
 
 (** Variable definitions, each with its name and name of its type
     + Array var: name, param definitions, type name
@@ -50,19 +50,21 @@ let arraydef name paramdef typename = Arraydef(name, paramdef, typename)
 
 (** Variable reference *)
 type var =
-  | Array of string * param list
+  | Array of string * paramref list
 
-let array name param = Array(name, param)
+let array name paramref = Array(name, paramref)
 
 (** Represents expressions, including
     + Constants
     + Variable references
     + Condition expressions
+    + Parameter
 *)
 type exp =
   | Const of const
   | Var of var
   | Cond of formula * exp * exp
+  | Param of paramref
 (** Boolean expressions, including
     + Boolean constants, Chaos as True, Miracle as false
     + Equation expression
@@ -81,6 +83,7 @@ and formula =
 let const c = Const c
 let var v = Var v
 let cond f e1 e2 = Cond(f, e1, e2)
+let param paramref = Param(paramref)
 
 let chaos = Chaos
 let miracle = Miracle
