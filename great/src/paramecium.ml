@@ -24,35 +24,35 @@ type typedef =
 
 let enum name values = Enum(name, values)
 
-(** Index definitions
-    + Indexdef, name and typename
+(** Parameter definitions
+    + Paramdef, name and typename
 *)
-type indexdef =
-  | Indexdef of string * string
+type paramdef =
+  | Paramdef of string * string
 
-let indexdef name typename = Indexdef(name, typename)
+let paramdef name typename = Paramdef(name, typename)
 
-(** Index references
-    + Index, name
+(** Parameter references
+    + Param, name
 *)
-type index =
-  | Index of string
+type param =
+  | Param of string
 
-let index name = Index name
+let param name = Param name
 
 (** Variable definitions, each with its name and name of its type
-    + Array var: each with its name, names list of its array-types and name of its type
+    + Array var: name, param definitions, type name
 *)
 type vardef =
-  | Arraydef of string * indexdef list * string
+  | Arraydef of string * paramdef list * string
 
-let arraydef name indexdef typename = Arraydef(name, indexdef, typename)
+let arraydef name paramdef typename = Arraydef(name, paramdef, typename)
 
 (** Variable reference *)
 type var =
-  | Array of string * index list
+  | Array of string * param list
 
-let array name index = Array(name, index)
+let array name param = Array(name, param)
 
 (** Represents expressions, including
     + Constants
@@ -101,17 +101,21 @@ type statement =
 let assign v e = Assign(v, e)
 let parallel statements = Parallel statements
 
-(** Represents rules which consists of guard and assignments *)
+(** Represents rules which consists of guard and assignments
+    + Rule: name, parameters, guard, assignments
+*)
 type rule = 
-  | Rule of string * indexdef list * formula * statement
+  | Rule of string * paramdef list * formula * statement
 
-let rule name indexdef f s = Rule(name, indexdef, f, s)
+let rule name paramdef f s = Rule(name, paramdef, f, s)
 
-(** Represents properties *)
+(** Represents properties
+    + Prop: name, parameters, formula
+*)
 type prop =
-  | Prop of string * indexdef list * formula
+  | Prop of string * paramdef list * formula
 
-let prop name indexdef f = Prop(name, indexdef, f)
+let prop name paramdef f = Prop(name, paramdef, f)
 
 (** Represents the whole protocol *)
 type protocol = {

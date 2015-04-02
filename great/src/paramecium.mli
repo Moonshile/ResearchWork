@@ -24,35 +24,35 @@ type typedef =
 
 val enum : string -> const list -> typedef
 
-(** Index definitions
-    + Indexdef, name and typename
+(** Parameter definitions
+    + paramdef, name and typename
 *)
-type indexdef =
-  | Indexdef of string * string
+type paramdef =
+  | Paramdef of string * string
 
-val indexdef : string -> string -> indexdef
+val paramdef : string -> string -> paramdef
 
-(** Index references
-    + Index, name
+(** Parameter references
+    + Param, name
 *)
-type index =
-  | Index of string
+type param =
+  | Param of string
 
-val index : string -> index
+val param : string -> param
 
 (** Variable definitions, each with its name and name of its type
-    + Array var: each with its name, names list of its array-types and name of its type
+    + Array var: name, param definitions, type name
 *)
 type vardef =
-  | Arraydef of string * indexdef list * string
+  | Arraydef of string * paramdef list * string
 
-val arraydef : string -> indexdef list -> string -> vardef
+val arraydef : string -> paramdef list -> string -> vardef
 
 (** Variable reference *)
 type var =
-  | Array of string * index list
+  | Array of string * param list
 
-val array : string -> index list -> var
+val array : string -> param list -> var
 
 (** Represents expressions, including
     + Constants
@@ -101,17 +101,21 @@ type statement =
 val assign : var -> exp -> statement
 val parallel : statement list -> statement
 
-(** Represents rules which consists of guard and assignments *)
+(** Represents rules which consists of guard and assignments
+    + Rule: name, parameters, guard, assignments
+*)
 type rule = 
-  | Rule of string * indexdef list * formula * statement
+  | Rule of string * paramdef list * formula * statement
 
-val rule : string -> indexdef list -> formula -> statement -> rule
+val rule : string -> paramdef list -> formula -> statement -> rule
 
-(** Represents properties *)
+(** Represents properties
+    + Prop: name, parameters, formula
+*)
 type prop =
-  | Prop of string * indexdef list * formula
+  | Prop of string * paramdef list * formula
 
-val prop : string -> indexdef list -> formula -> prop
+val prop : string -> paramdef list -> formula -> prop
 
 (** Represents the whole protocol *)
 type protocol = {
