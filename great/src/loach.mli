@@ -185,4 +185,14 @@ val bool_consts : bool list -> const list
 
 (*----------------------------- Translate module ---------------------------------*)
 
+module Trans : sig
 
+  exception Unexhausted_inst
+
+  (** Translate language of Loach to Paramecium
+
+      @param loach cache coherence protocol written in Loach
+      @return the protocol in Paramecium
+  *)
+  val act : loach:protocol -> Paramecium.protocol
+end

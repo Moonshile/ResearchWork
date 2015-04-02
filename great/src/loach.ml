@@ -226,7 +226,7 @@ let attach_list name i_list =
 (* Instantiate vardef *)
 let inst_vardef vardef ~types =
   match vardef with
-  | Singledef(n, t) -> [singledef n t]
+  | Singledef(n, t) -> [arraydef n [] [] t]
   | Arraydef(n, p, i, t) ->
     combine_params i types
     |> List.map ~f:(fun x -> arraydef (attach_list n x) p [] t)
@@ -238,7 +238,7 @@ let apply_indexref (Indexref x) ~index =
 (* Apply the indexref to var *)
 let apply_var var ~index =
   match var with
-  | Single(s) -> Single(s)
+  | Single(s) -> array s [] []
   | Array(s, params, indexrefs) ->
     let i_list = List.map indexrefs ~f:(apply_indexref ~index) in
     array (attach_list s i_list) params []
@@ -301,3 +301,105 @@ and inst_prop p indexdefs ~types =
   let actual_index = combine_params_with_name indexdefs types in
   List.concat (List.map actual_index ~f:(fun index -> apply_prop p ~index ~types))
 
+
+(*----------------------------- Translate module ---------------------------------*)
+
+module Trans = struct
+
+  exception Unexhausted_inst
+
+  (* Translate data structures from Loach to Paramecium *)
+
+  let trans_const const =
+    match const with
+    | Intc(i) -> Paramecium.intc i
+    | Strc(s) -> Paramecium.strc s
+    | Boolc(b) -> Paramecium.boolc b
+
+  let trans_typedef typedef =
+    match typedef with
+    | Enum(s, l) -> Paramecium.enum s (List.map l ~f:trans_const)
+
+  let trans_paramdef pd =
+    match pd with
+    | Paramdef(n, t) -> Paramecium.paramdef n t
+
+  let trans_paramref pr =
+    match pr with
+    | Paramref(n) -> Paramecium.paramref n
+
+  let trans_indexdef _ =
+    raise Unexhausted_inst
+
+  let trans_indexref _ =
+    raise Unexhausted_inst
+
+  let trans_vardef vardef =
+    match vardef with
+     | Arraydef(n, p, i, t) ->
+       let _ = (List.map i ~f:trans_indexdef) in
+       Paramecium.arraydef n (List.map p ~f:trans_paramdef) t
+     | Singledef(_) -> raise Unexhausted_inst
+
+  let trans_var var =
+    match var with
+    | Array(n, p, i) ->
+      let _ = (List.map i ~f:trans_indexref) in
+      Paramecium.array n (List.map p ~f:trans_paramref)
+    | Single(_) -> raise Unexhausted_inst
+
+  let rec trans_exp exp =
+    match exp with
+    | Const(c) -> Paramecium.const (trans_const c)
+    | Var(v) -> Paramecium.var (trans_var v)
+    | Cond(f, e1, e2) -> Paramecium.cond (trans_formula f) (trans_exp e1) (trans_exp e2)
+    | Param(x) -> Paramecium.param (trans_paramref x)
+    | Index(_) -> raise Unexhausted_inst
+  and trans_formula formula =
+    match formula with
+    | Chaos -> Paramecium.Chaos
+    | Miracle -> Paramecium.Miracle
+    | Eqn(e1, e2) -> Paramecium.eqn (trans_exp e1) (trans_exp e2)
+    | Neg(f) -> Paramecium.neg (trans_formula f)
+    | AndList(flist) -> Paramecium.andList (List.map ~f:trans_formula flist)
+    | OrList(flist) -> Paramecium.orList (List.map ~f:trans_formula flist)
+    | Imply(f1, f2) -> Paramecium.imply (trans_formula f1) (trans_formula f2)
+    | AbsForm(_) -> raise Unexhausted_inst
+
+  let rec trans_statement statement =
+    match statement with
+    | Assign(v, e) -> Paramecium.assign (trans_var v) (trans_exp e)
+    | Parallel(slist) -> Paramecium.parallel (List.map ~f:trans_statement slist)
+    | AbsStatement(_) -> raise Unexhausted_inst
+
+  let trans_rule r =
+    match r with
+    | Rule(n, p, f, s) -> 
+      Paramecium.rule n (List.map p ~f:trans_paramdef) (trans_formula f) (trans_statement s)
+    | AbsRule(_) -> raise Unexhausted_inst
+
+  let trans_prop p =
+    match p with
+    | Prop(n, p, f) -> Paramecium.prop n (List.map p ~f:trans_paramdef) (trans_formula f)
+    | AbsProp(_) -> raise Unexhausted_inst
+
+  (** Translate language of Loach to Paramecium
+
+      @param loach cache coherence protocol written in Loach
+      @return the protocol in Paramecium
+  *)
+  let act ~loach:{types; vardefs; init; rules; properties} =
+    printf "Start to translate from Loach to Paramecium...\n";
+    let new_vardefs = List.concat (List.map vardefs ~f:(inst_vardef ~types)) in
+    let new_init = apply_statement init ~index:[] ~types in
+    let new_rules = List.concat (List.map rules ~f:(apply_rule ~index:[] ~types)) in
+    let new_properties = List.concat (List.map properties ~f:(apply_prop ~index:[] ~types)) in
+    printf "Done\n";
+    { Paramecium.types = List.map ~f:trans_typedef types;
+      vardefs = List.map ~f:trans_vardef new_vardefs;
+      init = trans_statement new_init;
+      rules = List.map ~f:trans_rule new_rules;
+      properties = List.map ~f:trans_prop new_properties;
+    }
+
+end
