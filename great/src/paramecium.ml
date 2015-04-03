@@ -249,6 +249,9 @@ module InvFinder = struct
   *)
   exception Unexhausted_inst
 
+  (* This exception is for stop warnings. It will never be raised. *)
+  exception Empty_exception
+
   (** Concrete parameter
 
       + ConcreteParam: name, value
@@ -343,30 +346,29 @@ module InvFinder = struct
       Result has format (condition, form)
   *)
   and formEval form ~assigns =
+    let handle_tuples ~f tuples =
+      match tuples with
+      | [(f1, g1); (f2, g2)] -> (andList [f1; f2], f g1 g2)
+      | _ -> raise Empty_exception
+    in
     match form with
     | Eqn(e1, e2) ->
       combination [expEval e1 ~assigns; expEval e2 ~assigns]
-      |> List.map ~f:(fun [(g1, v1); (g2, v2)] -> (andList [g1; g2], eqn e1 e2))
+      |> List.map ~f:(handle_tuples ~f:eqn)
     | Neg(f) ->
       formEval f ~assigns
       |> List.map ~f:(fun (g, f') -> (g, neg f'))
-    | AndList(fl) -> (
-      match fl with
-      | [] -> [(chaos, andList [])]
-      | f::glist ->
-        combination [formEval f ~assigns; formEval (andList glist) ~assigns]
-        |> List.map ~f:(fun [(g, f1); (h, f2)] -> (andList [g; h], andList [f1; f2]))
-      )
-    | OrList(fl) -> (
-      match fl with
-      | [] -> [(chaos, orList [])]
-      | f::glist ->
-        combination [formEval f ~assigns; formEval (orList glist) ~assigns]
-        |> List.map ~f:(fun [(g, f1); (h, f2)] -> (andList [g; h], orList [f1; f2]))
-      )
+    | AndList([]) -> [(chaos, andList [])]
+    | AndList(f::glist) ->
+      combination [formEval f ~assigns; formEval (andList glist) ~assigns]
+      |> List.map ~f:(handle_tuples ~f:(fun g1 g2 -> andList [g1; g2]))
+    | OrList([]) -> [(chaos, orList [])]
+    | OrList(f::glist) ->
+      combination [formEval f ~assigns; formEval (orList glist) ~assigns]
+      |> List.map ~f:(handle_tuples ~f:(fun g1 g2 -> orList [g1; g2]))
     | Imply(ant, cons) ->
       combination [formEval ant ~assigns; formEval cons ~assigns]
-      |> List.map ~f:(fun [(g1, f1); (g2, f2)] -> (andList [g1; g2], imply f1 f2))
+      |> List.map ~f:(handle_tuples ~f:imply)
     | Chaos -> [(chaos, chaos)]
     | Miracle -> [(chaos, miracle)]
 
