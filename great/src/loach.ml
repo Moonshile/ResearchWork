@@ -203,19 +203,19 @@ let name2type ~tname ~types =
   let Enum(_, consts) = List.find_exn types ~f:(fun (Enum(n, _)) -> n = tname) in
   consts
 
-(* Generate combination of all possible values of a `indexdef` set
+(* Generate Cartesian production of all possible values of a `indexdef` set
     Result is like [[Boolc true; Intc 1]; [Boolc false; Intc 1]]
 *)
-let combine_params indexdefs types =
+let cart_product indexdefs types =
   indexdefs
   |> List.map ~f:(fun (Indexdef(_, tname)) -> name2type ~tname ~types)
   |> combination
 
-(* Generate combination of all possible values of a `indexdef` set
+(* Generate Cartesian production of all possible values of a `indexdef` set
     Each value in each set with its index name
     Result is like [[("x", Boolc true); ("n", Intc 1)]; [("x", Boolc false); ("n", Intc 1)]]
 *)
-let combine_params_with_name indexdefs types =
+let cart_product_with_name indexdefs types =
   indexdefs
   |> List.map ~f:(fun (Indexdef(n, tname)) -> (n, name2type ~tname ~types))
   |> List.map ~f:(fun (n, t) -> List.map t ~f:(fun x -> (n, x)))
@@ -250,7 +250,7 @@ let inst_vardef vardef ~types =
   match vardef with
   | Singledef(n, t) -> [arrdef n [] t]
   | Arrdef(n, i, p, t) ->
-    combine_params i types
+    cart_product i types
     |> List.map ~f:(fun x -> arrdef (attach_list n x) p t)
 
 (* Apply the indexref to var *)
@@ -284,7 +284,7 @@ and apply_form form ~index ~types =
   | Miracle -> form
 (* Instantiate formulae *)
 and inst_form form indexdefs ~types =
-  let actual_index = combine_params_with_name indexdefs types in
+  let actual_index = cart_product_with_name indexdefs types in
   andList (List.map actual_index ~f:(fun index -> apply_form form ~index ~types))
 
 (* Apply statement with index *)
@@ -295,7 +295,7 @@ let rec apply_statement statement ~index ~types =
   | AbsStatement(s, indexdefs) -> inst_statement s indexdefs ~types
 (* Instantiate statement *)
 and inst_statement statement indexdefs ~types =
-  let actual_index = combine_params_with_name indexdefs types in
+  let actual_index = cart_product_with_name indexdefs types in
   parallel (List.map actual_index ~f:(fun index -> apply_statement statement ~index ~types))
 
 (* Apply rule with index *)
@@ -308,7 +308,7 @@ let rec apply_rule r ~index ~types =
   | AbsRule(x, indexdefs) -> inst_rule x indexdefs ~types
 (* Instantiate rule *)
 and inst_rule r indexdefs ~types =
-  let actual_index = combine_params_with_name indexdefs types in
+  let actual_index = cart_product_with_name indexdefs types in
   List.concat (List.map actual_index ~f:(fun index -> apply_rule r ~index ~types))
 
 (* Apply property with index *)
@@ -319,14 +319,18 @@ let rec apply_prop property ~index ~types =
   | AbsProp(x, indexdefs) -> inst_prop x indexdefs ~types
 (* Instantiate property *)
 and inst_prop property indexdefs ~types =
-  let actual_index = combine_params_with_name indexdefs types in
+  let actual_index = cart_product_with_name indexdefs types in
   List.concat (List.map actual_index ~f:(fun index -> apply_prop property ~index ~types))
 
 
 (*----------------------------- Translate module ---------------------------------*)
 
+(** Translate language of this level to the next lower level *)
 module Trans = struct
 
+  (** Unexhausted instantiation
+      This exception should never be raised. Once raised, There should be a bug in this tool.
+  *)
   exception Unexhausted_inst
 
   (* Translate data structures from Loach to Paramecium *)

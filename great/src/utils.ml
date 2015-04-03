@@ -7,6 +7,7 @@
 open Core.Std
 
 (** Generate all possible combinations for a specific set of lists.
+    i.e., generate Cartesian Production of the lists
     For example, given [[1;2]; [1;3]] produces [[1;1]; [1;3]; [2;1]; [2;3]]
 
     @param list the given set of lists, whose elements will be omitted if it is []

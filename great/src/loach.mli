@@ -5,8 +5,6 @@
     @author Kaiqiang Duan <duankq@ios.ac.cn>
 *)
 
-open Core.Std
-
 (*------------------------------ Types ---------------------------------*)
 
 (** Constants *)
@@ -194,8 +192,12 @@ val bool_consts : bool list -> const list
 
 (*----------------------------- Translate module ---------------------------------*)
 
+(** Translate language of this level to the next lower level *)
 module Trans : sig
 
+  (** Unexhausted instantiation
+      This exception should never be raised. Once raised, There should be a bug in this tool.
+  *)
   exception Unexhausted_inst
 
   (** Translate language of Loach to Paramecium

@@ -131,3 +131,79 @@ type protocol = {
   rules: rule list;
   properties: prop list;
 }
+
+(*----------------------------- Exceptions ----------------------------------*)
+
+(** The actual parameters can't match with their definitions *)
+exception Unmatched_parameters
+
+(*----------------------------- Functions ----------------------------------*)
+
+
+(*----------------------------- Module InvFinder ----------------------------------*)
+
+(** Module for find invariants and causal relations *)
+module InvFinder : sig
+
+  (** Unexhausted instantiation
+      This exception should never be raised. Once raised, There should be a bug in this tool.
+  *)
+  exception Unexhausted_inst
+
+  (** Concrete parameter
+
+      + ConcreteParam: name, value
+  *)
+  type concrete_param =
+    | ConcreteParam of string * const
+
+  val concrete_param : string -> const -> concrete_param
+
+  (** Concrete rule
+
+      + ConcreteRule: rule, concrete param list
+  *)
+  type concrete_rule =
+    | ConcreteRule of rule * concrete_param list
+
+  val concrete_rule : rule -> concrete_param list -> concrete_rule
+
+  (** Concrete property
+
+      + ConcreteProp: property, concrete param list
+  *)
+  type concrete_prop =
+    | ConcreteProp of prop * concrete_param list
+
+  val concrete_prop : prop -> concrete_param list -> concrete_prop
+
+  (** Causal relations
+
+    + InvHoldForRule1
+    + InvHoldForRule2
+    + InvHoldForRule3: the new concrete invariant found
+  *)
+  type relation =
+    | InvHoldForRule1
+    | InvHoldForRule2
+    | InvHoldForRule3 of concrete_prop
+
+  val invHoldForRule1 : relation
+  val invHoldForRule2 : relation
+  val invHoldForRule3 : concrete_prop -> relation
+
+  (** InvFinder type, i.e., causal relation table *)
+  type t = {
+    rule: concrete_rule;
+    inv: concrete_prop;
+    relation: relation;
+  }
+
+  (** Find invs and causal relations of a protocol
+
+      @param protocol the protocol
+      @return causal relation table
+  *)
+  (*val find : protocol:protocol -> t list*)
+end
+

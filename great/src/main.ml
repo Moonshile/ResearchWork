@@ -91,12 +91,12 @@ prop name params formula
 );
 ]
 
-let protocol = {
+let protocol = Trans.act ~loach:{
   types;
   vardefs;
   init;
   rules;
   properties;
-};;
+}
 
-Trans.act ~loach:protocol
+
