@@ -70,25 +70,25 @@ let paramfix value = Paramfix value
 let paramindex indexed = Paramindex indexed
 
 (** Variable definitions, each with its name and name of its type
-    + Arraydef: name, param definitions, index definitions, type name
+    + Arraydef: name, index definitions, param definitions, type name
     + Singledef: name, type name
 *)
 type vardef =
-  | Arrdef of string * paramdef list * indexdef list * string
+  | Arrdef of string * indexdef list * paramdef list * string
   | Singledef of string * string
 
-let arrdef name paramdef indexdef typename = Arrdef(name, paramdef, indexdef, typename)
+let arrdef name ?(indexdef=[]) paramdef typename = Arrdef(name, indexdef, paramdef, typename)
 let singledef name typename = Singledef(name, typename)
 
 (** Variable reference
-    + Array: name, paramref, indexref
+    + Array: name, indexref, paramref
     + Single: name
 *)
 type var =
-  | Arr of string * paramref list * indexref list
+  | Arr of string * indexref list * paramref list
   | Single of string
 
-let arr name paramref indexref = Arr(name, paramref, indexref)
+let arr name ?(indexdef=[]) paramref = Arr(name, indexdef, paramref)
 let single name = Single name
 
 (** Represents expressions, including
@@ -248,18 +248,18 @@ let attach_list name i_list =
 (* Instantiate vardef *)
 let inst_vardef vardef ~types =
   match vardef with
-  | Singledef(n, t) -> [arrdef n [] [] t]
-  | Arrdef(n, p, i, t) ->
+  | Singledef(n, t) -> [arrdef n [] t]
+  | Arrdef(n, i, p, t) ->
     combine_params i types
-    |> List.map ~f:(fun x -> arrdef (attach_list n x) p [] t)
+    |> List.map ~f:(fun x -> arrdef (attach_list n x) p t)
 
 (* Apply the indexref to var *)
 let apply_var var ~index =
   match var with
-  | Single(s) -> arr s [] []
-  | Arr(s, params, indexrefs) ->
+  | Single(s) -> arr s []
+  | Arr(s, indexrefs, params) ->
     let i_list = List.map indexrefs ~f:(apply_indexref ~index) in
-    arr (attach_list s i_list) (List.map params ~f:(apply_param ~index)) []
+    arr (attach_list s i_list) (List.map params ~f:(apply_param ~index))
 
 (* Apply exp with index *)
 let rec apply_exp exp ~index ~types =
@@ -359,14 +359,14 @@ module Trans = struct
 
   let trans_vardef vardef =
     match vardef with
-     | Arrdef(n, p, i, t) ->
+     | Arrdef(n, i, p, t) ->
        let _ = (List.map i ~f:trans_indexdef) in
        Paramecium.arrdef n (List.map p ~f:trans_paramdef) t
      | Singledef(_) -> raise Unexhausted_inst
 
   let trans_var var =
     match var with
-    | Arr(n, p, i) ->
+    | Arr(n, i, p) ->
       let _ = (List.map i ~f:trans_indexref) in
       Paramecium.arr n (List.map p ~f:trans_paramref)
     | Single(_) -> raise Unexhausted_inst

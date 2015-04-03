@@ -69,25 +69,25 @@ val paramfix : const -> paramref
 val paramindex : indexref -> paramref
 
 (** Variable definitions, each with its name and name of its type
-    + Arraydef: name, param definitions, index definitions, type name
+    + Arraydef: name, index definitions, param definitions, type name
     + Singledef: name, type name
 *)
 type vardef =
-  | Arrdef of string * paramdef list * indexdef list * string
+  | Arrdef of string * indexdef list * paramdef list * string
   | Singledef of string * string
 
-val arrdef : string -> paramdef list -> indexdef list -> string -> vardef
+val arrdef : string -> ?indexdef:(indexdef list) -> paramdef list -> string -> vardef
 val singledef : string -> string -> vardef
 
 (** Variable reference
-    + Array: name, paramref, indexref
+    + Array: name, indexref, paramref
     + Single: name
 *)
 type var =
-  | Arr of string * paramref list * indexref list
+  | Arr of string * indexref list * paramref list
   | Single of string
 
-val arr : string -> paramref list -> indexref list -> var
+val arr : string -> ?indexdef:(indexref list) -> paramref list -> var
 val single : string -> var
 
 (** Represents expressions, including

@@ -25,13 +25,13 @@ let types = [
 (* Variables *)
 let vardefs = [
   singledef "x" "bool";
-  arrdef "n" [defi] [] "state";
+  arrdef "n" [defi] "state";
 ]
 
 (* Initialization *)
 let init =
   let a1 = assign (single "x") _True in
-  let an = assign (arr "n" [paramindex (indexref "i")] []) _I in
+  let an = assign (arr "n" [paramindex (indexref "i")]) _I in
   let a2 = AbsStatement(an, [indexdef "i" "node"]) in
   parallel [a1; a2;]
 
@@ -39,20 +39,20 @@ let rules = [
 (
 let name = "try" in
 let params = [defi] in
-let formula = eqn (var (arr "n" [i] [])) _I in
-let statement = assign (arr "n" [i] []) _T in
+let formula = eqn (var (arr "n" [i])) _I in
+let statement = assign (arr "n" [i]) _T in
 rule name params formula statement
 );
 (
 let name = "crit" in
 let params = [defi] in
 let formula =
-  let f1 = eqn (var (arr "n" [i] [])) _T in
+  let f1 = eqn (var (arr "n" [i])) _T in
   let f2 = eqn (var (single "x")) _True in
   andList [f1; f2]
 in
 let statement =
-  let s1 = assign (arr "n" [i] []) _C in
+  let s1 = assign (arr "n" [i]) _C in
   let s2 = assign (single "x") _False in
   parallel [s1; s2]
 in
@@ -61,17 +61,17 @@ rule name params formula statement
 (
 let name = "exit" in
 let params = [defi] in
-let formula = eqn (var (arr "n" [i] [])) _C in
-let statement = assign (arr "n" [i] []) _E in
+let formula = eqn (var (arr "n" [i])) _C in
+let statement = assign (arr "n" [i]) _E in
 rule name params formula statement
 );
 (
 let name = "idle" in
 let params = [defi] in
-let formula = eqn (var (arr "n" [i] [])) _E in
+let formula = eqn (var (arr "n" [i])) _E in
 let statement =
   let s1 = assign (single "x") _True in
-  let s2 = assign (arr "n" [i] []) _I in
+  let s2 = assign (arr "n" [i]) _I in
   parallel [s1; s2]
 in
 rule name params formula statement
@@ -83,8 +83,8 @@ let properties = [
 let name = "coherence" in
 let params = [defi; defj] in
 let formula =
-  let f1 = eqn (var (arr "n" [i] [])) _C in
-  let f2 = eqn (var (arr "n" [j] [])) _C in
+  let f1 = eqn (var (arr "n" [i])) _C in
+  let f2 = eqn (var (arr "n" [j])) _C in
   andList [f1; f2]
 in
 prop name params formula
