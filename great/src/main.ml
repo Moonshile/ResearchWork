@@ -1,98 +1,93 @@
 open Loach
 
+(* Common parameter definitions and references *)
+let defi = paramdef "i" "node"
+let defj = paramdef "j" "node"
+
+let i = paramref "i"
+let j = paramref "i"
+
+(* Constants *)
+let _I = const (strc "I")
+let _T = const (strc "T")
+let _C = const (strc "C")
+let _E = const (strc "E")
+let _True = const (boolc true)
+let _False = const (boolc false)
+
 (* Self-defined types *)
 let types = [
-  Enum("state", str_consts ["I"; "T"; "C"; "E"]);
-  Enum("bool", bool_consts [true; false]);
-  Enum("node", int_consts [1; 2; 3]);
-]
-
-let indexdefs = [
-  indexdef "x" "bool";
-  indexdef "n" "node";
+  enum "state" (str_consts ["I"; "T"; "C"; "E"]);
+  enum "bool" (bool_consts [true; false]);
+  enum "node" (int_consts [1; 2; 3]);
 ]
 
 (* Variables *)
 let vardefs = [
-  Singledef("x", "bool");
-  Arraydef("n", [paramdef "i" "node"], "state");
+  singledef "x" "bool";
+  arrdef "n" [defi] [] "state";
 ]
 
 (* Initialization *)
 let init =
-  let a1 = Assign(Global "x", Const(Strc "True")) in
-  let an = Assign(Array("n", [Var(Param "j")]), Const(Strc "I")) in
-  let a2 = AbsStatement(an, [Singledef("j", "Parameter")]) in
-  Parallel [a1; a2;]
+  let a1 = assign (single "x") _True in
+  let an = assign (arr "n" [paramindex (indexref "i")] []) _I in
+  let a2 = AbsStatement(an, [indexdef "i" "node"]) in
+  parallel [a1; a2;]
 
 let rules = [
 (
-let params = [Singledef("i", "Parameter")] in
-let rule_try =
-  let name = "try" in
-  let formula = Eqn(Var(Array("n", [Var(Param "i")])), Const(Strc "I")) in
-  let statement = Assign(Array("n", [Var(Param "i")]), Const(Strc "T")) in
-  Rule(name, formula, statement)
-in
-AbsRule(rule_try, params)
+let name = "try" in
+let params = [defi] in
+let formula = eqn (var (arr "n" [i] [])) _I in
+let statement = assign (arr "n" [i] []) _T in
+rule name params formula statement
 );
 (
-let params = [Singledef("i", "Parameter")] in
-let rule_crit =
-  let name = "crit" in
-  let formula =
-    let f1 = Eqn(Var(Array("n", [Var(Param "i")])), Const(Strc "T")) in
-    let f2 = Eqn(Var(Global "x"), Const(Strc "True")) in
-    And [f1; f2]
-  in
-  let statement =
-    let s1 = Assign(Array("n", [Var(Param "i")]), Const(Strc "C")) in
-    let s2 = Assign(Global "x", Const(Strc "False")) in
-    Parallel [s1; s2]
-  in
-  Rule(name, formula, statement)
+let name = "crit" in
+let params = [defi] in
+let formula =
+  let f1 = eqn (var (arr "n" [i] [])) _T in
+  let f2 = eqn (var (single "x")) _True in
+  andList [f1; f2]
 in
-AbsRule(rule_crit, params)
+let statement =
+  let s1 = assign (arr "n" [i] []) _C in
+  let s2 = assign (single "x") _False in
+  parallel [s1; s2]
+in
+rule name params formula statement
 );
 (
-let params = [Singledef("i", "Parameter")] in
-let rule_exit =
-  let name = "exit" in
-  let formula = Eqn(Var(Array("n", [Var(Param "i")])), Const(Strc "C")) in
-  let statement = Assign(Array("n", [Var(Param "i")]), Const(Strc "E")) in
-  Rule(name, formula, statement)
-in
-AbsRule(rule_exit, params)
+let name = "exit" in
+let params = [defi] in
+let formula = eqn (var (arr "n" [i] [])) _C in
+let statement = assign (arr "n" [i] []) _E in
+rule name params formula statement
 );
 (
-let params = [Singledef("i", "Parameter")] in
-let rule_idle =
-  let name = "idle" in
-  let formula = Eqn(Var(Array("n", [Var(Param "i")])), Const(Strc "E")) in
-  let statement =
-    let s1 = Assign(Global "x", Const(Strc("True"))) in
-    let s2 = Assign(Array("n", [Var(Param "i")]), Const(Strc "I")) in
-    Parallel [s1; s2]
-  in
-  Rule(name, formula, statement)
+let name = "idle" in
+let params = [defi] in
+let formula = eqn (var (arr "n" [i] [])) _E in
+let statement =
+  let s1 = assign (single "x") _True in
+  let s2 = assign (arr "n" [i] []) _I in
+  parallel [s1; s2]
 in
-AbsRule(rule_idle, params)
+rule name params formula statement
 );
 ]
 
 let properties = [
 (
-let params = [Singledef("i", "Parameter"); Singledef("j", "Parameter")] in
-let coherence =
-  let name = "coherence" in
-  let formula =
-    let f1 = Eqn(Var(Array("n", [Var(Param "i")])), Const(Strc "C")) in
-    let f2 = Eqn(Var(Array("n", [Var(Param "j")])), Const(Strc "C")) in
-    And [f1; f2]
-  in
-  Prop(name, formula)
+let name = "coherence" in
+let params = [defi; defj] in
+let formula =
+  let f1 = eqn (var (arr "n" [i] [])) _C in
+  let f2 = eqn (var (arr "n" [j] [])) _C in
+  andList [f1; f2]
 in
-AbsProp(coherence, params)
+prop name params formula
 );
 ]
 

@@ -27,22 +27,6 @@ type typedef =
 
 val enum : string -> const list -> typedef
 
-(** Parameter definitions
-    + paramdef, name and typename
-*)
-type paramdef =
-  | Paramdef of string * string
-
-val paramdef : string -> string -> paramdef
-
-(** Parameter references
-    + Paramref, name
-*)
-type paramref =
-  | Paramref of string
-
-val paramref : string -> paramref
-
 (** Index definitions, for abstract components
     + Indexdef: name, type name
 *)
@@ -53,21 +37,46 @@ val indexdef : string -> string -> indexdef
 
 (** Index reference
     + Indexref: name
+    + Indexfix: const value
 *)
 type indexref =
   | Indexref of string
+  | Indexfix of const
 
 val indexref : string -> indexref
+val indexfix : const -> indexref
+
+(** Parameter definitions
+    + paramdef, name and typename
+*)
+type paramdef =
+  | Paramdef of string * string
+
+val paramdef : string -> string -> paramdef
+
+(** Parameter references
+    + Paramref, name
+    + Paramfix, value
+    + Paramindex, indexed param
+*)
+type paramref =
+  | Paramref of string
+  | Paramfix of const
+  | Paramindex of indexref
+
+val paramref : string -> paramref
+val paramfix : const -> paramref
+val paramindex : indexref -> paramref
 
 (** Variable definitions, each with its name and name of its type
     + Arraydef: name, param definitions, index definitions, type name
     + Singledef: name, type name
 *)
 type vardef =
-  | Arraydef of string * paramdef list * indexdef list * string
+  | Arrdef of string * paramdef list * indexdef list * string
   | Singledef of string * string
 
-val arraydef : string -> paramdef list -> indexdef list -> string -> vardef
+val arrdef : string -> paramdef list -> indexdef list -> string -> vardef
 val singledef : string -> string -> vardef
 
 (** Variable reference
@@ -75,10 +84,10 @@ val singledef : string -> string -> vardef
     + Single: name
 *)
 type var =
-  | Array of string * paramref list * indexref list
+  | Arr of string * paramref list * indexref list
   | Single of string
 
-val array : string -> paramref list -> indexref list -> var
+val arr : string -> paramref list -> indexref list -> var
 val single : string -> var
 
 (** Represents expressions, including

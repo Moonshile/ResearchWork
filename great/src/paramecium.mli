@@ -34,25 +34,28 @@ val paramdef : string -> string -> paramdef
 
 (** Parameter references
     + Paramref, name
+    + Paramfix, value
 *)
 type paramref =
   | Paramref of string
+  | Paramfix of const
 
 val paramref : string -> paramref
+val paramfix : const -> paramref
 
 (** Variable definitions, each with its name and name of its type
     + Array var: name, param definitions, type name
 *)
 type vardef =
-  | Arraydef of string * paramdef list * string
+  | Arrdef of string * paramdef list * string
 
-val arraydef : string -> paramdef list -> string -> vardef
+val arrdef : string -> paramdef list -> string -> vardef
 
 (** Variable reference *)
 type var =
-  | Array of string * paramref list
+  | Arr of string * paramref list
 
-val array : string -> paramref list -> var
+val arr : string -> paramref list -> var
 
 (** Represents expressions, including
     + Constants

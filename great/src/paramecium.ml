@@ -34,25 +34,28 @@ let paramdef name typename = Paramdef(name, typename)
 
 (** Parameter references
     + Paramref, name
+    + Paramfix, value
 *)
 type paramref =
   | Paramref of string
+  | Paramfix of const
 
 let paramref name = Paramref name
+let paramfix value = Paramfix value
 
 (** Variable definitions, each with its name and name of its type
     + Array var: name, param definitions, type name
 *)
 type vardef =
-  | Arraydef of string * paramdef list * string
+  | Arrdef of string * paramdef list * string
 
-let arraydef name paramdef typename = Arraydef(name, paramdef, typename)
+let arrdef name paramdef typename = Arrdef(name, paramdef, typename)
 
 (** Variable reference *)
 type var =
-  | Array of string * paramref list
+  | Arr of string * paramref list
 
-let array name paramref = Array(name, paramref)
+let arr name paramref = Arr(name, paramref)
 
 (** Represents expressions, including
     + Constants
