@@ -150,32 +150,23 @@ module InvFinder : sig
   *)
   exception Unexhausted_inst
 
-  (** Concrete parameter
-
-      + ConcreteParam: name, value
-  *)
-  type concrete_param =
-    | ConcreteParam of string * const
-
-  val concrete_param : string -> const -> concrete_param
-
   (** Concrete rule
 
       + ConcreteRule: rule, concrete param list
   *)
   type concrete_rule =
-    | ConcreteRule of rule * concrete_param list
+    | ConcreteRule of rule * (string * const) list
 
-  val concrete_rule : rule -> concrete_param list -> concrete_rule
+  val concrete_rule : rule -> (string * const) list -> concrete_rule
 
   (** Concrete property
 
       + ConcreteProp: property, concrete param list
   *)
   type concrete_prop =
-    | ConcreteProp of prop * concrete_param list
+    | ConcreteProp of prop * (string * const) list
 
-  val concrete_prop : prop -> concrete_param list -> concrete_prop
+  val concrete_prop : prop -> (string * const) list -> concrete_prop
 
   (** Causal relations
 

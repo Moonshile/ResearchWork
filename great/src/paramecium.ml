@@ -252,21 +252,12 @@ module InvFinder = struct
   (* This exception is for stop warnings. It will never be raised. *)
   exception Empty_exception
 
-  (** Concrete parameter
-
-      + ConcreteParam: name, value
-  *)
-  type concrete_param =
-    | ConcreteParam of string * const
-
-  let concrete_param name value = ConcreteParam(name, value)
-
   (** Concrete rule
 
       + ConcreteRule: rule, concrete param list
   *)
   type concrete_rule =
-    | ConcreteRule of rule * concrete_param list
+    | ConcreteRule of rule * (string * const) list
 
   let concrete_rule r ps = ConcreteRule(r, ps)
 
@@ -275,7 +266,7 @@ module InvFinder = struct
       + ConcreteProp: property, concrete param list
   *)
   type concrete_prop =
-    | ConcreteProp of prop * concrete_param list
+    | ConcreteProp of prop * (string * const) list
 
   let concrete_prop property ps = ConcreteProp(property, ps)
 
@@ -300,6 +291,18 @@ module InvFinder = struct
     inv: concrete_prop;
     relation: relation;
   }
+
+  (* Convert rule to concrete rules *)
+  let rule_2_concrete r ~types =
+    let Rule(_, paramdefs, _, _) = r in
+    cart_product_with_name paramdefs types
+    |> List.map ~f:(fun params -> concrete_rule r params)
+
+  (* Convert property to concrete property *)
+  let prop_2_concrete property ~types =
+    let Prop(_, paramdefs, _) = property in
+    cart_product_with_name paramdefs types
+    |> List.map ~f:(fun params -> concrete_prop property params)
 
   (* Convert statements to a list of assignments *)
   let rec statement_2_assigns statement =
