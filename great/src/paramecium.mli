@@ -137,18 +137,38 @@ type protocol = {
 (** The actual parameters can't match with their definitions *)
 exception Unmatched_parameters
 
+(** Unexhausted instantiation
+    This exception should never be raised. Once raised, There should be a bug in this tool.
+*)
+exception Unexhausted_inst
+
 (*----------------------------- Functions ----------------------------------*)
 
+(*----------------------------- Module ToStr ----------------------------------*)
+
+(** Module for translate to string *)
+module ToStr : sig
+
+  (** Translate to smt2 string *)
+  module Smt2 : sig
+
+    (** Translate to smt2 string
+
+        @param types the type definitions of the protocol
+        @param vardefs the variable definitions of the protocol
+        @param form the formula to be translated
+        @return the smt2 string
+    *)
+    val act : types:typedef list -> vardefs:vardef list -> form:formula -> string
+
+  end
+
+end
 
 (*----------------------------- Module InvFinder ----------------------------------*)
 
 (** Module for find invariants and causal relations *)
 module InvFinder : sig
-
-  (** Unexhausted instantiation
-      This exception should never be raised. Once raised, There should be a bug in this tool.
-  *)
-  exception Unexhausted_inst
 
   (** Concrete rule
 

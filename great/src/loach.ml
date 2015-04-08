@@ -250,8 +250,11 @@ let inst_vardef vardef ~types =
   match vardef with
   | Singledef(n, t) -> [arrdef n [] t]
   | Arrdef(n, i, p, t) ->
-    cart_product i types
-    |> List.map ~f:(fun x -> arrdef (attach_list n x) p t)
+    if i = [] then
+      [vardef]
+    else
+      cart_product i types
+      |> List.map ~f:(fun x -> arrdef (attach_list n x) p t)
 
 (* Apply the indexref to var *)
 let apply_var var ~index =
@@ -284,8 +287,11 @@ and apply_form form ~index ~types =
   | Miracle -> form
 (* Instantiate formulae *)
 and inst_form form indexdefs ~types =
-  let actual_index = cart_product_with_name indexdefs types in
-  andList (List.map actual_index ~f:(fun index -> apply_form form ~index ~types))
+  if indexdefs = [] then
+    form
+  else
+    let actual_index = cart_product_with_name indexdefs types in
+    andList (List.map actual_index ~f:(fun index -> apply_form form ~index ~types))
 
 (* Apply statement with index *)
 let rec apply_statement statement ~index ~types =
@@ -295,8 +301,11 @@ let rec apply_statement statement ~index ~types =
   | AbsStatement(s, indexdefs) -> inst_statement s indexdefs ~types
 (* Instantiate statement *)
 and inst_statement statement indexdefs ~types =
-  let actual_index = cart_product_with_name indexdefs types in
-  parallel (List.map actual_index ~f:(fun index -> apply_statement statement ~index ~types))
+  if indexdefs = [] then
+    statement
+  else
+    let actual_index = cart_product_with_name indexdefs types in
+    parallel (List.map actual_index ~f:(fun index -> apply_statement statement ~index ~types))
 
 (* Apply rule with index *)
 let rec apply_rule r ~index ~types =
@@ -308,8 +317,11 @@ let rec apply_rule r ~index ~types =
   | AbsRule(x, indexdefs) -> inst_rule x indexdefs ~types
 (* Instantiate rule *)
 and inst_rule r indexdefs ~types =
-  let actual_index = cart_product_with_name indexdefs types in
-  List.concat (List.map actual_index ~f:(fun index -> apply_rule r ~index ~types))
+  if indexdefs = [] then
+    [r]
+  else
+    let actual_index = cart_product_with_name indexdefs types in
+    List.concat (List.map actual_index ~f:(fun index -> apply_rule r ~index ~types))
 
 (* Apply property with index *)
 let rec apply_prop property ~index ~types =
@@ -319,8 +331,11 @@ let rec apply_prop property ~index ~types =
   | AbsProp(x, indexdefs) -> inst_prop x indexdefs ~types
 (* Instantiate property *)
 and inst_prop property indexdefs ~types =
-  let actual_index = cart_product_with_name indexdefs types in
-  List.concat (List.map actual_index ~f:(fun index -> apply_prop property ~index ~types))
+  if indexdefs = [] then
+    [property]
+  else
+    let actual_index = cart_product_with_name indexdefs types in
+    List.concat (List.map actual_index ~f:(fun index -> apply_prop property ~index ~types))
 
 
 (*----------------------------- Translate module ---------------------------------*)

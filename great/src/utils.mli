@@ -4,6 +4,11 @@
     @author Kaiqiang Duan <duankq@ios.ac.cn>
 *)
 
+(*----------------------------- Exceptions ----------------------------------*)
+
+(* This exception is for stop warnings. It will never be raised. *)
+exception Empty_exception
+
 (*----------------------------- Functions ----------------------------------*)
 
 (** Generate all possible combinations for a specific set of list.

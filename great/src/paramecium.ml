@@ -5,6 +5,7 @@
 *)
 
 open Utils
+open Smt
 
 open Core.Std
 
@@ -141,6 +142,11 @@ type protocol = {
 (** The actual parameters can't match with their definitions *)
 exception Unmatched_parameters
 
+(** Unexhausted instantiation
+    This exception should never be raised. Once raised, There should be a bug in this tool.
+*)
+exception Unexhausted_inst
+
 (*----------------------------- Functions ----------------------------------*)
 
 (** Find the letues range of a type by its name
@@ -239,18 +245,108 @@ let apply_prop property ~param =
   else
     raise Unmatched_parameters
 
+(*----------------------------- Module ToStr ----------------------------------*)
+
+(** Module for translate to string *)
+module ToStr = struct
+
+  (** Translate to smt2 string *)
+  module Smt2 = struct
+
+    (* Translate a type definition to smt2 type definition *)
+    let type_act t =
+      let Enum(name, values) = t in
+      let is_strc = all values ~f:(fun c ->
+        match c with
+        | Strc(_) -> true
+        | Intc(_) | Boolc(_) -> false
+      ) in
+      if is_strc then
+        let strs = List.map values ~f:(fun c ->
+          match c with
+          | Strc(s) -> s
+          | Intc(_) | Boolc(_) -> raise Empty_exception
+        ) in
+        sprintf "(declare-datatypes () ((%s %s)))" name (String.concat ~sep:" " strs)
+      else
+        ""
+    
+    (* Translate a variable definition to smt2 function definition *)
+    let vardef_act vd =
+      let Arrdef(name, paramdefs, tname) = vd in
+      let param_ts = List.map paramdefs ~f:(fun (Paramdef(_, t)) -> t) in
+      sprintf "(declare-fun %s (%s) %s)" name (String.concat ~sep:" " param_ts) tname
+
+    (* Translate a const to smt const *)
+    let const_act c =
+      match c with
+      | Intc(i) -> Int.to_string i
+      | Strc(s) -> s
+      | Boolc(b) -> Bool.to_string b
+
+    (* Translate a variable to smt2 function call *)
+    let var_act v =
+      let Arr(name, params) = v in
+      if params = [] then
+        name
+      else
+        let actual_ps = List.map params ~f:(fun p ->
+          match p with
+          | Paramfix(c) -> const_act c
+          | Paramref(_) -> raise Unexhausted_inst
+        ) in
+        sprintf "(%s %s)" name (String.concat ~sep:" " actual_ps)
+
+    (* Translate an exp to smt2 exp *)
+    let rec exp_act exp =
+      match exp with
+      | Const(c) -> const_act c
+      | Var(v) -> var_act v
+      | Cond(form, e1, e2) ->
+        sprintf "(ite %s %s %s)" (form_act form) (exp_act e1) (exp_act e2)
+      | Param(_) -> raise Unexhausted_inst
+    (* Translate formula to smt2 string *)
+    and form_act form =
+      match form with
+      | Chaos -> "true"
+      | Miracle -> "false"
+      | Eqn(e1, e2) -> sprintf "(= %s %s)" (exp_act e1) (exp_act e2)
+      | Neg(form) -> sprintf "(not %s)" (form_act form)
+      | AndList(fl) ->
+        List.map fl ~f:form_act
+        |> List.fold ~init:"true" ~f:(fun res x -> sprintf "(and %s %s)" res x)
+      | OrList(fl) ->
+        List.map fl ~f:form_act
+        |> List.fold ~init:"false" ~f:(fun res x -> sprintf "(or %s %s)" res x)
+      | Imply(f1, f2) -> sprintf "(=> %s %s)" (form_act f1) (form_act f2)
+
+    (** Translate to smt2 string
+
+        @param types the type definitions of the protocol
+        @param vardefs the variable definitions of the protocol
+        @param form the formula to be translated
+        @return the smt2 string
+    *)
+    let act ~types ~vardefs ~form =
+      let type_str =
+        List.map types ~f:type_act
+        |> List.filter ~f:(fun x -> not (x = ""))
+        |> String.concat ~sep:"\n"
+      in
+      let vardef_str =
+        List.map vardefs ~f:vardef_act
+        |> String.concat ~sep:"\n"
+      in
+      sprintf "%s\n%s\n%s\n(check-sat)\n" type_str vardef_str (form_act form)
+
+  end
+
+end
+
 (*----------------------------- Module InvFinder ----------------------------------*)
 
 (** Module for find invariants and causal relations *)
 module InvFinder = struct
-
-  (** Unexhausted instantiation
-      This exception should never be raised. Once raised, There should be a bug in this tool.
-  *)
-  exception Unexhausted_inst
-
-  (* This exception is for stop warnings. It will never be raised. *)
-  exception Empty_exception
 
   (** Concrete rule
 
