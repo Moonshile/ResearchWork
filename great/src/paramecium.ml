@@ -253,14 +253,25 @@ module ToStr = struct
   (** Translate to smt2 string *)
   module Smt2 = struct
 
+    let const_is_strc c = 
+      match c with
+      | Strc(_) -> true
+      | Intc(_) | Boolc(_) -> false
+
+    let const_is_intc c = 
+      match c with
+      | Intc(_) -> true
+      | Strc(_) | Boolc(_) -> false
+
+    let const_is_boolc c = 
+      match c with
+      | Boolc(_) -> true
+      | Intc(_) | Strc(_) -> false
+
     (* Translate a type definition to smt2 type definition *)
     let type_act t =
       let Enum(name, values) = t in
-      let is_strc = all values ~f:(fun c ->
-        match c with
-        | Strc(_) -> true
-        | Intc(_) | Boolc(_) -> false
-      ) in
+      let is_strc = all values ~f:const_is_strc in
       if is_strc then
         let strs = List.map values ~f:(fun c ->
           match c with
@@ -272,10 +283,19 @@ module ToStr = struct
         ""
     
     (* Translate a variable definition to smt2 function definition *)
-    let vardef_act vd =
+    let vardef_act vd ~types =
       let Arrdef(name, paramdefs, tname) = vd in
-      let param_ts = List.map paramdefs ~f:(fun (Paramdef(_, t)) -> t) in
-      sprintf "(declare-fun %s (%s) %s)" name (String.concat ~sep:" " param_ts) tname
+      let type_name tname =
+        let consts = name2type ~tname ~types in
+        if all consts ~f:const_is_strc then
+          tname
+        else if all consts ~f:const_is_intc then
+          "Int"
+        else
+          "Bool"
+      in
+      let param_ts = List.map paramdefs ~f:(fun (Paramdef(_, t)) -> type_name t) in
+      sprintf "(declare-fun %s (%s) %s)" name (String.concat ~sep:" " param_ts) (type_name tname)
 
     (* Translate a const to smt const *)
     let const_act c =
@@ -334,10 +354,10 @@ module ToStr = struct
         |> String.concat ~sep:"\n"
       in
       let vardef_str =
-        List.map vardefs ~f:vardef_act
+        List.map vardefs ~f:(vardef_act ~types)
         |> String.concat ~sep:"\n"
       in
-      sprintf "%s\n%s\n%s\n(check-sat)\n" type_str vardef_str (form_act form)
+      sprintf "%s\n%s\n(assert %s)\n(check-sat)\n" type_str vardef_str (form_act form)
 
   end
 

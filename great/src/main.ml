@@ -108,5 +108,7 @@ let form =
   let f2 = eqn (var (arr "n" [paramfix (intc 2)])) (const (strc "C")) in
   andList [f1; f2]
 in
-printf "%s\n" (Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs ~form)
+let smtstr = Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs ~form in
+printf "\n%s\n" smtstr;
+printf "\n%b\n" (Smt.is_tautology ~formula:smtstr ())
 
