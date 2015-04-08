@@ -22,11 +22,11 @@ let create_file filename content =
 (** Judge if a given formula is tautology
 
     @param filename is the temp file to store smt2 formula, default is "inv.smt2"
-    @param print_to_scr set true to print output of smt solver to screen else false
+    @param quiet set true to print output of smt solver to screen else false
     @param formula the formula to be judged
     @return true if is tautology else false
 *)
-let is_tautology ?(filename="inv.smt2") ?(print_to_scr=false) ~formula () =
+let is_tautology ?(filename="inv.smt2") ?(quiet=false) ~formula () =
   let smt = 
     create_file filename formula;
     exec ~prog:smt_solver ~args:["-smt2"; filename]
@@ -35,5 +35,5 @@ let is_tautology ?(filename="inv.smt2") ?(print_to_scr=false) ~formula () =
     (printf "%s" smt; raise Error_in_formula)
   else
     let res = String.is_prefix smt ~prefix:"unsat" in
-    if print_to_scr then (printf "%s" smt; res) else res
+    if quiet then (printf "%s" smt; res) else res
 

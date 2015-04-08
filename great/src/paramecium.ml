@@ -185,15 +185,14 @@ let attach_list name i_list =
   List.fold i_list ~init:name ~f:attach
 
 (* Apply a paramref with param, i.e., cast it to consts *)
-let apply_paramref paramref ~param =
-  match paramref with
-  | Paramref(s) -> List.Assoc.find_exn param s
-  | Paramfix(c) -> c
+let apply_paramref pr ~param =
+  match pr with
+  | Paramref(s) -> paramfix (List.Assoc.find_exn param s)
+  | Paramfix(_) -> pr
 
 (* Apply array with param *)
 let apply_array (Arr(name, params)) ~param =
-  let param_consts = List.map params ~f:(apply_paramref ~param) in
-  arr (attach_list name param_consts) []
+  arr name (List.map params ~f:(apply_paramref ~param))
 
 (* Apply exp with param *)
 let rec apply_exp exp ~param =
@@ -201,7 +200,11 @@ let rec apply_exp exp ~param =
   | Var(x) -> var (apply_array x ~param)
   | Cond(f, e1, e2) -> 
     cond (apply_form f ~param) (apply_exp e1 ~param) (apply_exp e2 ~param)
-  | Param(p) -> const (apply_paramref p ~param)
+  | Param(p) -> (
+    match (apply_paramref p ~param) with
+    | Paramfix(c) -> const c
+    | Paramref(_) -> raise Empty_exception
+  )
   | Const(_) -> exp
 (* Apply formula with param *)
 and apply_form f ~param =
