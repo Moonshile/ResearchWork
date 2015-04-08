@@ -22,3 +22,23 @@ val combination : 'a list list -> 'a list list
     @return true if satisfy else false
 *)
 val all : 'a list -> f:('a -> bool) -> bool
+
+(** Judge if any elements in list satisfies function f
+
+    @param the list
+    @param f a function maps elements in list to bool
+    @return true if satisfies else false
+*)
+val any : 'a list -> f:('a -> bool) -> bool
+
+(** Denotes there are errors while execute a program *)
+exception Exec_error
+
+(** Execute a program with some arguments then fetch the stdout.
+    This function will block the main process.
+
+    @param prog the program to be executed
+    @param args arguments
+    @return stdout string
+*)
+val exec : prog:string -> args:string list -> string
