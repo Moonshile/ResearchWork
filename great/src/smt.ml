@@ -31,8 +31,8 @@ let is_tautology ?(filename="inv.smt2") ?(quiet=true) ~formula () =
     create_file filename formula;
     exec ~prog:smt_solver ~args:["-smt2"; filename]
   in
-  if not quiet then printf "The smt2 formula to be checked is:\n%s\n" formula;
-  let print_smt = printf "Result of smt check is:\n%s" smt in
+  if not quiet then Prt.info "The smt2 formula to be checked is:\n";printf "%s\n" formula;
+  let print_smt = Prt.info "Result of smt check is:\n";printf "%s" smt in
   if not (any ["sat"; "unsat"] ~f:(fun prefix -> String.is_prefix smt ~prefix)) then
     (print_smt; raise Error_in_formula)
   else

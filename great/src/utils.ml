@@ -67,7 +67,7 @@ let read_to_end filedsr =
     if size = 0 then
       results
     else
-      read filedsr ((String.sub buf 0 size)::results)
+      read filedsr ((String.sub buf ~pos:0 ~len:size)::results)
   in
   String.concat (List.rev (read filedsr []))
 
@@ -82,3 +82,82 @@ let exec ~prog ~args =
   let open Unix.Process_info in
   let sub = Unix.create_process ~prog ~args in
   read_to_end sub.stdout
+
+(** Some usefule colorful print functions *)
+module Prt = struct
+
+  (** Wrong color value *)
+  exception Wrong_color
+
+  (** Basic color *)
+  type basic_color =
+    | Black
+    | Red
+    | Green
+    | Yellow
+    | Blue
+    | Magenta
+    | Cyan
+    | White
+
+  (** More color
+      + Basic basic color
+      + Bold bold color
+      + RGB 6x6x6 color cube
+      + Gray 24 grayscale levels
+  *)
+  type color =
+    | Basic of basic_color
+    | Bold of basic_color
+    | RGB of int * int * int
+    | Gray of int
+
+  let basic c = Basic c
+  let bold c = Bold c
+  let rgb r g b =
+    let in_range i = i >= 0 && i < 6 in
+    if in_range r && in_range g && in_range b then
+      RGB (r, g, b)
+    else
+      raise Wrong_color
+  let gray i = if i >=0 && i < 24 then Gray i else raise Wrong_color
+
+  (* Cast basic color to integer representation in terminal color *)
+  let basic_color_to_int = function
+    | Black -> 0
+    | Red -> 1
+    | Green -> 2
+    | Yellow -> 3
+    | Blue -> 4
+    | Magenta -> 5
+    | Cyan -> 6
+    | White -> 7
+
+  (* Cast all color to integer *)
+  let color_to_int = function
+    | Basic basic_color -> basic_color_to_int basic_color
+    | Bold basic_color -> 8 + basic_color_to_int basic_color
+    | RGB (r, g, b) -> 16 + b + 6*g + 36*r
+    | Gray i -> 232 + i
+
+  (** Print colorful text on terminal
+
+      @param text string to be printed
+      @param color color of string
+  *)
+  let colorful ~text ~color =
+    printf "\027[38;5;%dm%s\027[0m" (color_to_int color) text
+
+  (** Print info string *)
+  let info text =
+    colorful ~text ~color:(basic Cyan)
+
+  (** Print warning string *)
+  let warning text =
+    colorful ~text ~color:(basic Yellow)
+
+  (** Print error string *)
+  let error text =
+    colorful ~text ~color:(basic Red)
+
+end

@@ -47,3 +47,51 @@ exception Exec_error
     @return stdout string
 *)
 val exec : prog:string -> args:string list -> string
+
+(** Some usefule colorful print functions *)
+module Prt : sig
+
+  (** Wrong color value *)
+  exception Wrong_color
+
+  (** Basic color *)
+  type basic_color =
+    | Black
+    | Red
+    | Green
+    | Yellow
+    | Blue
+    | Magenta
+    | Cyan
+    | White
+
+  (** More color
+      + Basic basic color
+      + Bold bold color
+      + RGB 6x6x6 color cube
+      + Gray 24 grayscale levels
+  *)
+  type color
+
+  val basic : basic_color -> color
+  val bold : basic_color -> color
+  val rgb : int -> int -> int -> color
+  val gray : int -> color
+
+  (** Print colorful text on terminal
+
+      @param text string to be printed
+      @param color color of string
+  *)
+  val colorful : text:string -> color:color -> unit
+
+  (** Print info string *)
+  val info : string -> unit
+
+  (** Print warning string *)
+  val warning : string -> unit
+
+  (** Print error string *)
+  val error : string -> unit
+
+end

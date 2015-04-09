@@ -431,12 +431,12 @@ module Trans = struct
       @return the protocol in Paramecium
   *)
   let act ~loach:{types; vardefs; init; rules; properties} =
-    printf "Start to translate from Loach to Paramecium...\n";
+    Prt.info "Start to translate from Loach to Paramecium...\n";
     let new_vardefs = List.concat (List.map vardefs ~f:(inst_vardef ~types)) in
     let new_init = apply_statement init ~index:[] ~types in
     let new_rules = List.concat (List.map rules ~f:(apply_rule ~index:[] ~types)) in
     let new_properties = List.concat (List.map properties ~f:(apply_prop ~index:[] ~types)) in
-    printf "Done\n";
+    Prt.info "Done\n";
     { Paramecium.types = List.map ~f:trans_typedef types;
       vardefs = List.map ~f:trans_vardef new_vardefs;
       init = trans_statement new_init;
