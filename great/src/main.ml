@@ -109,6 +109,5 @@ let form =
   andList [f1; f2]
 in
 let smtstr = Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs ~form in
-printf "\n%s\n" smtstr;
-printf "\n%b\n" (Smt.is_tautology ~formula:smtstr ())
+printf "%b\n" (Smt.is_tautology ~quiet:false ~formula:smtstr ())
 

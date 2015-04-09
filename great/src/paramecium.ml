@@ -360,7 +360,7 @@ module ToStr = struct
         List.map vardefs ~f:(vardef_act ~types)
         |> String.concat ~sep:"\n"
       in
-      sprintf "%s\n%s\n(assert %s)\n(check-sat)\n" type_str vardef_str (form_act form)
+      sprintf "%s\n%s\n(assert %s)\n(check-sat)" type_str vardef_str (form_act form)
 
   end
 
