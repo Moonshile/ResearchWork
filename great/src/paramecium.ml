@@ -499,6 +499,28 @@ module InvFinder = struct
     formEval f ~assigns:(statement_2_assigns statements)
     |> List.dedup
 
+  (* Deal with case invHoldForRule1 *)
+  let deal_with_case_1 crule cinv =
+    { rule = crule;
+      inv = cinv;
+      relation = invHoldForRule1;
+    }
+
+  (* Deal with case invHoldForRule2 *)
+  let deal_with_case_2 crule cinv =
+    { rule = crule;
+      inv = cinv;
+      relation = invHoldForRule2;
+    }
+
+  (* Deal with case invHoldForRule3 *)
+  let deal_with_case_3 crule cinv inv' =
+    { rule = crule;
+      inv = cinv;
+      relation = invHoldForRule3 inv';
+    }
+
+
   (** Find invs and causal relations of a protocol
 
       @param protocol the protocol

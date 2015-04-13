@@ -29,8 +29,11 @@ let create_file filename content =
 let is_tautology ?(filename="inv.smt2") ?(quiet=true) formula =
   let smt = 
     let (stdout, _) =
-      create_file filename formula;
-      exec ~prog:smt_solver ~args:["-smt2"; filename]
+      let res =
+        create_file filename formula;
+        exec ~prog:smt_solver ~args:["-smt2"; filename]
+      in
+      Unix.remove filename; res
     in
     stdout
   in
