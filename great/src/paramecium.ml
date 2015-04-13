@@ -497,6 +497,7 @@ module InvFinder = struct
   (* preCond *)
   let preCond f statements =
     formEval f ~assigns:(statement_2_assigns statements)
+    |> List.dedup
 
   (** Find invs and causal relations of a protocol
 

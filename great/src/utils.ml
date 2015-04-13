@@ -71,7 +71,7 @@ let read_to_end filedsr =
   in
   String.concat (List.rev (read filedsr []))
 
-(** Execute a program with some arguments then fetch the stdout.
+(** Execute a program with some arguments then fetch the output.
     This function will block the main process.
 
     @param prog the program to be executed
@@ -81,7 +81,24 @@ let read_to_end filedsr =
 let exec ~prog ~args =
   let open Unix.Process_info in
   let sub = Unix.create_process ~prog ~args in
-  read_to_end sub.stdout
+  (read_to_end sub.stdout, read_to_end sub.stderr)
+
+(** Execute a program with some arguments and some input strings then fetch the output.
+    This function will block the main process.
+
+    @param prog the program to be executed
+    @param args arguments
+    @param input input string
+    @return stdout string
+*)
+let exec_with_input ~prog ~args input =
+  let open Unix.Process_info in
+  let sub = Unix.create_process ~prog ~args in
+  let size = Unix.write sub.stdin ~buf:input in
+  if size = 0 then
+    raise Empty_exception
+  else
+    (read_to_end sub.stdout, read_to_end sub.stderr)
 
 (** Some usefule colorful print functions *)
 module Prt = struct

@@ -39,14 +39,24 @@ val any : 'a list -> f:('a -> bool) -> bool
 (** Denotes there are errors while execute a program *)
 exception Exec_error
 
-(** Execute a program with some arguments then fetch the stdout.
+(** Execute a program with some arguments then fetch the output.
     This function will block the main process.
 
     @param prog the program to be executed
     @param args arguments
     @return stdout string
 *)
-val exec : prog:string -> args:string list -> string
+val exec : prog:string -> args:string list -> string * string
+
+(** Execute a program with some arguments and some input strings then fetch the output.
+    This function will block the main process.
+
+    @param prog the program to be executed
+    @param args arguments
+    @param input input string
+    @return stdout string
+*)
+val exec_with_input : prog:string -> args:string list -> string -> string * string
 
 (** Some usefule colorful print functions *)
 module Prt : sig

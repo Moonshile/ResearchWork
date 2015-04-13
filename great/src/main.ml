@@ -108,6 +108,17 @@ let form =
   let f2 = eqn (var (arr "n" [paramfix (intc 2)])) (const (strc "C")) in
   andList [f1; f2]
 in
-let smtstr = Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs ~form in
-printf "%b\n" (Smt.is_tautology ~quiet:false ~formula:smtstr ())
+Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs ~form
+|> Smt.is_tautology ~quiet:false
+|> printf "%b\n";;
+
+let open Paramecium in
+let form =
+  let f1 = eqn (var (arr "n" [paramfix (intc 1)])) (const (strc "C")) in
+  let f2 = eqn (var (arr "n" [paramfix (intc 2)])) (const (strc "EE")) in
+  andList [f1; f2]
+in
+Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs ~form
+|> Smt.is_tautology ~quiet:false
+|> printf "%b\n";;
 

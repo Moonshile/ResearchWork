@@ -14,4 +14,4 @@ exception Error_in_formula
     @param formula the formula to be judged
     @return true if is tautology else false
 *)
-val is_tautology : ?filename:string -> ?quiet:bool -> formula:string -> unit -> bool
+val is_tautology : ?filename:string -> ?quiet:bool -> string -> bool

@@ -26,16 +26,19 @@ let create_file filename content =
     @param formula the formula to be judged
     @return true if is tautology else false
 *)
-let is_tautology ?(filename="inv.smt2") ?(quiet=true) ~formula () =
+let is_tautology ?(filename="inv.smt2") ?(quiet=true) formula =
   let smt = 
-    create_file filename formula;
-    exec ~prog:smt_solver ~args:["-smt2"; filename]
+    let (stdout, _) =
+      create_file filename formula;
+      exec ~prog:smt_solver ~args:["-smt2"; filename]
+    in
+    stdout
   in
   if not quiet then Prt.info "The smt2 formula to be checked is:\n";printf "%s\n" formula;
-  let print_smt = Prt.info "Result of smt check is:\n";printf "%s" smt in
+  let print_smt printer = printer "Result of smt check is:\n";printf "%s" smt in
   if not (any ["sat"; "unsat"] ~f:(fun prefix -> String.is_prefix smt ~prefix)) then
-    (print_smt; raise Error_in_formula)
+    (print_smt Prt.error; raise Error_in_formula)
   else
     let res = String.is_prefix smt ~prefix:"unsat" in
-    if quiet then res else (print_smt; res)
+    if quiet then res else (print_smt Prt.info; res)
 
