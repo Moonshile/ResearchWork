@@ -11,11 +11,56 @@ open Core.Std
 (* This exception is for stop warnings. It will never be raised. *)
 exception Empty_exception
 
+(*----------------------------- Functions ----------------------------------*)
+
+let up_to n =
+  let rec wrapper n res =
+    match n with
+    | 0 -> res
+    | _ -> wrapper (n - 1) ((n - 1)::res)
+  in
+  wrapper n []
+
+(** Generate the permutation of a list *)
+let rec permutation list =
+  match list with
+  | [] -> []
+  | _ ->
+    let remove_at list len i = 
+      let head = List.sub list 0 i in 
+      let tail = List.sub list (i + 1) (len - i - 1) in
+      if head@tail = [] then
+        [List.sub list i 1]
+      else begin
+        List.map (permutation (head@tail)) ~f:(fun x -> (List.sub list i 1)@x)
+      end
+    in
+    let len = List.length list in
+    List.map (up_to len) ~f:(remove_at list len)
+    |> List.concat
+
+(** Generate the combination of a list *)
+let rec combination list n =
+  match list with
+  | [] -> []
+  | ele::list' ->
+    let len = List.length list in
+    if len < n then
+      []
+    else begin
+      match n with
+      | 0 -> []
+      | 1 -> List.map list ~f:(fun x -> [x])
+      | _ ->
+        let first_set = List.map (combination list' (n - 1)) ~f:(fun x -> ele::x) in
+        first_set@(combination list' n)
+    end
+
 (** Generate Cartesian Production of a set of lists
     For example, given [[1;2]; [1;3]] produces [[1;1]; [1;3]; [2;1]; [2;3]]
 
     @param list the given set of lists, whose elements will be omitted if it is []
-    @return the generated combinations
+    @return the generated Cartesian Production
 *)
 let cartesian_product list =
   let append_all alist ele = List.map ~f:(fun x -> x@[ele]) alist in

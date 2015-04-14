@@ -11,11 +11,17 @@ exception Empty_exception
 
 (*----------------------------- Functions ----------------------------------*)
 
+(** Generate the permutation of a list *)
+val permutation : 'a list -> 'a list list
+
+(** Generate the combination of a list *)
+val combination : 'a list -> int -> 'a list list
+
 (** Generate Cartesian Production of a set of lists
     For example, given [[1;2]; [1;3]] produces [[1;1]; [1;3]; [2;1]; [2;3]]
 
     @param list the given set of lists, whose elements will be omitted if it is []
-    @return the generated combinations
+    @return the generated Cartesian Production
 *)
 val cartesian_product : 'a list list -> 'a list list
 
