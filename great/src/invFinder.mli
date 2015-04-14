@@ -14,18 +14,18 @@ exception Unexhausted_flat_parallel
     + ConcreteRule: rule, concrete param list
 *)
 type concrete_rule =
-  | ConcreteRule of rule * (string * const) list
+  | ConcreteRule of rule * (string * paramref) list
 
-val concrete_rule : rule -> (string * const) list -> concrete_rule
+val concrete_rule : rule -> (string * paramref) list -> concrete_rule
 
 (** Concrete property
 
     + ConcreteProp: property, concrete param list
 *)
 type concrete_prop =
-  | ConcreteProp of prop * (string * const) list
+  | ConcreteProp of prop * (string * paramref) list
 
-val concrete_prop : prop -> (string * const) list -> concrete_prop
+val concrete_prop : prop -> (string * paramref) list -> concrete_prop
 
 (** Causal relations
 

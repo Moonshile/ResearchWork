@@ -19,7 +19,7 @@ exception Unexhausted_flat_parallel
     + ConcreteRule: rule, concrete param list
 *)
 type concrete_rule =
-  | ConcreteRule of rule * (string * const) list
+  | ConcreteRule of rule * (string * paramref) list
 
 let concrete_rule r ps = ConcreteRule(r, ps)
 
@@ -28,7 +28,7 @@ let concrete_rule r ps = ConcreteRule(r, ps)
     + ConcreteProp: property, concrete param list
 *)
 type concrete_prop =
-  | ConcreteProp of prop * (string * const) list
+  | ConcreteProp of prop * (string * paramref) list
 
 let concrete_prop property ps = ConcreteProp(property, ps)
 
@@ -57,20 +57,114 @@ type t = {
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ~types =
   let Rule(_, paramdefs, _, _) = r in
-  cart_product_with_name paramdefs types
+  cart_product_with_paramfix paramdefs types
   |> List.map ~f:(fun params -> concrete_rule r params)
 
 (* Convert property to concrete property *)
 let prop_2_concrete property ~types =
   let Prop(_, paramdefs, _) = property in
-  cart_product_with_name paramdefs types
+  cart_product_with_paramfix paramdefs types
   |> List.map ~f:(fun params -> concrete_prop property params)
 
 (* Convert concrete property to formula *)
 let concrete_prop_2_form cprop =
-  let ConcreteProp(property, param) = cprop in
-  let Prop(_, _, form) = apply_prop property ~param in
+  let ConcreteProp(property, p) = cprop in
+  let Prop(_, _, form) = apply_prop property ~p in
   form
+
+let new_inv_name_base = "inv__"
+
+(* Generate names for new invariants found *)
+let next_inv_name new_invs = sprintf "%s%d" new_inv_name_base (List.length new_invs)
+
+(********************************* Module Parameterize *************************************)
+
+(* Convert instantiated components to its corresponding paramterized format *)
+module Parameterize = struct
+
+  type t =
+    | Paraminfo of paramdef list * (string * paramref) list
+
+  let paraminfo paramdefs params = Paraminfo(paramdefs, params)
+
+  let paramdef_name_base = "p__"
+
+  (* Generate paramdef names *)
+  let next_name new_paramdefs = sprintf "%s%d" paramdef_name_base (List.length new_paramdefs)
+
+  (* Convert paramref *)
+  let paramref_act pr param_info =
+    let Paraminfo(paramdefs, params) = param_info in
+    match pr with
+    | Paramref(_) -> raise Unexhausted_inst
+    | Paramfix(tname, c) ->
+      let name = next_name paramdefs in
+      let new_def = paramdef name tname in
+      let new_param = (name, pr) in
+      (paramref name, paraminfo (new_def::paramdefs) (new_param::params))
+
+  (* Convert a list of components *)
+  let rec components_act components param_info f =
+    match components with
+    | [] -> ([], param_info)
+    | c::components' ->
+      let (c', param_info') = f c param_info in
+      let (c'', param_info'') = components_act components' param_info' f in
+      (c'::c'', param_info'')
+
+  (* Convert var *)
+  let var_act v param_info =
+    let Arr(name, prs) = v in
+    let (prs', param_info') = components_act prs param_info paramref_act in
+    (arr name prs', param_info')
+
+  (* Convert exp *)
+  let rec exp_act e param_info =
+    match e with
+    | Const(_) -> (e, param_info)
+    | Var(v) ->
+      let (v', param_info') = var_act v param_info in
+      (var v', param_info')
+    | Cond(f, e1, e2) ->
+      let (f', param_info1) = form_act f param_info in
+      let (e1', param_info2) = exp_act e1 param_info1 in
+      let (e2', param_info3) = exp_act e2 param_info2 in
+      (cond f' e1' e2', param_info3)
+    | Param(pr) ->
+      let (pr', param_info') = paramref_act pr param_info in
+      (param pr', param_info')
+  (* Convert formula *)
+  and form_act f param_info =
+    match f with
+    | Chaos
+    | Miracle -> (f, param_info)
+    | Eqn(e1, e2) ->
+      let (e1', param_info1) = exp_act e1 param_info in
+      let (e2', param_info2) = exp_act e2 param_info1 in
+      (eqn e1' e2', param_info2)
+    | Neg(f) ->
+      let (f', param_info') = form_act f param_info in
+      (neg f', param_info')
+    | AndList(fl) ->
+      let (fl', param_info') = components_act fl param_info form_act in
+      (andList fl', param_info')
+    | OrList(fl) ->
+      let (fl', param_info') = components_act fl param_info form_act in
+      (orList fl', param_info')
+    | Imply(f1, f2) ->
+      let (f1', param_info1) = form_act f1 param_info in
+      let (f2', param_info2) = form_act f2 param_info1 in
+      (imply f1' f2', param_info2)
+
+end
+
+(* Convert formula to concrete property *)
+let form_2_concreate_prop form new_invs =
+  let (form', Parameterize.Paraminfo(paramdefs, params)) =
+    Parameterize.form_act form (Parameterize.paraminfo [] [])
+  in
+  let property = prop (next_inv_name new_invs) paramdefs form' in
+  concrete_prop property params
 
 (* Convert statements to a list of assignments *)
 let rec statement_2_assigns statement =

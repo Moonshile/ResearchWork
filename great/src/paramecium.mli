@@ -147,6 +147,15 @@ exception Unexhausted_inst
 (** Find the letues range of a type by its name *)
 val name2type : tname:string -> types:typedef list -> const list
 
+(* Generate Cartesian production of all possible values of a `paramdef` set
+    Each value in each set is index name with its associated paramfix
+    Result is like [
+      [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))]; 
+      [("x", Paramfix("bool", Boolc false)); ("n", Paramfix("int", Intc 1))]
+    ]
+*)
+val cart_product_with_paramfix : paramdef list -> typedef list -> (string * paramref) list list
+
 (** attach consts i to string name *)
 val attach_list : string -> const list -> string
 
