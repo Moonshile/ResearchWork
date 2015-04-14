@@ -108,7 +108,7 @@ let form =
   let f2 = eqn (var (arr "n" [paramfix (intc 2)])) (const (strc "C")) in
   andList [f1; f2]
 in
-Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
+ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
 |> Smt.is_tautology ~quiet:false
 |> printf "%b\n";;
 
@@ -118,7 +118,7 @@ let form =
   let f2 = neg (eqn (var (arr "n" [paramfix (intc 1)])) (const (strc "C"))) in
   andList [f1; f2]
 in
-Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
+ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
 |> Smt.is_tautology ~quiet:false
 |> printf "%b\n";;
 
@@ -128,7 +128,7 @@ let form =
   let f2 = eqn (var (arr "n" [paramfix (intc 2)])) (const (strc "EE")) in
   andList [f1; f2]
 in
-Paramecium.ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
+ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
 |> Smt.is_tautology ~quiet:false
 |> printf "%b\n";;
 

@@ -1,0 +1,54 @@
+(** For find invariants and causal relations based on Paramecium
+
+    @author Yongjian Li <lyj238@gmail.com>
+    @author Kaiqiang Duan <duankq@ios.ac.cn>
+*)
+
+open Paramecium
+
+(** Concrete rule
+
+    + ConcreteRule: rule, concrete param list
+*)
+type concrete_rule =
+  | ConcreteRule of rule * (string * const) list
+
+val concrete_rule : rule -> (string * const) list -> concrete_rule
+
+(** Concrete property
+
+    + ConcreteProp: property, concrete param list
+*)
+type concrete_prop =
+  | ConcreteProp of prop * (string * const) list
+
+val concrete_prop : prop -> (string * const) list -> concrete_prop
+
+(** Causal relations
+
+  + InvHoldForRule1
+  + InvHoldForRule2
+  + InvHoldForRule3: the new concrete invariant found
+*)
+type relation =
+  | InvHoldForRule1
+  | InvHoldForRule2
+  | InvHoldForRule3 of concrete_prop
+
+val invHoldForRule1 : relation
+val invHoldForRule2 : relation
+val invHoldForRule3 : concrete_prop -> relation
+
+(** InvFinder type, i.e., causal relation table *)
+type t = {
+  rule: concrete_rule;
+  inv: concrete_prop;
+  relation: relation;
+}
+
+(** Find invs and causal relations of a protocol
+
+    @param protocol the protocol
+    @return causal relation table
+*)
+(*val find : protocol:protocol -> t list*)

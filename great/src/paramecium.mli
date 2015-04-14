@@ -144,77 +144,30 @@ exception Unexhausted_inst
 
 (*----------------------------- Functions ----------------------------------*)
 
-(*----------------------------- Module ToStr ----------------------------------*)
+(** Find the letues range of a type by its name *)
+val name2type : tname:string -> types:typedef list -> const list
 
-(** Module for translate to string *)
-module ToStr : sig
+(** attach consts i to string name *)
+val attach_list : string -> const list -> string
 
-  (** Translate to smt2 string *)
-  module Smt2 : sig
+(** Apply a paramref with param, i.e., cast it to consts *)
+val apply_paramref : paramref -> param:(string * const) list -> paramref
 
-    (** Translate to smt2 string
+(** Apply array with param *)
+val apply_array : var -> param:(string * const) list -> var
 
-        @param types the type definitions of the protocol
-        @param vardefs the variable definitions of the protocol
-        @param form the formula to be translated
-        @return the smt2 string
-    *)
-    val act : types:typedef list -> vardefs:vardef list -> formula -> string
+(** Apply exp with param *)
+val apply_exp : exp -> param:(string * const) list -> exp
 
-  end
+(** Apply formula with param *)
+val apply_form : formula -> param:(string * const) list -> formula
 
-end
+(** Apply statement with param *)
+val apply_statement : statement -> param:(string * const) list -> statement
 
-(*----------------------------- Module InvFinder ----------------------------------*)
+(** Apply rule with param *)
+val apply_rule : rule -> param:(string * const) list -> rule
 
-(** Module for find invariants and causal relations *)
-module InvFinder : sig
-
-  (** Concrete rule
-
-      + ConcreteRule: rule, concrete param list
-  *)
-  type concrete_rule =
-    | ConcreteRule of rule * (string * const) list
-
-  val concrete_rule : rule -> (string * const) list -> concrete_rule
-
-  (** Concrete property
-
-      + ConcreteProp: property, concrete param list
-  *)
-  type concrete_prop =
-    | ConcreteProp of prop * (string * const) list
-
-  val concrete_prop : prop -> (string * const) list -> concrete_prop
-
-  (** Causal relations
-
-    + InvHoldForRule1
-    + InvHoldForRule2
-    + InvHoldForRule3: the new concrete invariant found
-  *)
-  type relation =
-    | InvHoldForRule1
-    | InvHoldForRule2
-    | InvHoldForRule3 of concrete_prop
-
-  val invHoldForRule1 : relation
-  val invHoldForRule2 : relation
-  val invHoldForRule3 : concrete_prop -> relation
-
-  (** InvFinder type, i.e., causal relation table *)
-  type t = {
-    rule: concrete_rule;
-    inv: concrete_prop;
-    relation: relation;
-  }
-
-  (** Find invs and causal relations of a protocol
-
-      @param protocol the protocol
-      @return causal relation table
-  *)
-  (*val find : protocol:protocol -> t list*)
-end
+(** Apply property with param *)
+val apply_prop : prop -> param:(string * const) list -> prop
 
