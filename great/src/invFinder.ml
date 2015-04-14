@@ -139,12 +139,16 @@ let preCond f statements =
   formEval f ~assigns:(statement_2_assigns statements)
   |> List.dedup
 
+
+
 (* Deal with case invHoldForRule1 *)
 let deal_with_case_1 crule cinv (invs, relations) =
   (invs, { rule = crule;
     inv = cinv;
     relation = invHoldForRule1;
   }::relations)
+
+
 
 (* Deal with case invHoldForRule2 *)
 let deal_with_case_2 crule cinv (invs, relations) =
@@ -155,13 +159,15 @@ let deal_with_case_2 crule cinv (invs, relations) =
 
 (* Deal with case invHoldForRule3 *)
 let deal_with_case_3 crule cinv remainder (invs, relations) =
-
-  (invs, { rule = crule;
+  let inv' = invs in (* TODO *)
+  (inv', { rule = crule;
     inv = cinv;
-    relation = invHoldForRule3 invs;
+    relation = invHoldForRule3 inv';
   }::relations)
 
-let tab_expans crule cinv (invs, relations) ~types ~vardefs =
+
+
+let tabular_expans crule cinv (invs, relations) ~types ~vardefs =
   let ConcreteRule(r, param) =  crule in
   let Rule(name, _, form, statement) = apply_rule r ~param in
   let ConcreteProp(p, param) = cinv in

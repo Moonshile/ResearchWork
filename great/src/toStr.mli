@@ -21,3 +21,17 @@ module Smt2 : sig
   val act : types:typedef list -> vardefs:vardef list -> formula -> string
 
 end
+
+(*----------------------------- Module To SMV String ----------------------------------*)
+
+(** Translate to smv string *)
+module Smv : sig
+
+  (** Translate formula to smv string
+
+      @param form the formula to be translated
+      @return the smv string
+  *)
+  val form_act : formula -> string
+
+end

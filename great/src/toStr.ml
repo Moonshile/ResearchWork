@@ -70,13 +70,14 @@ module Smt2 = struct
     let Arr(name, params) = v in
     if params = [] then
       name
-    else
+    else begin
       let actual_ps = List.map params ~f:(fun p ->
         match p with
         | Paramfix(c) -> const_act c
         | Paramref(_) -> raise Unexhausted_inst
       ) in
       sprintf "(%s %s)" name (String.concat ~sep:" " actual_ps)
+    end
 
   (* Translate an exp to smt2 exp *)
   let rec exp_act exp =
@@ -85,7 +86,8 @@ module Smt2 = struct
     | Var(v) -> var_act v
     | Cond(form, e1, e2) ->
       sprintf "(ite %s %s %s)" (form_act form) (exp_act e1) (exp_act e2)
-    | Param(_) -> raise Unexhausted_inst
+    | Param(Paramfix c) -> const_act c
+    | Param(Paramref _) -> raise Unexhausted_inst
   (* Translate formula to smt2 string *)
   and form_act form =
     match form with
@@ -119,5 +121,63 @@ module Smt2 = struct
       |> String.concat ~sep:"\n"
     in
     sprintf "%s\n%s\n(assert %s)\n(check-sat)" type_str vardef_str (form_act form)
+
+end
+
+(*----------------------------- Module To SMV String ----------------------------------*)
+
+(** Translate to smv string *)
+module Smv = struct
+
+  (* Translate a const to smv const *)
+  let const_act c =
+    match c with
+    | Intc(i) -> Int.to_string i
+    | Strc(s) -> s
+    | Boolc(b) -> String.uppercase (Bool.to_string b)
+
+  (* Translate a variable to smv variable *)
+  let var_act v =
+    let Arr(name, params) = v in
+    if params = [] then
+      name
+    else begin
+      let actual_ps = List.map params ~f:(fun p ->
+        match p with
+        | Paramfix(c) -> sprintf "[%s]" (const_act c)
+        | Paramref(_) -> raise Unexhausted_inst
+      ) in
+      sprintf "%s%s" name (String.concat actual_ps)
+    end
+
+  (* Translate an exp to smv exp *)
+  let rec exp_act exp =
+    match exp with
+    | Const(c) -> const_act c
+    | Var(v) -> var_act v
+    | Cond(form, e1, e2) ->
+      sprintf "(case %s: %s; TRUE: %s; esac)" (form_act form) (exp_act e1) (exp_act e2)
+    | Param(Paramfix c) -> const_act c
+    | Param(Paramref _) -> raise Unexhausted_inst
+  (** Translate formula to smv string
+
+      @param form the formula to be translated
+      @return the smv string
+  *)
+  and form_act form =
+    match form with
+    | Chaos -> "TRUE"
+    | Miracle -> "FALSE"
+    | Eqn(e1, e2) -> sprintf "(%s = %s)" (exp_act e1) (exp_act e2)
+    | Neg(form) -> sprintf "(!%s)" (form_act form)
+    | AndList(fl) ->
+      List.map fl ~f:form_act
+      |> List.fold ~init:"true" ~f:(fun res x -> sprintf "(%s & %s)" res x)
+      |> sprintf "(%s)"
+    | OrList(fl) ->
+      List.map fl ~f:form_act
+      |> List.fold ~init:"false" ~f:(fun res x -> sprintf "(%s | %s)" res x)
+      |> sprintf "(%s)"
+    | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
 
 end
