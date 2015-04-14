@@ -159,7 +159,7 @@ module ToStr : sig
         @param form the formula to be translated
         @return the smt2 string
     *)
-    val act : types:typedef list -> vardefs:vardef list -> form:formula -> string
+    val act : types:typedef list -> vardefs:vardef list -> formula -> string
 
   end
 

@@ -350,7 +350,7 @@ module ToStr = struct
         @param form the formula to be translated
         @return the smt2 string
     *)
-    let act ~types ~vardefs ~form =
+    let act ~types ~vardefs form =
       let type_str =
         List.map types ~f:type_act
         |> List.filter ~f:(fun x -> not (x = ""))
@@ -500,26 +500,57 @@ module InvFinder = struct
     |> List.dedup
 
   (* Deal with case invHoldForRule1 *)
-  let deal_with_case_1 crule cinv =
-    { rule = crule;
+  let deal_with_case_1 crule cinv (invs, relations) =
+    (invs, { rule = crule;
       inv = cinv;
       relation = invHoldForRule1;
-    }
+    }::relations)
 
   (* Deal with case invHoldForRule2 *)
-  let deal_with_case_2 crule cinv =
-    { rule = crule;
+  let deal_with_case_2 crule cinv (invs, relations) =
+    (invs, { rule = crule;
       inv = cinv;
       relation = invHoldForRule2;
-    }
+    }::relations)
 
   (* Deal with case invHoldForRule3 *)
-  let deal_with_case_3 crule cinv inv' =
-    { rule = crule;
-      inv = cinv;
-      relation = invHoldForRule3 inv';
-    }
+  let deal_with_case_3 crule cinv remainder (invs, relations) =
 
+    (invs, { rule = crule;
+      inv = cinv;
+      relation = invHoldForRule3 invs;
+    }::relations)
+
+  let tab_expans crule cinv (invs, relations) ~types ~vardefs =
+    let ConcreteRule(r, param) =  crule in
+    let Rule(name, _, form, statement) = apply_rule r ~param in
+    let ConcreteProp(p, param) = cinv in
+    let Prop(_, _, inv_inst) = apply_prop p ~param in
+    (* preCond *)
+    let obligations = preCond form statement in
+    (* case 2 *)
+    let (id_obligations, remainder) =
+      List.partition_tf obligations ~f:(fun (_, inv') -> inv_inst = inv')
+    in
+    let (invs, relations) = deal_with_case_2 crule cinv (invs, relations) in
+    if remainder = [] then
+      (invs, relations)
+    else begin
+      (* case 1 *)
+      let (taut_obligations, remainder) =
+        let new_form (g, inv') = 
+          neg (andList [form; g; inv'])
+          |> ToStr.Smt2.act ~types ~vardefs
+        in
+        List.partition_tf remainder ~f:(fun ob -> is_tautology (new_form ob))
+      in
+      let (invs, relations) = deal_with_case_1 crule cinv (invs, relations) in
+      if remainder = [] then
+        (invs, relations)
+      else
+        (* case 3 *)
+        deal_with_case_3 crule cinv remainder (invs, relations)
+    end
 
   (** Find invs and causal relations of a protocol
 

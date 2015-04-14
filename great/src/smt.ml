@@ -41,7 +41,8 @@ let is_tautology ?(filename="inv.smt2") ?(quiet=true) formula =
   let print_smt printer = printer "Result of smt check is:\n";printf "%s" smt in
   if not (any ["sat"; "unsat"] ~f:(fun prefix -> String.is_prefix smt ~prefix)) then
     (print_smt Prt.error; raise Error_in_formula)
-  else
+  else begin
     let res = String.is_prefix smt ~prefix:"unsat" in
     if quiet then res else (print_smt Prt.info; res)
+  end
 
