@@ -6,6 +6,9 @@
 
 open Paramecium
 
+(** Raised when parallel statements haven't been cast to assign list *)
+exception Unexhausted_flat_parallel
+
 (** Concrete rule
 
     + ConcreteRule: rule, concrete param list

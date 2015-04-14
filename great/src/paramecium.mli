@@ -34,14 +34,14 @@ val paramdef : string -> string -> paramdef
 
 (** Parameter references
     + Paramref, name
-    + Paramfix, value
+    + Paramfix, typename, value
 *)
 type paramref =
   | Paramref of string
-  | Paramfix of const
+  | Paramfix of string * const
 
 val paramref : string -> paramref
-val paramfix : const -> paramref
+val paramfix : string -> const -> paramref
 
 (** Variable definitions, each with its name and name of its type
     + Array var: name, param definitions, type name
@@ -151,23 +151,23 @@ val name2type : tname:string -> types:typedef list -> const list
 val attach_list : string -> const list -> string
 
 (** Apply a paramref with param, i.e., cast it to consts *)
-val apply_paramref : paramref -> param:(string * const) list -> paramref
+val apply_paramref : paramref -> p:(string * paramref) list -> paramref
 
 (** Apply array with param *)
-val apply_array : var -> param:(string * const) list -> var
+val apply_array : var -> p:(string * paramref) list -> var
 
 (** Apply exp with param *)
-val apply_exp : exp -> param:(string * const) list -> exp
+val apply_exp : exp -> p:(string * paramref) list -> exp
 
 (** Apply formula with param *)
-val apply_form : formula -> param:(string * const) list -> formula
+val apply_form : formula -> p:(string * paramref) list -> formula
 
 (** Apply statement with param *)
-val apply_statement : statement -> param:(string * const) list -> statement
+val apply_statement : statement -> p:(string * paramref) list -> statement
 
 (** Apply rule with param *)
-val apply_rule : rule -> param:(string * const) list -> rule
+val apply_rule : rule -> p:(string * paramref) list -> rule
 
 (** Apply property with param *)
-val apply_prop : prop -> param:(string * const) list -> prop
+val apply_prop : prop -> p:(string * paramref) list -> prop
 

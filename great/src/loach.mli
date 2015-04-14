@@ -54,17 +54,17 @@ val paramdef : string -> string -> paramdef
 
 (** Parameter references
     + Paramref, name
-    + Paramfix, value
-    + Paramindex, indexed param
+    + Paramfix, type name, value
+    + Paramindex, type name of parameter (not index), indexed param
 *)
 type paramref =
   | Paramref of string
-  | Paramfix of const
-  | Paramindex of indexref
+  | Paramfix of string * const
+  | Paramindex of string * indexref
 
 val paramref : string -> paramref
-val paramfix : const -> paramref
-val paramindex : indexref -> paramref
+val paramfix : string -> const -> paramref
+val paramindex : string -> indexref -> paramref
 
 (** Variable definitions, each with its name and name of its type
     + Arraydef: name, index definitions, param definitions, type name

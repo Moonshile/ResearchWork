@@ -11,6 +11,9 @@ open Paramecium
 
 open Core.Std
 
+(** Raised when parallel statements haven't been cast to assign list *)
+exception Unexhausted_flat_parallel
+
 (** Concrete rule
 
     + ConcreteRule: rule, concrete param list
@@ -38,7 +41,7 @@ let concrete_prop property ps = ConcreteProp(property, ps)
 type relation =
   | InvHoldForRule1
   | InvHoldForRule2
-  | InvHoldForRule3 of concrete_prop
+  | InvHoldForRule3 of formula
 
 let invHoldForRule1 = InvHoldForRule1
 let invHoldForRule2 = InvHoldForRule2
@@ -63,6 +66,12 @@ let prop_2_concrete property ~types =
   cart_product_with_name paramdefs types
   |> List.map ~f:(fun params -> concrete_prop property params)
 
+(* Convert concrete property to formula *)
+let concrete_prop_2_form cprop =
+  let ConcreteProp(property, param) = cprop in
+  let Prop(_, _, form) = apply_prop property ~param in
+  form
+
 (* Convert statements to a list of assignments *)
 let rec statement_2_assigns statement =
   match statement with
@@ -72,6 +81,8 @@ let rec statement_2_assigns statement =
 (* Strengthen the guard of evaluated exps with formula f *)
 let strengthen ~form evaled_exp =
   List.map evaled_exp ~f:(fun (h, e) -> (andList [form; h], e))
+
+
 
 (* Evaluate exp with assignments
     Result has format (condition, value)
@@ -85,7 +96,8 @@ let rec expEval exp ~assigns =
     | Cond(f, e1, e2) -> [(f, e1); (neg f, e2)]
     | Const(_)
     | Var(_) -> [(chaos, value)]
-    | Param(_) -> raise Unexhausted_inst)
+    | Param(Paramfix(_, c)) -> [(chaos, const c)]
+    | Param(Paramref _) -> raise Unexhausted_inst)
   | Cond(form, e1, e2) ->
     let evaled_e1 = expEval e1 ~assigns in
     let evaled_e2 = expEval e2 ~assigns in
@@ -103,7 +115,8 @@ let rec expEval exp ~assigns =
       |> List.concat
     in
     evaled_T@evaled_F
-  | Param(_) -> raise Unexhausted_inst
+  | Param(Paramfix(_, c)) -> [(chaos, const c)]
+  | Param(Paramref _) -> raise Unexhausted_inst
 (* Evaluate formula with assignments
     Result has format (condition, form)
 *)
@@ -115,21 +128,21 @@ and formEval form ~assigns =
   in
   match form with
   | Eqn(e1, e2) ->
-    combination [expEval e1 ~assigns; expEval e2 ~assigns]
+    cartesian_product [expEval e1 ~assigns; expEval e2 ~assigns]
     |> List.map ~f:(handle_tuples ~f:eqn)
   | Neg(f) ->
     formEval f ~assigns
     |> List.map ~f:(fun (g, f') -> (g, neg f'))
   | AndList([]) -> [(chaos, andList [])]
   | AndList(f::glist) ->
-    combination [formEval f ~assigns; formEval (andList glist) ~assigns]
+    cartesian_product [formEval f ~assigns; formEval (andList glist) ~assigns]
     |> List.map ~f:(handle_tuples ~f:(fun g1 g2 -> andList [g1; g2]))
   | OrList([]) -> [(chaos, orList [])]
   | OrList(f::glist) ->
-    combination [formEval f ~assigns; formEval (orList glist) ~assigns]
+    cartesian_product [formEval f ~assigns; formEval (orList glist) ~assigns]
     |> List.map ~f:(handle_tuples ~f:(fun g1 g2 -> orList [g1; g2]))
   | Imply(ant, cons) ->
-    combination [formEval ant ~assigns; formEval cons ~assigns]
+    cartesian_product [formEval ant ~assigns; formEval cons ~assigns]
     |> List.map ~f:(handle_tuples ~f:imply)
   | Chaos -> [(chaos, chaos)]
   | Miracle -> [(chaos, miracle)]
@@ -141,14 +154,61 @@ let preCond f statements =
 
 
 
+(********************************** Module Choose **************************************)
+
+(* Choose a true invariant *)
+module Choose = struct
+
+  type level =
+    | Tautology of formula
+    | Implied of formula
+    | New_inv of formula
+    | Not_inv of formula
+
+  let tautology form = Tautology form
+  let implied form = Implied form
+  let new_inv form = New_inv form
+  let not_inv form = Not_inv form
+
+  (* Check the level of an optional invariant *)
+  let check_level ~types ~vardefs inv smv_file invs =
+    if is_tautology (ToStr.Smt2.act inv ~types ~vardefs) then
+      tautology inv
+    else begin
+      
+    end
+
+  (* Assign to formula *)
+  let assign_to_form statement =
+    match statement with
+    | Assign(v, e) -> eqn (var v) e
+    | Parallel(_) -> raise Unexhausted_flat_parallel
+
+  let rec choose_0_dimen invs guards assigns cons =
+    let assigns_on_0_dimen =
+      List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.length paramrefs = 0)
+    in
+    let ants_0_dimen = 
+      if assigns_on_0_dimen = [] then
+        []
+      else begin
+        assigns_on_0_dimen
+        |> List.map ~f:assign_to_form
+        |> List.map ~f:neg
+      end
+    in
+
+
+
+end
+
+
 (* Deal with case invHoldForRule1 *)
 let deal_with_case_1 crule cinv (invs, relations) =
   (invs, { rule = crule;
     inv = cinv;
     relation = invHoldForRule1;
   }::relations)
-
-
 
 (* Deal with case invHoldForRule2 *)
 let deal_with_case_2 crule cinv (invs, relations) =

@@ -11,14 +11,13 @@ open Core.Std
 (* This exception is for stop warnings. It will never be raised. *)
 exception Empty_exception
 
-(** Generate all possible combinations for a specific set of lists.
-    i.e., generate Cartesian Production of the lists
+(** Generate Cartesian Production of a set of lists
     For example, given [[1;2]; [1;3]] produces [[1;1]; [1;3]; [2;1]; [2;3]]
 
     @param list the given set of lists, whose elements will be omitted if it is []
     @return the generated combinations
 *)
-let combination list =
+let cartesian_product list =
   let append_all alist ele = List.map ~f:(fun x -> x@[ele]) alist in
   let com_next res b =
     match (res, b) with

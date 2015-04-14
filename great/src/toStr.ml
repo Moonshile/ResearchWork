@@ -73,7 +73,7 @@ module Smt2 = struct
     else begin
       let actual_ps = List.map params ~f:(fun p ->
         match p with
-        | Paramfix(c) -> const_act c
+        | Paramfix(_, c) -> const_act c
         | Paramref(_) -> raise Unexhausted_inst
       ) in
       sprintf "(%s %s)" name (String.concat ~sep:" " actual_ps)
@@ -86,7 +86,7 @@ module Smt2 = struct
     | Var(v) -> var_act v
     | Cond(form, e1, e2) ->
       sprintf "(ite %s %s %s)" (form_act form) (exp_act e1) (exp_act e2)
-    | Param(Paramfix c) -> const_act c
+    | Param(Paramfix(_, c)) -> const_act c
     | Param(Paramref _) -> raise Unexhausted_inst
   (* Translate formula to smt2 string *)
   and form_act form =
@@ -144,7 +144,7 @@ module Smv = struct
     else begin
       let actual_ps = List.map params ~f:(fun p ->
         match p with
-        | Paramfix(c) -> sprintf "[%s]" (const_act c)
+        | Paramfix(_, c) -> sprintf "[%s]" (const_act c)
         | Paramref(_) -> raise Unexhausted_inst
       ) in
       sprintf "%s%s" name (String.concat actual_ps)
@@ -157,7 +157,7 @@ module Smv = struct
     | Var(v) -> var_act v
     | Cond(form, e1, e2) ->
       sprintf "(case %s: %s; TRUE: %s; esac)" (form_act form) (exp_act e1) (exp_act e2)
-    | Param(Paramfix c) -> const_act c
+    | Param(Paramfix(_, c)) -> const_act c
     | Param(Paramref _) -> raise Unexhausted_inst
   (** Translate formula to smv string
 
@@ -172,11 +172,11 @@ module Smv = struct
     | Neg(form) -> sprintf "(!%s)" (form_act form)
     | AndList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"true" ~f:(fun res x -> sprintf "(%s & %s)" res x)
+      |> List.fold ~init:"TRUE" ~f:(fun res x -> sprintf "(%s & %s)" res x)
       |> sprintf "(%s)"
     | OrList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"false" ~f:(fun res x -> sprintf "(%s | %s)" res x)
+      |> List.fold ~init:"FALSE" ~f:(fun res x -> sprintf "(%s | %s)" res x)
       |> sprintf "(%s)"
     | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
 

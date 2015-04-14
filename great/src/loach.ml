@@ -57,17 +57,17 @@ let paramdef name typename = Paramdef(name, typename)
 
 (** Parameter references
     + Paramref, name
-    + Paramfix, value
-    + Paramindex, indexed param
+    + Paramfix, type name, value
+    + Paramindex, type name of parameter (not index), indexed param
 *)
 type paramref =
   | Paramref of string
-  | Paramfix of const
-  | Paramindex of indexref
+  | Paramfix of string * const
+  | Paramindex of string * indexref
 
 let paramref name = Paramref name
-let paramfix value = Paramfix value
-let paramindex indexed = Paramindex indexed
+let paramfix tname value = Paramfix(tname, value)
+let paramindex tname indexed = Paramindex(tname, indexed)
 
 (** Variable definitions, each with its name and name of its type
     + Arraydef: name, index definitions, param definitions, type name
@@ -209,7 +209,7 @@ let name2type ~tname ~types =
 let cart_product indexdefs types =
   indexdefs
   |> List.map ~f:(fun (Indexdef(_, tname)) -> name2type ~tname ~types)
-  |> combination
+  |> cartesian_product
 
 (* Generate Cartesian production of all possible values of a `indexdef` set
     Each value in each set with its index name
@@ -219,7 +219,7 @@ let cart_product_with_name indexdefs types =
   indexdefs
   |> List.map ~f:(fun (Indexdef(n, tname)) -> (n, name2type ~tname ~types))
   |> List.map ~f:(fun (n, t) -> List.map t ~f:(fun x -> (n, x)))
-  |> combination
+  |> cartesian_product
 
 (* Apply indexref with index *)
 let apply_indexref i ~index =
@@ -230,7 +230,7 @@ let apply_indexref i ~index =
 (* Apply param with index *)
 let apply_param param ~index =
   match param with
-  | Paramindex(i) -> paramfix (apply_indexref i ~index)
+  | Paramindex(tname, i) -> paramfix tname (apply_indexref i ~index)
   | Paramref(_)
   | Paramfix(_) -> param
 
@@ -271,8 +271,8 @@ let rec apply_exp exp ~index ~types =
   | Cond(f, exp1, exp2) ->
     cond (apply_form f ~index ~types) (apply_exp exp1 ~index ~types) (apply_exp exp2 ~index ~types)
   | Index(x) -> const (apply_indexref x ~index)
-  | Const(_)
-  | Param(_) -> exp
+  | Const(_) -> exp
+  | Param(p) -> param (apply_param p ~index)
 (* Apply formula with index *)
 and apply_form form ~index ~types =
   match form with
@@ -367,7 +367,7 @@ module Trans = struct
   let trans_paramref pr =
     match pr with
     | Paramref(n) -> Paramecium.paramref n
-    | Paramfix(c) -> Paramecium.paramfix (trans_const c)
+    | Paramfix(tname, c) -> Paramecium.paramfix tname (trans_const c)
     | Paramindex(_) -> raise Unexhausted_inst
 
   let trans_indexdef _ =

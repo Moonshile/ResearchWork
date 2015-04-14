@@ -11,14 +11,13 @@ exception Empty_exception
 
 (*----------------------------- Functions ----------------------------------*)
 
-(** Generate all possible combinations for a specific set of list.
-    i.e., generate Cartesian Production of the lists
+(** Generate Cartesian Production of a set of lists
     For example, given [[1;2]; [1;3]] produces [[1;1]; [1;3]; [2;1]; [2;3]]
 
-    @param list the given set of list
+    @param list the given set of lists, whose elements will be omitted if it is []
     @return the generated combinations
 *)
-val combination : 'a list list -> 'a list list
+val cartesian_product : 'a list list -> 'a list list
 
 (** Judge if all elements in list satisfy function f
 
