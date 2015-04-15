@@ -41,6 +41,7 @@ let flat_to_orList form =
   orList (to_list form)
 
 (** Judge if tow formulae are symmetric *)
+(* TODO what if variables of the formulae have chaos sequence? *)
 let form_are_symmetric f1 f2 =
   let param_info  = Generalize.paraminfo [] [] in
   let (f1', _) = Generalize.form_act f1 param_info in

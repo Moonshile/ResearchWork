@@ -158,6 +158,19 @@ val name2type : tname:string -> types:typedef list -> const list
 *)
 val cart_product_with_paramfix : paramdef list -> typedef list -> (string * paramref) list list
 
+(** Get the names of concrete parameters
+    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))],
+    generate ["x"; "n"]
+*)
+val get_names_of_params : ('a * 'b) list -> 'a list
+
+(** Set the names of concrete parameters
+    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))]
+    and name list ["y"; "m"],
+    generate [("y", Paramfix("bool", Boolc true)); ("m", Paramfix("int", Intc 1))]
+*)
+val set_names_of_params : ('a * 'b) list -> names:'c list -> ('c * 'b) list
+
 (** attach consts i to string name *)
 val attach_list : string -> const list -> string
 

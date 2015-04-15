@@ -181,6 +181,88 @@ module Choose = struct
   let new_inv form = New_inv form
   let not_inv form = Not_inv form
 
+  (* get type name of a concrete param *)
+  let param_type_name param =
+    match param with
+    | (_, Paramfix(tname, _)) -> tname
+    | (_, Paramref(_)) -> raise Unexhausted_inst
+
+  (* partition the concrete params by their type, then sort by typename *)
+  let sorted_partition params =
+    partition_with_label params ~f:param_type_name
+    |> List.sort ~cmp:(fun (x, _) (y, _) -> String.compare x y)
+
+  (*  Given two partitioned concrete params, suppose they have same types
+      Judge if the first partition has no more parameters in each type
+      than the second one
+  *)
+  let not_more_params partition1 partition2 =
+    let not_more_than (_, x) (_, y) = List.length x <= List.length y in
+    List.map2_exn partition1 partition2 ~f:not_more_than
+    |> reduce ~default:true ~f:(fun x y -> x && y)
+
+  (*  If partition1 is the compatible subset of one with partition2
+      Generate the compatible parameters
+  *)
+  let compatible_params partition1 partition2 =
+    (* parameter names of eache type in partition2 *)
+    let params_names_part2 = List.map partition2 ~f:(fun (_, x) -> get_names_of_params x) in
+    (* parameter count of each type in partition2 *)
+    let params_c_part2 = List.map partition2 ~f:(fun (_, x) -> List.length x) in
+    (* get values of parameters of shortened partition1 *)
+    let params_val_shorten_part1 = List.map partition1 ~f:(fun (_, x) -> x) in
+    let rename_all list names = List.map list ~f:(set_names_of_params ~names) in
+    (*  choose |params2[k]| params in the values of shortened partition1
+        result is like [[[a;b];[b;c];[a;c]]; [[1;2];[1;3];[2;3]]]
+    *)
+    let choosed_comb = List.map2_exn params_val_shorten_part1 params_c_part2 ~f:combination in
+    (* rename to names of partition2 *)
+    List.map2_exn choosed_comb params_names_part2 ~f:rename_all
+    (*  permutation,  result is like
+        [[[a;b];[b;a];[b;c];[c;b];[a;c];[c;a]]; [[1;2];[2;1];...]]
+    *)
+    |> List.map ~f:(fun x -> List.map x ~f:(fun y -> List.concat (permutation y)))
+    (* result is like [[[a;b];[1;2]]; [[a;b];[2;1]]; ...] *)
+    |> cartesian_product
+    (* result is like [[a;b;1;2]; [a;b;2;1]; ...] *)
+    |> List.map ~f:List.concat
+
+  (* Algorithm ParamCompatible
+      This algorithm is for judge if a invariant inv1 is compatible with inv2.
+
+      Compatible definition
+      Suppose parameter type set of inv1 is types1, and types2of inv2; suppose
+      |types1| = m, |types2| = n; inv1 is
+      compatible with inv2 iff:
+      1. types2 is subset of types1 (so n <= m), and
+      2. suppose the parameter types in inv1 have parameter sets params1[i] for
+        0 <= i < m, and for inv2 have paramter sets params2[j] for 0 <= j < n, then
+        |params2[k]| <= |params1[k| for 0 <= k < n
+
+      This algorithm returns the compatible params combination of inv1 for inv2
+  *)
+  let param_compatible inv_param1 inv_param2 =
+    (* Firstly, partition the parameters by their type *)
+    let partition1 = sorted_partition inv_param1 in
+    let partition2 = sorted_partition inv_param2 in
+    (* Secondly, Judge the compatibility *)
+    let types1 = String.Set.of_list (List.map partition1 ~f:(fun (x, _) -> x)) in
+    let types2 = String.Set.of_list (List.map partition2 ~f:(fun (x, _) -> x)) in
+    (* types2 is not subset of types1 *)
+    if not (String.Set.subset types2 types1) then
+      []
+    else begin
+      let shorten_partition1 = List.sub partition1 ~pos:0 ~len:(List.length partition2) in
+      let more_params = not (not_more_params partition2 shorten_partition1) in
+      (* |params2[k]| > |params1[k| for 0 <= k < n *)
+      if more_params then
+        []
+      (* is compatible *)
+      else begin
+        compatible_params shorten_partition1 partition2
+      end
+    end
+
   (* Check if the new inv could be implied by old ones *)
   let inv_implied_by_old ~types ~vardefs inv invs =
     let wrapper inv old =

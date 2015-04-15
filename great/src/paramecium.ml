@@ -185,6 +185,20 @@ let cart_product_with_paramfix paramdefs types =
   |> List.map ~f:(fun (n, (tname, trange)) -> List.map trange ~f:(fun x -> (n, paramfix tname x)))
   |> cartesian_product
 
+(** Get the names of concrete parameters
+    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))],
+    generate ["x"; "n"]
+*)
+let get_names_of_params p = List.map p ~f:(fun (name, _) -> name)
+
+(** Set the names of concrete parameters
+    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))]
+    and name list ["y"; "m"],
+    generate [("y", Paramfix("bool", Boolc true)); ("m", Paramfix("int", Intc 1))]
+*)
+let set_names_of_params p ~names =
+  List.map2_exn p names ~f:(fun (_, p) name -> (name, p))
+
 (* attach const i to string name *)
 let attach name i =
   match i with
