@@ -2,6 +2,7 @@
 
 open Core.Std
 open Paramecium
+open Formula
 
 (* Common parameter definitions and references *)
 let defi = paramdef "i" "node"
@@ -108,17 +109,17 @@ let form =
   let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in
   andList [f1; f2]
 in
-ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
-|> Smt.is_tautology ~quiet:false
+form
+|> is_tautology ~quiet:false ~types:protocol.types ~vardefs:protocol.vardefs
 |> printf "%b\n";;
 
 let form =
   let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
   let f2 = neg (eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C"))) in
-  andList [f1; f2]
+  orList [f1; f2]
 in
-ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
-|> Smt.is_tautology ~quiet:false
+form
+|> is_tautology ~quiet:false ~types:protocol.types ~vardefs:protocol.vardefs
 |> printf "%b\n";;
 
 try
@@ -127,8 +128,8 @@ try
     let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "EE")) in
     andList [f1; f2]
   in
-  ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
-  |> Smt.is_tautology ~quiet:false
+  form
+  |> is_tautology ~quiet:false ~types:protocol.types ~vardefs:protocol.vardefs
   |> printf "%b\n"
 with _ -> ();;
 

@@ -19,14 +19,14 @@ let create_file filename content =
   fprintf outf "%s\n" content;
   Out_channel.close outf
 
-(** Judge if a given formula is tautology
+(** Judge if a given formula is satisfiable
 
     @param filename is the temp file to store smt2 formula, default is "inv.smt2"
     @param quiet true (default) to prevent to print output of smt solver to screen
     @param formula the formula to be judged
-    @return true if is tautology else false
+    @return true if is satisfiable else false
 *)
-let is_tautology ?(filename="inv.smt2") ?(quiet=true) formula =
+let is_satisfiable ?(filename="inv.smt2") ?(quiet=true) formula =
   let smt = 
     let (stdout, _) =
       let res =
@@ -42,7 +42,7 @@ let is_tautology ?(filename="inv.smt2") ?(quiet=true) formula =
   if not (any ["sat"; "unsat"] ~f:(fun prefix -> String.is_prefix smt ~prefix)) then
     (print_smt Prt.error; raise Error_in_formula)
   else begin
-    let res = String.is_prefix smt ~prefix:"unsat" in
+    let res = String.is_prefix smt ~prefix:"sat" in
     if quiet then res else (print_smt Prt.info; res)
   end
 

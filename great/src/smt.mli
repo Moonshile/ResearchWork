@@ -7,11 +7,11 @@
 (** Raises when there is an error in the formula to be judged *)
 exception Error_in_formula
 
-(** Judge if a given formula is tautology
+(** Judge if a given formula is satisfiable
 
     @param filename is the temp file to store smt2 formula, default is "inv.smt2"
     @param quiet true (default) to prevent to print output of smt solver to screen
     @param formula the formula to be judged
-    @return true if is tautology else false
+    @return true if is satisfiable else false
 *)
-val is_tautology : ?filename:string -> ?quiet:bool -> string -> bool
+val is_satisfiable : ?filename:string -> ?quiet:bool -> string -> bool

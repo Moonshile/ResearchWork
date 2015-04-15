@@ -7,6 +7,7 @@
 open Utils
 open Smt
 open Smv
+open Formula
 open Paramecium
 
 open Core.Std
@@ -256,17 +257,14 @@ module Choose = struct
         false
       (* If length of parameters in old is 0, then check directly *)
       else if List.length old_pd = 0 then
-        is_tautology (ToStr.Smt2.act (neg (imply old inv)) ~types ~vardefs)
+        is_tautology (imply old inv) ~types ~vardefs
       (* If old has more paramters, then false *)
       else if param_compatible inv_p old_p = [] then
         false
       (* Otherwise, check old with parameters of inv *)
       else begin
         let params = param_compatible inv_p old_p in
-        let taut_check inv p =
-          is_tautology (ToStr.Smt2.act (apply_form inv ~p) ~types ~vardefs)
-        in
-        any params ~f:(fun p -> taut_check old_gened p)
+        any params ~f:(fun p -> is_tautology (apply_form old_gened p) ~types ~vardefs)
       end
     in
     any invs ~f:(fun old -> wrapper inv old)
@@ -274,7 +272,7 @@ module Choose = struct
 
   (* Check the level of an optional invariant *)
   let check_level ~types ~vardefs inv smv_file invs =
-    if is_tautology (ToStr.Smt2.act inv ~types ~vardefs) then
+    if is_tautology inv ~types ~vardefs then
       tautology inv
     else if inv_implied_by_old ~types ~vardefs inv invs then
       implied inv
@@ -343,7 +341,7 @@ let tabular_expans crule cinv (invs, relations) ~types ~vardefs =
   if obligation = inv_inst then
     deal_with_case_2 crule cinv (invs, relations)
   (* case 1 *)
-  else if is_tautology (ToStr.Smt2.act ~types ~vardefs (neg (imply form obligation))) then
+  else if is_tautology (imply form obligation) ~types ~vardefs then
     deal_with_case_1 crule cinv (invs, relations)
   (* case 3 *)
   else begin

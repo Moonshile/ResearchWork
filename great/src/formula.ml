@@ -8,6 +8,17 @@ open Paramecium
 
 open Core.Std
 
+(** Judge if a formula is tautology
+    If negation of the formula is not satisfiable, then the formula is tautology
+
+    @param filename is the temp file to store smt2 formula, default is "inv.smt2"
+    @param quiet true (default) to prevent to print output of smt solver to screen
+    @param types type definitions
+    @param vardefs variable definitions
+*)
+let is_tautology ?(filename="inv.smt2") ?(quiet=true) ~types ~vardefs form =
+  not (Smt.is_satisfiable ~filename ~quiet (ToStr.Smt2.act ~types ~vardefs (neg form)))
+
 (** For andList, flat its all components,
     for others, flat to a single list
 *)
