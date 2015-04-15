@@ -142,7 +142,7 @@ try
     andList [f1; f2]
   in
   ToStr.Smv.form_act (neg form)
-  |> Smv.is_inv ~quiet:false ~smv_file:"/home/duan/mutualEx.smv"
+  |> Smv.is_inv_by_smv ~quiet:false ~smv_file:"/home/duan/mutualEx.smv"
   |> printf "%b\n"
 with _ -> ();;
 
