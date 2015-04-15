@@ -14,5 +14,5 @@ exception Error_in_smv
     @param formula the formula to be judged
     @return true if is true invariant else false
 *)
-val is_inv : ?quiet:bool -> smv_file:string -> string -> bool
+val is_inv_by_smv : ?quiet:bool -> smv_file:string -> string -> bool
 

@@ -299,8 +299,10 @@ module Choose = struct
       tautology inv
     else if inv_implied_by_old ~types ~vardefs inv invs then
       implied inv
-    else if
-      
+    else if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
+      new_inv inv
+    else 
+      not_inv inv
     end
 
   (* Assign to formula *)

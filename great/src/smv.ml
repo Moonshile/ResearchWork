@@ -20,7 +20,7 @@ exception Error_in_smv
     @param inv the inv to be judged
     @return true if is true invariant else false
 *)
-let is_inv ?(quiet=true) ~smv_file inv =
+let is_inv_by_smv ?(quiet=true) ~smv_file inv =
   let (stdout, stderr) =
     let check_str = sprintf "go\ncompute_reachable\ncheck_invar -p \"%s\"\nquit\n" inv in
     let args = ["-dcx"; "-int"; "-old"; smv_file] in
