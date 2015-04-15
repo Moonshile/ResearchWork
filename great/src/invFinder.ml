@@ -277,21 +277,29 @@ module Choose = struct
         false
       (* If length of parameters in old is 0, then check directly *)
       else if List.length old_pd = 0 then
-        is_tautology (neg (imply old inv))
+        is_tautology (ToStr.Smt2.act (neg (imply old inv)) ~types ~vardefs)
       (* If old has more paramters, then false *)
       else if param_compatible inv_p old_p = [] then
         false
       (* Otherwise, check old with parameters of inv *)
       else begin
         let params = param_compatible inv_p old_p in
+        let taut_check inv p =
+          is_tautology (ToStr.Smt2.act (apply_form inv ~p) ~types ~vardefs)
+        in
+        any params ~f:(fun p -> taut_check old_gened p)
       end
+    in
+    any invs ~f:(fun old -> wrapper inv old)
 
 
   (* Check the level of an optional invariant *)
   let check_level ~types ~vardefs inv smv_file invs =
     if is_tautology (ToStr.Smt2.act inv ~types ~vardefs) then
       tautology inv
-    else begin
+    else if inv_implied_by_old ~types ~vardefs inv invs then
+      implied inv
+    else if
       
     end
 
@@ -301,7 +309,7 @@ module Choose = struct
     | Assign(v, e) -> eqn (var v) e
     | Parallel(_) -> raise Unexhausted_flat_parallel
 
-  let rec choose_0_dimen invs guards assigns cons =
+  let rec choose_0_dimen_var invs guards assigns cons =
     let assigns_on_0_dimen =
       List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.length paramrefs = 0)
     in
