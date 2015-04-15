@@ -44,6 +44,12 @@ val any : 'a list -> f:('a -> bool) -> bool
 (** Reduce a list, if the list is empty, a default value is returned *)
 val reduce: 'a list -> default:'a -> f:('a -> 'a -> 'a) -> 'a
 
+(** Partition a list to a set of lists, with function f
+    e.g., for list [1;2;3;4;5;6] and function (fun x -> x mod 3),
+    generate list [[1;4]; [2;5]; [3;6]]
+*)
+val partition : 'a list -> f:('a -> 'b) -> 'a list list
+
 (** Denotes there are errors while execute a program *)
 exception Exec_error
 
