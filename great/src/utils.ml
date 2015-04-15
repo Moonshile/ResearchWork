@@ -27,12 +27,12 @@ let rec permutation list =
   | [] -> []
   | _ ->
     let remove_at list len i = 
-      let head = List.sub list 0 i in 
-      let tail = List.sub list (i + 1) (len - i - 1) in
+      let head = List.sub list ~pos:0 ~len:i in 
+      let tail = List.sub list ~pos:(i + 1) ~len:(len - i - 1) in
       if head@tail = [] then
-        [List.sub list i 1]
+        [List.sub list ~pos:i ~len:1]
       else begin
-        List.map (permutation (head@tail)) ~f:(fun x -> (List.sub list i 1)@x)
+        List.map (permutation (head@tail)) ~f:(fun x -> (List.sub list ~pos:i ~len:1)@x)
       end
     in
     let len = List.length list in

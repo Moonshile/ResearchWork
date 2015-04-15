@@ -15,3 +15,6 @@ val flat_to_andList : formula -> formula
     for others, flat to a single list
 *)
 val flat_to_orList : formula -> formula
+
+(** Judge if tow formulae are symmetric *)
+val form_are_symmetric : formula -> formula -> bool

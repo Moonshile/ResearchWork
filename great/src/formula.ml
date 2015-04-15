@@ -39,3 +39,10 @@ let flat_to_orList form =
     | Imply(_) -> [form]
   in
   orList (to_list form)
+
+(** Judge if tow formulae are symmetric *)
+let form_are_symmetric f1 f2 =
+  let param_info  = Generalize.paraminfo [] [] in
+  let (f1', _) = Generalize.form_act f1 param_info in
+  let (f2', _) = Generalize.form_act f2 param_info in
+  f1' = f2'

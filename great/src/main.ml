@@ -115,15 +115,6 @@ ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
 let open Paramecium in
 let form =
   let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
-  let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in
-  andList [f1; f2]
-in
-ToStr.Smv.form_act (neg form)
-|> Smv.is_inv ~quiet:false ~smv_file:"/home/duan/mutualEx.smv";;
-
-let open Paramecium in
-let form =
-  let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
   let f2 = neg (eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C"))) in
   andList [f1; f2]
 in
@@ -131,13 +122,40 @@ ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
 |> Smt.is_tautology ~quiet:false
 |> printf "%b\n";;
 
+try
+  let open Paramecium in
+  let form =
+    let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
+    let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "EE")) in
+    andList [f1; f2]
+  in
+  ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
+  |> Smt.is_tautology ~quiet:false
+  |> printf "%b\n"
+with _ -> ();;
+
+try
+  let open Paramecium in
+  let form =
+    let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
+    let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in
+    andList [f1; f2]
+  in
+  ToStr.Smv.form_act (neg form)
+  |> Smv.is_inv ~quiet:false ~smv_file:"/home/duan/mutualEx.smv"
+  |> printf "%b\n"
+with _ -> ();;
+
 let open Paramecium in
-let form =
+let form1 =
   let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
-  let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "EE")) in
+  let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in
   andList [f1; f2]
 in
-ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
-|> Smt.is_tautology ~quiet:false
-|> printf "%b\n";;
-
+let form2 =
+  let f1 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in
+  let f2 = eqn (var (arr "n" [paramfix "node" (intc 3)])) (const (strc "C")) in
+  andList [f1; f2]
+in
+printf "\nThe two formulae:\n%s\n%s\nare %ssymmetric\n" (ToStr.Smv.form_act form1) 
+  (ToStr.Smv.form_act form2) (if Formula.form_are_symmetric form1 form2 then "" else "not ");;

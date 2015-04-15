@@ -172,11 +172,11 @@ module Smv = struct
     | Neg(form) -> sprintf "(!%s)" (form_act form)
     | AndList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"TRUE" ~f:(fun res x -> sprintf "(%s & %s)" res x)
+      |> List.fold ~init:"TRUE" ~f:(fun res x -> sprintf "%s & %s" res x)
       |> sprintf "(%s)"
     | OrList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"FALSE" ~f:(fun res x -> sprintf "(%s | %s)" res x)
+      |> List.fold ~init:"FALSE" ~f:(fun res x -> sprintf "%s | %s" res x)
       |> sprintf "(%s)"
     | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
 
