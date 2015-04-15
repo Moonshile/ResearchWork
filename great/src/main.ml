@@ -1,7 +1,7 @@
 
 
 open Core.Std
-open Loach
+open Paramecium
 
 (* Common parameter definitions and references *)
 let defi = paramdef "i" "node"
@@ -27,16 +27,17 @@ let types = [
 
 (* Variables *)
 let vardefs = [
-  singledef "x" "bool";
+  arrdef "x" [] "bool";
   arrdef "n" [defi] "state";
 ]
 
 (* Initialization *)
 let init =
-  let a1 = assign (single "x") _True in
-  let an = assign (arr "n" [paramindex "node" (indexref "i")]) _I in
-  let a2 = AbsStatement(an, [indexdef "i" "node"]) in
-  parallel [a1; a2;]
+  let a1 = assign (arr "x" []) _True in
+  let a21 = assign (arr "n" [paramfix "node" (intc 1)]) _I in
+  let a22 = assign (arr "n" [paramfix "node" (intc 2)]) _I in
+  let a23 = assign (arr "n" [paramfix "node" (intc 3)]) _I in
+  parallel [a1; a21; a22; a23]
 
 let rules = [
 (
@@ -51,12 +52,12 @@ let name = "crit" in
 let params = [defi] in
 let formula =
   let f1 = eqn (var (arr "n" [i])) _T in
-  let f2 = eqn (var (single "x")) _True in
+  let f2 = eqn (var (arr "x" [])) _True in
   andList [f1; f2]
 in
 let statement =
   let s1 = assign (arr "n" [i]) _C in
-  let s2 = assign (single "x") _False in
+  let s2 = assign (arr "x" []) _False in
   parallel [s1; s2]
 in
 rule name params formula statement
@@ -73,7 +74,7 @@ let name = "idle" in
 let params = [defi] in
 let formula = eqn (var (arr "n" [i])) _E in
 let statement =
-  let s1 = assign (single "x") _True in
+  let s1 = assign (arr "x" []) _True in
   let s2 = assign (arr "n" [i]) _I in
   parallel [s1; s2]
 in
@@ -94,7 +95,7 @@ prop name params formula
 );
 ]
 
-let protocol = Trans.act ~loach:{
+let protocol = {
   types;
   vardefs;
   init;
@@ -102,7 +103,6 @@ let protocol = Trans.act ~loach:{
   properties;
 };;
 
-let open Paramecium in
 let form =
   let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
   let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in
@@ -112,7 +112,6 @@ ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
 |> Smt.is_tautology ~quiet:false
 |> printf "%b\n";;
 
-let open Paramecium in
 let form =
   let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
   let f2 = neg (eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C"))) in
@@ -123,7 +122,6 @@ ToStr.Smt2.act ~types:protocol.types ~vardefs:protocol.vardefs form
 |> printf "%b\n";;
 
 try
-  let open Paramecium in
   let form =
     let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
     let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "EE")) in
@@ -135,7 +133,6 @@ try
 with _ -> ();;
 
 try
-  let open Paramecium in
   let form =
     let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
     let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in
@@ -146,7 +143,6 @@ try
   |> printf "%b\n"
 with _ -> ();;
 
-let open Paramecium in
 let form1 =
   let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "C")) in
   let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "C")) in

@@ -80,16 +80,15 @@ module Smt2 = struct
     end
 
   (* Translate an exp to smt2 exp *)
-  let rec exp_act exp =
+  let exp_act exp =
     match exp with
     | Const(c) -> const_act c
     | Var(v) -> var_act v
-    | Cond(form, e1, e2) ->
-      sprintf "(ite %s %s %s)" (form_act form) (exp_act e1) (exp_act e2)
     | Param(Paramfix(_, c)) -> const_act c
     | Param(Paramref _) -> raise Unexhausted_inst
+
   (* Translate formula to smt2 string *)
-  and form_act form =
+  let rec form_act form =
     match form with
     | Chaos -> "true"
     | Miracle -> "false"
@@ -151,20 +150,19 @@ module Smv = struct
     end
 
   (* Translate an exp to smv exp *)
-  let rec exp_act exp =
+  let exp_act exp =
     match exp with
     | Const(c) -> const_act c
     | Var(v) -> var_act v
-    | Cond(form, e1, e2) ->
-      sprintf "(case %s: %s; TRUE: %s; esac)" (form_act form) (exp_act e1) (exp_act e2)
     | Param(Paramfix(_, c)) -> const_act c
     | Param(Paramref _) -> raise Unexhausted_inst
+
   (** Translate formula to smv string
 
       @param form the formula to be translated
       @return the smv string
   *)
-  and form_act form =
+  let rec form_act form =
     match form with
     | Chaos -> "TRUE"
     | Miracle -> "FALSE"

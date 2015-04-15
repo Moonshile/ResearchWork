@@ -45,22 +45,18 @@ let var_act v param_info =
   (arr name prs', param_info')
 
 (** Convert exp *)
-let rec exp_act e param_info =
+let exp_act e param_info =
   match e with
   | Const(_) -> (e, param_info)
   | Var(v) ->
     let (v', param_info') = var_act v param_info in
     (var v', param_info')
-  | Cond(f, e1, e2) ->
-    let (f', param_info1) = form_act f param_info in
-    let (e1', param_info2) = exp_act e1 param_info1 in
-    let (e2', param_info3) = exp_act e2 param_info2 in
-    (cond f' e1' e2', param_info3)
   | Param(pr) ->
     let (pr', param_info') = paramref_act pr param_info in
     (param pr', param_info')
+
 (** Convert formula *)
-and form_act f param_info =
+let rec form_act f param_info =
   match f with
   | Chaos
   | Miracle -> (f, param_info)

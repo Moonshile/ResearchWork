@@ -14,6 +14,9 @@ open Core.Std
 (** Raised when parallel statements haven't been cast to assign list *)
 exception Unexhausted_flat_parallel
 
+(** Raised when circular parallel assignments detected *)
+exception Circular_parallel_assign
+
 (** Concrete rule
 
     + ConcreteRule: rule, concrete param list
@@ -41,7 +44,7 @@ let concrete_prop property ps = ConcreteProp(property, ps)
 type relation =
   | InvHoldForRule1
   | InvHoldForRule2
-  | InvHoldForRule3 of formula
+  | InvHoldForRule3 of concrete_prop
 
 let invHoldForRule1 = InvHoldForRule1
 let invHoldForRule2 = InvHoldForRule2
@@ -98,71 +101,47 @@ let strengthen ~form evaled_exp =
 (* Evaluate exp with assignments
     Result has format (condition, value)
 *)
-let rec expEval exp ~assigns =
-  match exp with
-  | Const(_) -> [(chaos, exp)]
-  | Var(v) ->
-    let value = List.Assoc.find_exn assigns v in
-    (match value with
-    | Cond(f, e1, e2) -> [(f, e1); (neg f, e2)]
-    | Const(_)
-    | Var(_) -> [(chaos, value)]
-    | Param(Paramfix(_, c)) -> [(chaos, const c)]
-    | Param(Paramref _) -> raise Unexhausted_inst)
-  | Cond(form, e1, e2) ->
-    let evaled_e1 = expEval e1 ~assigns in
-    let evaled_e2 = expEval e2 ~assigns in
-    let evaled_form = formEval form ~assigns in
-    (* strengthen value condition with the True components in evaled_form *)
-    let evaled_T =
-      List.filter evaled_form ~f:(fun (_, f'') -> f'' = Chaos)
-      |> List.map ~f:(fun (form, _) -> strengthen ~form evaled_e1)
-      |> List.concat
-    in
-    (* strengthen value condition with the False components in evaled_form *)
-    let evaled_F = 
-      List.filter evaled_form ~f:(fun (_, f'') -> f'' = Miracle)
-      |> List.map ~f:(fun (form, _) -> strengthen ~form evaled_e2)
-      |> List.concat
-    in
-    evaled_T@evaled_F
-  | Param(Paramfix(_, c)) -> [(chaos, const c)]
-  | Param(Paramref _) -> raise Unexhausted_inst
+let expEval exp ~assigns =
+  let rec wrapper exp assigns accessed =
+    match exp with
+    | Const(_) -> exp
+    | Param(Paramfix(_, c)) -> Const c
+    | Param(Paramref _) -> raise Unexhausted_inst
+    | Var(v) ->
+      let accessed' = exp::accessed in
+      let value = List.Assoc.find assigns v in (
+        match value with
+        | None -> var v
+        | Some(Var v') ->
+          if List.exists accessed' ~f:(fun x -> x = var v') then
+            (* TODO in fact, this is circular parallel assignment
+                which is illegal
+            *)
+            var v'
+            (* raise Circular_parallel_assign *)
+          else begin
+            wrapper (var v') assigns accessed'
+          end
+        | Some(e) -> wrapper e assigns accessed'
+      )
+  in
+  wrapper exp assigns []
+
 (* Evaluate formula with assignments
     Result has format (condition, form)
 *)
-and formEval form ~assigns =
-  let handle_tuples ~f tuples =
-    match tuples with
-    | [(f1, g1); (f2, g2)] -> (andList [f1; f2], f g1 g2)
-    | _ -> raise Empty_exception
-  in
+let rec formEval form ~assigns =
   match form with
-  | Eqn(e1, e2) ->
-    cartesian_product [expEval e1 ~assigns; expEval e2 ~assigns]
-    |> List.map ~f:(handle_tuples ~f:eqn)
-  | Neg(f) ->
-    formEval f ~assigns
-    |> List.map ~f:(fun (g, f') -> (g, neg f'))
-  | AndList([]) -> [(chaos, andList [])]
-  | AndList(f::glist) ->
-    cartesian_product [formEval f ~assigns; formEval (andList glist) ~assigns]
-    |> List.map ~f:(handle_tuples ~f:(fun g1 g2 -> andList [g1; g2]))
-  | OrList([]) -> [(chaos, orList [])]
-  | OrList(f::glist) ->
-    cartesian_product [formEval f ~assigns; formEval (orList glist) ~assigns]
-    |> List.map ~f:(handle_tuples ~f:(fun g1 g2 -> orList [g1; g2]))
-  | Imply(ant, cons) ->
-    cartesian_product [formEval ant ~assigns; formEval cons ~assigns]
-    |> List.map ~f:(handle_tuples ~f:imply)
-  | Chaos -> [(chaos, chaos)]
-  | Miracle -> [(chaos, miracle)]
+  | Chaos
+  | Miracle -> form
+  | Eqn(e1, e2) -> eqn (expEval e1 ~assigns) (expEval e2 ~assigns)
+  | Neg(f) -> neg (formEval f ~assigns)
+  | AndList(fl) -> andList (List.map fl ~f:(formEval ~assigns))
+  | OrList(fl) -> orList (List.map fl ~f:(formEval ~assigns))
+  | Imply(ant, cons) -> imply (formEval ant ~assigns) (formEval cons ~assigns)
 
 (* preCond *)
-let preCond f statements =
-  formEval f ~assigns:(statement_2_assigns statements)
-  |> List.dedup
-
+let preCond f statements = formEval f ~assigns:(statement_2_assigns statements)
 
 
 (********************************** Module Choose **************************************)
@@ -270,7 +249,7 @@ module Choose = struct
       let inv_vars = VarNames.of_form inv in
       let old_vars = VarNames.of_form old in
       let ConcreteProp(Prop(_, old_pd, old_gened), old_p) = form_2_concreate_prop old in
-      let ConcreteProp(Prop(_, inv_pd, inv_gened), inv_p) = form_2_concreate_prop inv in
+      let ConcreteProp(Prop(_, _, _), inv_p) = form_2_concreate_prop inv in
       (* If vars in old are more than vars in inv, then can't imply *)
       (* TODO is there some problems in this strategy? *)
       if String.Set.length (String.Set.diff old_vars inv_vars) > 0 then
@@ -301,7 +280,7 @@ module Choose = struct
       implied inv
     else if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
       new_inv inv
-    else 
+    else begin
       not_inv inv
     end
 
@@ -311,7 +290,7 @@ module Choose = struct
     | Assign(v, e) -> eqn (var v) e
     | Parallel(_) -> raise Unexhausted_flat_parallel
 
-  let rec choose_0_dimen_var invs guards assigns cons =
+  (*let rec choose_0_dimen_var invs guards assigns cons =
     let assigns_on_0_dimen =
       List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.length paramrefs = 0)
     in
@@ -323,8 +302,7 @@ module Choose = struct
         |> List.map ~f:assign_to_form
         |> List.map ~f:neg
       end
-    in
-
+    in*)
 
 
 end
@@ -345,44 +323,31 @@ let deal_with_case_2 crule cinv (invs, relations) =
   }::relations)
 
 (* Deal with case invHoldForRule3 *)
-let deal_with_case_3 crule cinv remainder (invs, relations) =
+let deal_with_case_3 crule cinv obligation (invs, relations) =
   let inv' = invs in (* TODO *)
   (inv', { rule = crule;
     inv = cinv;
-    relation = invHoldForRule3 inv';
+    relation = invHoldForRule3 (form_2_concreate_prop inv');
   }::relations)
 
 
 
 let tabular_expans crule cinv (invs, relations) ~types ~vardefs =
-  let ConcreteRule(r, param) =  crule in
-  let Rule(name, _, form, statement) = apply_rule r ~param in
-  let ConcreteProp(p, param) = cinv in
-  let Prop(_, _, inv_inst) = apply_prop p ~param in
+  let ConcreteRule(r, p) =  crule in
+  let Rule(_, _, form, statement) = apply_rule r ~p in
+  let ConcreteProp(property, p) = cinv in
+  let Prop(_, _, inv_inst) = apply_prop property ~p in
   (* preCond *)
-  let obligations = preCond form statement in
+  let obligation = preCond inv_inst statement in
   (* case 2 *)
-  let (id_obligations, remainder) =
-    List.partition_tf obligations ~f:(fun (_, inv') -> inv_inst = inv')
-  in
-  let (invs, relations) = deal_with_case_2 crule cinv (invs, relations) in
-  if remainder = [] then
-    (invs, relations)
+  if obligation = inv_inst then
+    deal_with_case_2 crule cinv (invs, relations)
+  (* case 1 *)
+  else if is_tautology (ToStr.Smt2.act ~types ~vardefs (neg (imply form obligation))) then
+    deal_with_case_1 crule cinv (invs, relations)
+  (* case 3 *)
   else begin
-    (* case 1 *)
-    let (taut_obligations, remainder) =
-      let new_form (g, inv') = 
-        neg (andList [form; g; inv'])
-        |> ToStr.Smt2.act ~types ~vardefs
-      in
-      List.partition_tf remainder ~f:(fun ob -> is_tautology (new_form ob))
-    in
-    let (invs, relations) = deal_with_case_1 crule cinv (invs, relations) in
-    if remainder = [] then
-      (invs, relations)
-    else
-      (* case 3 *)
-      deal_with_case_3 crule cinv remainder (invs, relations)
+    deal_with_case_3 crule cinv obligation (invs, relations)
   end
 
 (** Find invs and causal relations of a protocol
