@@ -56,6 +56,12 @@ let rec combination list n =
         first_set@(combination list' n)
     end
 
+(** Combination firstly and permutation for each element of the combination *)
+let combination_permutation list n =
+  combination list n
+  |> List.map ~f:permutation
+  |> List.concat
+
 (** Generate Cartesian Production of a set of lists
     For example, given [[1;2]; [1;3]] produces [[1;1]; [1;3]; [2;1]; [2;3]]
 
