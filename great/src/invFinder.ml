@@ -72,10 +72,16 @@ let concrete_prop_2_form cprop =
   let Prop(_, _, form) = apply_prop property ~p in
   form
 
-let new_inv_name_base = "inv__"
-
-(* Generate names for new invariants found *)
-let next_inv_name new_invs = sprintf "%s%d" new_inv_name_base (List.length new_invs)
+(* Convert formula to concrete property *)
+let form_2_concreate_prop ?(new_invs=[]) form =
+  let new_inv_name_base = "inv__" in
+  (* Generate names for new invariants found *)
+  let next_inv_name new_invs = sprintf "%s%d" new_inv_name_base (List.length new_invs) in
+  let (form', Generalize.Paraminfo(paramdefs, params)) =
+    Generalize.form_act form (Generalize.paraminfo [] [])
+  in
+  let property = prop (next_inv_name new_invs) paramdefs form' in
+  concrete_prop property params
 
 (* Convert statements to a list of assignments *)
 let rec statement_2_assigns statement =
@@ -157,14 +163,6 @@ let preCond f statements =
   formEval f ~assigns:(statement_2_assigns statements)
   |> List.dedup
 
-(* Convert formula to concrete property *)
-let form_2_concreate_prop form new_invs =
-  let (form', Generalize.Paraminfo(paramdefs, params)) =
-    Generalize.form_act form (Generalize.paraminfo [] [])
-  in
-  let property = prop (next_inv_name new_invs) paramdefs form' in
-  concrete_prop property params
-
 
 
 (********************************** Module Choose **************************************)
@@ -185,7 +183,27 @@ module Choose = struct
 
   (* Check if the new inv could be implied by old ones *)
   let inv_implied_by_old ~types ~vardefs inv invs =
-    
+    let wrapper inv old =
+      let inv_vars = VarNames.of_form inv in
+      let old_vars = VarNames.of_form old in
+      let ConcreteProp(Prop(_, old_pd, old_gened), old_p) = form_2_concreate_prop old in
+      let ConcreteProp(Prop(_, inv_pd, inv_gened), inv_p) = form_2_concreate_prop inv in
+      (* If vars in old are more than vars in inv, then can't imply *)
+      (* TODO is there some problems in this strategy? *)
+      if String.Set.length (String.Set.diff old_vars inv_vars) > 0 then
+        false
+      (* If length of parameters in old is 0, then check directly *)
+      else if List.length old_pd = 0 then
+        is_tautology (neg (imply old inv))
+      (* If old has more paramters, then false *)
+      (* TODO problem: what if the invariants have 2 types of paramters or more? *)
+      else if List.length old_p > List.length inv_p then
+        false
+      (* Otherwise, check old with parameters of inv *)
+      else begin
+
+      end
+
 
   (* Check the level of an optional invariant *)
   let check_level ~types ~vardefs inv smv_file invs =

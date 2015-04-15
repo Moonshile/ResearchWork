@@ -4,6 +4,8 @@
     @author Kaiqiang Duan <duankq@ios.ac.cn>
 *)
 
+open Core.Std
+
 (*------------------------------ Types ---------------------------------*)
 
 (** Constants *)
@@ -180,3 +182,18 @@ val apply_rule : rule -> p:(string * paramref) list -> rule
 (** Apply property with param *)
 val apply_prop : prop -> p:(string * paramref) list -> prop
 
+(*********************************** Module Variable Names **************************************)
+
+(** Get variable names in the components *)
+module VarNames : sig
+
+  (** Names of var *)
+  val of_var : var -> String.Set.t
+
+  (** Names of exp *)
+  val of_exp : exp -> String.Set.t
+
+  (** Names of formula *)
+  val of_form : formula -> String.Set.t
+
+end

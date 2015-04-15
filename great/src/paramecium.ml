@@ -260,7 +260,30 @@ let apply_prop property ~p =
 
 (** Get variable names in the components *)
 module VarNames = struct
-
   
+  open String.Set
+
+  (** Names of var *)
+  let of_var v =
+    let Arr(name, _) = v in
+    of_list [name]
+
+  (** Names of exp *)
+  let rec of_exp e =
+    match e with
+    | Const(_)
+    | Param(_) -> of_list []
+    | Var(v) -> of_var v
+    | Cond(f, e1, e2) -> union_list [of_form f; of_exp e1; of_exp e2]
+  (** Names of formula *)
+  and of_form f =
+    match f with
+    | Chaos
+    | Miracle -> of_list []
+    | Eqn(e1, e2) -> union_list [of_exp e1; of_exp e2]
+    | Neg(form) -> of_form form
+    | AndList(fl)
+    | OrList(fl) -> union_list (List.map fl ~f:of_form)
+    | Imply(f1, f2) -> union_list [of_form f1; of_form f2]
 
 end

@@ -100,11 +100,11 @@ let reduce list ~default ~f =
   | Some(x) -> x
   | None -> default
 
-(** Partition a list to a set of lists, with function f
+(** Partition a list to a set of labeled lists, with function f
     e.g., for list [1;2;3;4;5;6] and function (fun x -> x mod 3),
-    generate list [[1;4]; [2;5]; [3;6]]
+    generate list [(1, [1;4]); (2, [2;5]); (0, [3;6])]
 *)
-let partition list ~f =
+let partition_with_label list ~f =
   let rec wrapper list assoc =
     match list with
     | [] -> assoc
@@ -117,7 +117,14 @@ let partition list ~f =
           wrapper list' (List.Assoc.add assoc' value (ele::v))
       )
   in
-  let assoc = wrapper list [] in
+  wrapper list []
+
+(** Partition a list to a set of lists, with function f
+    e.g., for list [1;2;3;4;5;6] and function (fun x -> x mod 3),
+    generate list [[1;4]; [2;5]; [3;6]]
+*)
+let partition list ~f =
+  let assoc = partition_with_label list ~f in
   List.map assoc ~f:(fun (_, v) -> v)
 
 (** Denotes there are errors while execute a program *)
