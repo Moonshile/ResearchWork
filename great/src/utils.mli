@@ -51,7 +51,7 @@ val reduce: 'a list -> default:'a -> f:('a -> 'a -> 'a) -> 'a
     e.g., for list [1;2;3;4;5;6] and function (fun x -> x mod 3),
     generate list [(1, [1;4]); (2, [2;5]); (0, [3;6])]
 *)
-val partition_with_label : 'a list -> f:('a -> 'b) -> 'a list list
+val partition_with_label : 'a list -> f:('a -> 'b) -> ('b * 'a list) list
 
 (** Partition a list to a set of lists, with function f
     e.g., for list [1;2;3;4;5;6] and function (fun x -> x mod 3),

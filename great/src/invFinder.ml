@@ -240,6 +240,7 @@ module Choose = struct
         |params2[k]| <= |params1[k| for 0 <= k < n
 
       This algorithm returns the compatible params combination of inv1 for inv2
+      if are compatible, else return []
   *)
   let param_compatible inv_param1 inv_param2 =
     (* Firstly, partition the parameters by their type *)
@@ -278,12 +279,11 @@ module Choose = struct
       else if List.length old_pd = 0 then
         is_tautology (neg (imply old inv))
       (* If old has more paramters, then false *)
-      (* TODO problem: what if the invariants have 2 types of paramters or more? *)
-      else if List.length old_p > List.length inv_p then
+      else if param_compatible inv_p old_p = [] then
         false
       (* Otherwise, check old with parameters of inv *)
       else begin
-
+        let params = param_compatible inv_p old_p in
       end
 
 
