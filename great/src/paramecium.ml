@@ -255,3 +255,12 @@ let apply_prop property ~p =
     prop name [] (apply_form f ~p)
   else
     raise Unmatched_parameters
+
+(*********************************** Module Variable Names **************************************)
+
+(** Get variable names in the components *)
+module VarNames = struct
+
+  
+
+end

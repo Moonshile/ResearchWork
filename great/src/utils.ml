@@ -94,6 +94,12 @@ let any list ~f =
   |> List.map ~f
   |> List.fold ~f:(fun res x -> res || x) ~init:false
 
+(** Reduce a list, if the list is empty, a default value is returned *)
+let reduce list ~default ~f =
+  match List.reduce list ~f with
+  | Some(x) -> x
+  | None -> default
+
 (** Denotes there are errors while execute a program *)
 exception Exec_error
 

@@ -97,10 +97,10 @@ module Smt2 = struct
     | Neg(form) -> sprintf "(not %s)" (form_act form)
     | AndList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"true" ~f:(fun res x -> sprintf "(and %s %s)" res x)
+      |> reduce ~default:"true" ~f:(fun res x -> sprintf "(and %s %s)" res x)
     | OrList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"false" ~f:(fun res x -> sprintf "(or %s %s)" res x)
+      |> reduce ~default:"false" ~f:(fun res x -> sprintf "(or %s %s)" res x)
     | Imply(f1, f2) -> sprintf "(=> %s %s)" (form_act f1) (form_act f2)
 
   (** Translate to smt2 string
@@ -172,11 +172,11 @@ module Smv = struct
     | Neg(form) -> sprintf "(!%s)" (form_act form)
     | AndList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"TRUE" ~f:(fun res x -> sprintf "%s & %s" res x)
+      |> reduce ~default:"TRUE" ~f:(fun res x -> sprintf "%s & %s" res x)
       |> sprintf "(%s)"
     | OrList(fl) ->
       List.map fl ~f:form_act
-      |> List.fold ~init:"FALSE" ~f:(fun res x -> sprintf "%s | %s" res x)
+      |> reduce ~default:"FALSE" ~f:(fun res x -> sprintf "%s | %s" res x)
       |> sprintf "(%s)"
     | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
 

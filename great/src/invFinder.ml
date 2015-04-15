@@ -185,7 +185,7 @@ module Choose = struct
 
   (* Check if the new inv could be implied by old ones *)
   let inv_implied_by_old ~types ~vardefs inv invs =
-  
+    
 
   (* Check the level of an optional invariant *)
   let check_level ~types ~vardefs inv smv_file invs =
