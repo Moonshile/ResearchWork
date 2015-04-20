@@ -5,7 +5,7 @@
 *)
 
 open Paramecium
-
+open Smt
 open Core.Std
 
 (** Judge if a formula is tautology
@@ -17,7 +17,7 @@ open Core.Std
     @param vardefs variable definitions
 *)
 let is_tautology ?(filename="inv.smt2") ?(quiet=true) ~types ~vardefs form =
-  not (Smt.is_satisfiable ~filename ~quiet (ToStr.Smt2.act ~types ~vardefs (neg form)))
+  not (is_satisfiable ~filename ~quiet (ToStr.Smt2.act ~types ~vardefs (neg form)))
 
 (** For andList, flat its all components,
     for others, flat to a single list

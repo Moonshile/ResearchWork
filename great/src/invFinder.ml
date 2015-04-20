@@ -103,30 +103,16 @@ let strengthen ~form evaled_exp =
     Result has format (condition, value)
 *)
 let expEval exp ~assigns =
-  let rec wrapper exp assigns accessed =
-    match exp with
-    | Const(_) -> exp
-    | Param(Paramfix(_, c)) -> Const c
-    | Param(Paramref _) -> raise Unexhausted_inst
-    | Var(v) ->
-      let accessed' = exp::accessed in
-      let value = List.Assoc.find assigns v in (
-        match value with
-        | None -> var v
-        | Some(Var v') ->
-          if List.exists accessed' ~f:(fun x -> x = var v') then
-            (* TODO in fact, this is circular parallel assignment
-                which is illegal
-            *)
-            var v'
-            (* raise Circular_parallel_assign *)
-          else begin
-            wrapper (var v') assigns accessed'
-          end
-        | Some(e) -> wrapper e assigns accessed'
-      )
-  in
-  wrapper exp assigns []
+  match exp with
+  | Const(_) -> exp
+  | Param(Paramfix(_, c)) -> Const c
+  | Param(Paramref _) -> raise Unexhausted_inst
+  | Var(v) ->
+    let value = List.Assoc.find assigns v in (
+      match value with
+      | None -> var v
+      | Some(e) -> e
+    )
 
 (* Evaluate formula with assignments
     Result has format (condition, form)
@@ -184,24 +170,26 @@ module Choose = struct
   (*  If partition1 is the compatible subset of one with partition2
       Generate the compatible parameters
   *)
-  let compatible_params partition1 partition2 =
+  let compatible_params 
+  (partition1:(string * (string * paramref) list) list) 
+  (partition2:(string * (string * paramref) list) list) =
     (* parameter names of eache type in partition2 *)
     let params_names_part2 = List.map partition2 ~f:(fun (_, x) -> get_names_of_params x) in
     (* parameter count of each type in partition2 *)
     let params_c_part2 = List.map partition2 ~f:(fun (_, x) -> List.length x) in
     (* get values of parameters of shortened partition1 *)
     let params_val_shorten_part1 = List.map partition1 ~f:(fun (_, x) -> x) in
-    let rename_all list names = List.map list ~f:(set_names_of_params ~names) in
+    let rename_all names list = List.map list ~f:(set_names_of_params ~names) in
     (*  choose |params2[k]| params in the values of shortened partition1
         result is like [[[a;b];[b;c];[a;c]]; [[1;2];[1;3];[2;3]]]
     *)
-    let choosed_comb = List.map2_exn params_val_shorten_part1 params_c_part2 ~f:combination in
-    (* rename to names of partition2 *)
-    List.map2_exn choosed_comb params_names_part2 ~f:rename_all
+    List.map2_exn params_val_shorten_part1 params_c_part2 ~f:combination
     (*  permutation,  result is like
         [[[a;b];[b;a];[b;c];[c;b];[a;c];[c;a]]; [[1;2];[2;1];...]]
     *)
     |> List.map ~f:(fun x -> List.map x ~f:(fun y -> List.concat (permutation y)))
+    (* rename to names of partition2 *)
+    |> List.map2_exn params_names_part2 ~f:rename_all
     (* result is like [[[a;b];[1;2]]; [[a;b];[2;1]]; ...] *)
     |> cartesian_product
     (* result is like [[a;b;1;2]; [a;b;2;1]; ...] *)
@@ -217,12 +205,14 @@ module Choose = struct
       1. types2 is subset of types1 (so n <= m), and
       2. suppose the parameter types in inv1 have parameter sets params1[i] for
         0 <= i < m, and for inv2 have paramter sets params2[j] for 0 <= j < n, then
-        |params2[k]| <= |params1[k| for 0 <= k < n
+        |params2[k]| <= |params1[k]| for 0 <= k < n
 
       This algorithm returns the compatible params combination of inv1 for inv2
       if are compatible, else return []
   *)
-  let param_compatible inv_param1 inv_param2 =
+  let param_compatible 
+  (inv_param1:(string * paramref) list) 
+  (inv_param2:(string * paramref) list) =
     (* Firstly, partition the parameters by their type *)
     let partition1 = sorted_partition inv_param1 in
     let partition2 = sorted_partition inv_param2 in
@@ -264,7 +254,7 @@ module Choose = struct
       (* Otherwise, check old with parameters of inv *)
       else begin
         let params = param_compatible inv_p old_p in
-        any params ~f:(fun p -> is_tautology (apply_form old_gened p) ~types ~vardefs)
+        any params ~f:(fun p -> is_tautology (imply (apply_form old_gened p) inv) ~types ~vardefs)
       end
     in
     any invs ~f:(fun old -> wrapper inv old)
@@ -282,25 +272,50 @@ module Choose = struct
       not_inv inv
     end
 
+  (* choose one pre in pres such that (imply pre cons) is an new inv *)
+  let choose_one ~types ~vardefs pres cons smv_file invs =
+    let rec wrapper pres exist_invs =
+      match pres with
+      | [] -> (None, exist_invs)
+      | pre::pres' ->
+        let level = check_level ~types ~vardefs (imply pre cons) smv_file invs in (
+          match level with
+          | Implied(inv) -> (Some inv, exist_invs)
+          | Tautology(_)
+          | Implied(_) -> wrapper pres' (level::exist_invs)
+          | Not_inv(_) -> wrapper pres' exist_invs
+        )
+    in
+    wrapper pres []
+
   (* Assign to formula *)
   let assign_to_form statement =
     match statement with
     | Assign(v, e) -> eqn (var v) e
     | Parallel(_) -> raise Unexhausted_flat_parallel
 
-  (*let rec choose_0_dimen_var invs guards assigns cons =
-    let assigns_on_0_dimen =
-      List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.length paramrefs = 0)
-    in
+  (* Assignments on 0 dimension variables *)
+  let assigns_on_0_dimen assigns =
+    List.filter assigns ~f:(fun assign -> 
+      match assign with
+      | Assign(Arr(_, paramrefs), _) -> List.length paramrefs = 0
+      | Parallel(_) -> raise Unexhausted_flat_parallel
+    )
+  
+  (* choose new inv about 0 dimension variables *)
+  let choose_with_0_dimen_var ~types ~vardefs guard assigns cons smv_file invs =
+    let dimen_0 = assigns_on_0_dimen assigns in
     let ants_0_dimen = 
-      if assigns_on_0_dimen = [] then
+      if dimen_0 = [] then
         []
       else begin
-        assigns_on_0_dimen
+        dimen_0
         |> List.map ~f:assign_to_form
         |> List.map ~f:neg
       end
-    in*)
+    in
+    choose_one ~types ~vardefs (guard::ants_0_dimen) cons smv_file invs
+
 
 
 end
