@@ -340,7 +340,26 @@ module Choose = struct
 
   (* get new inv by removing a component in the pres *)
   let remove_one ~types ~vardefs guards cons smv_file invs =
-    
+    let rec wrapper guards necessary =
+      match guards with
+      | [] -> (
+          let op_inv = (imply (andList necessary) cons) in
+          match check_level ~types ~vardefs op_inv smv_file invs with
+          | New_inv(inv) -> Some inv
+          | Tautology(_)
+          | Implied(_)
+          | Not_inv(_) -> None
+        )
+      | g::guards' -> (
+          let op_inv = (imply (andList (guards'@necessary)) cons) in
+          match check_level ~types ~vardefs op_inv smv_file invs with
+          | New_inv(_) -> wrapper guards' necessary
+          | Tautology(_)
+          | Implied(_)
+          | Not_inv(_) -> wrapper guards' (g::necessary)
+        )
+    in
+    wrapper guards []
 
   (* choose new inv *)
   let choose ~types ~vardefs guards assigns cons smv_file invs =
@@ -373,7 +392,7 @@ module Choose = struct
         if not (choosed_by_policy_2 = None) then
           choosed_by_policy_2
         else begin
-          None
+          remove_one ~types ~vardefs guards cons smv_file invs
         end
       end
     end
