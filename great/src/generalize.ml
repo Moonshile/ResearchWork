@@ -23,7 +23,7 @@ let paramref_act pr param_info =
   let Paraminfo(paramdefs, params) = param_info in
   match pr with
   | Paramref(_) -> raise Unexhausted_inst
-  | Paramfix(tname, c) ->
+  | Paramfix(tname, _) ->
     let name = next_name paramdefs in
     let new_def = paramdef name tname in
     let new_param = (name, pr) in

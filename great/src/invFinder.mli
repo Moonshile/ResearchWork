@@ -57,4 +57,5 @@ type t = {
     @param protocol the protocol
     @return causal relation table
 *)
-(*val find : protocol:protocol -> t list*)
+val find : protocol:protocol -> (string * paramref) list list list ->
+  (string * (formula list * t list) list) list

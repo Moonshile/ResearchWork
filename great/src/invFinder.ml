@@ -59,10 +59,8 @@ type t = {
 }
 
 (* Convert rule to concrete rules *)
-let rule_2_concrete r ~types =
-  let Rule(_, paramdefs, _, _) = r in
-  cart_product_with_paramfix paramdefs types
-  |> List.map ~f:(fun params -> concrete_rule r params)
+let rule_2_concrete r ps =
+  List.map ps ~f:(fun params -> concrete_rule r params)
 
 (* Convert concrete rule to rule instances *)
 let concrete_rule_2_rule_inst cr =
@@ -70,10 +68,8 @@ let concrete_rule_2_rule_inst cr =
   apply_rule r ~p
 
 (* Convert property to concrete property *)
-let prop_2_concrete property ~types =
-  let Prop(_, paramdefs, _) = property in
-  cart_product_with_paramfix paramdefs types
-  |> List.map ~f:(fun params -> concrete_prop property params)
+let prop_2_concrete property ps =
+  List.map ps ~f:(fun params -> concrete_prop property params)
 
 (* Convert concrete property to formula *)
 let concrete_prop_2_form cprop =
@@ -420,10 +416,10 @@ let deal_with_case_3 crule cinv cons (invs, relations) smv_file ~types ~vardefs 
   let level = Choose.choose ~types ~vardefs guards assigns cons smv_file invs in
   let (new_invs, inv') =
     match level with
-    | Tautology(_) -> (invs, chaos)
-    | Implied(_, old) -> (invs, old)
-    | New_inv(inv) -> (inv::invs, inv) (* refine inv: discard TRUE components *)
-    | Not_inv -> raise Empty_exception
+    | Choose.Tautology(_) -> (invs, chaos)
+    | Choose.Implied(_, old) -> (invs, old)
+    | Choose.New_inv(inv) -> (inv::invs, inv) (* refine inv: discard TRUE components *)
+    | Choose.Not_inv -> raise Empty_exception
   in
   (new_invs, { rule = crule;
     inv = cinv;
@@ -447,6 +443,11 @@ let tabular_expans crule cinv (invs, relations) smv_file ~types ~vardefs =
     deal_with_case_3 crule cinv (neg obligation) (invs, relations) smv_file ~types ~vardefs
   end
 
+(* Rule instant policy *)
+let rule_inst_policy r ~cinv ~types =
+  let Rule(_, paramdefs, _, _) = r in
+  let ps = cart_product_with_paramfix paramdefs types in
+  rule_2_concrete r ps
 
 
 (** Find invs and causal relations of a protocol
@@ -454,3 +455,24 @@ let tabular_expans crule cinv (invs, relations) smv_file ~types ~vardefs =
     @param protocol the protocol
     @return causal relation table
 *)
+let find ~protocol:{name; types; vardefs; init; rules; properties} prop_params =
+  let smv_file = sprintf "%s.smv" name in
+  let cs_invs = List.map2_exn properties prop_params ~f:(fun prop ps ->
+    let Prop(name, _, _) = prop in
+    (name, prop_2_concrete prop ps)
+  ) in
+  let find_by_cinv cinv =
+    let concrete_rules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types)) in
+    let rec find_by_rules rules new_invs relations =
+      match rules with
+      | [] -> (new_invs, relations)
+      | r::rules' -> 
+        let (new_invs', relations') = 
+          tabular_expans r cinv (new_invs, relations) smv_file ~types ~vardefs
+        in
+        find_by_rules rules' new_invs' relations'
+    in
+    find_by_rules concrete_rules [] []
+  in
+  List.map cs_invs ~f:(fun (n, cinvs) -> (n, List.map cinvs ~f:find_by_cinv))
+(* init is not used yet *)
