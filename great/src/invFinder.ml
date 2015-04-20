@@ -280,13 +280,14 @@ module Choose = struct
       | pre::pres' ->
         let level = check_level ~types ~vardefs (imply pre cons) smv_file invs in (
           match level with
-          | Implied(inv) -> (Some inv, exist_invs)
+          | New_inv(inv) -> (Some inv, exist_invs)
           | Tautology(_)
           | Implied(_) -> wrapper pres' (level::exist_invs)
           | Not_inv(_) -> wrapper pres' exist_invs
         )
     in
-    wrapper pres []
+    let (new_inv, exist_invs) = wrapper pres [] in
+    new_inv
 
   (* Assign to formula *)
   let assign_to_form statement =
@@ -303,7 +304,7 @@ module Choose = struct
     )
   
   (* choose new inv about 0 dimension variables *)
-  let choose_with_0_dimen_var ~types ~vardefs guard assigns cons smv_file invs =
+  let choose_with_0_dimen_var ~types ~vardefs guards assigns cons smv_file invs =
     let dimen_0 = assigns_on_0_dimen assigns in
     let ants_0_dimen = 
       if dimen_0 = [] then
@@ -314,10 +315,35 @@ module Choose = struct
         |> List.map ~f:neg
       end
     in
-    choose_one ~types ~vardefs (guard::ants_0_dimen) cons smv_file invs
+    choose_one ~types ~vardefs (guards@ants_0_dimen) cons smv_file invs
 
+  (* Formulae on 0 dimension variables *)
+  let form_on_0_dimen forms =
+    List.filter forms ~f:(fun f ->
+      let ConcreteProp(Prop(_, pd, _), _) = form_2_concreate_prop f in
+      List.is_empty pd
+    )
 
+  (* choose new inv with policy 1 *)
+  let choose_with_policy_1 ~types ~vardefs guards cons smv_file invs =
+    let ConcreteProp(Prop(_, guard_pd, _), _) = form_2_concreate_prop (andList guards) in
+    let ConcreteProp(Prop(_, cons_pd, _), _) = form_2_concreate_prop cons in
+    let guard_pd_names = String.Set.of_list (List.map guard_pd ~f:(fun (Paramdef(n, _)) -> n)) in
+    let cons_pd_names = String.Set.of_list (List.map cons_pd ~f:(fun (Paramdef(n, _)) -> n)) in
+    let inter_is_empty = String.Set.is_empty (String.Set.inter guard_pd_names cons_pd_names) in
+    if not inter_is_empty then
+      None
+    else begin
+      let inv_on_0_dimen = imply (andList (form_on_0_dimen guards)) cons in
+      let level = check_level ~types ~vardefs inv_on_0_dimen smv_file invs in
+      match level with
+      | New_inv(inv) -> Some inv
+      | Tautology(_)
+      | Implied(_)
+      | Not_inv(_) -> None
+    end
 
+  (* choose new inv with policy 2 *)
 end
 
 
