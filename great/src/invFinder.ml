@@ -64,6 +64,11 @@ let rule_2_concrete r ~types =
   cart_product_with_paramfix paramdefs types
   |> List.map ~f:(fun params -> concrete_rule r params)
 
+(* Convert concrete rule to rule instances *)
+let concrete_rule_2_rule_inst cr =
+  let ConcreteRule(r, p) = cr in
+  apply_rule r ~p
+
 (* Convert property to concrete property *)
 let prop_2_concrete property ~types =
   let Prop(_, paramdefs, _) = property in
@@ -92,11 +97,6 @@ let rec statement_2_assigns statement =
   match statement with
   | Parallel(sl) -> List.concat (List.map sl ~f:statement_2_assigns)
   | Assign(v, e) -> [(v, e)]
-
-(* Strengthen the guard of evaluated exps with formula f *)
-let strengthen ~form evaled_exp =
-  List.map evaled_exp ~f:(fun (h, e) -> (andList [form; h], e))
-
 
 
 (* Evaluate exp with assignments
@@ -138,12 +138,12 @@ module Choose = struct
 
   type level =
     | Tautology of formula
-    | Implied of formula
+    | Implied of formula * formula
     | New_inv of formula
     | Not_inv
 
   let tautology form = Tautology form
-  let implied form = Implied form
+  let implied form old = Implied(form, old)
   let new_inv form = New_inv form
   let not_inv = Not_inv
 
@@ -244,32 +244,50 @@ module Choose = struct
       (* If vars in old are more than vars in inv, then can't imply *)
       (* TODO is there some problems in this strategy? *)
       if String.Set.length (String.Set.diff old_vars inv_vars) > 0 then
-        false
+        None
       (* If length of parameters in old is 0, then check directly *)
       else if List.length old_pd = 0 then
-        is_tautology (imply old inv) ~types ~vardefs
+        if is_tautology (imply old inv) ~types ~vardefs then
+          Some old
+        else begin
+          None
+        end
       (* If old has more paramters, then false *)
       else if param_compatible inv_p old_p = [] then
-        false
+        None
       (* Otherwise, check old with parameters of inv *)
       else begin
         let params = param_compatible inv_p old_p in
-        any params ~f:(fun p -> is_tautology (imply (apply_form old_gened p) inv) ~types ~vardefs)
+        let forms = List.map params ~f:(fun p-> apply_form old_gened p) in
+        let tautologies = List.filter forms ~f:(fun form ->
+          is_tautology (imply form inv) ~types ~vardefs
+        ) in
+        match tautologies with
+        | [] -> None
+        | form::_ -> Some form
       end
     in
-    any invs ~f:(fun old -> wrapper inv old)
+    let implies = List.map invs ~f:(fun old -> wrapper inv old) in
+    let not_none = List.filter implies ~f:(fun i -> not (i = None)) in
+    match not_none with
+    | [] -> None
+    | form::_ -> form
 
 
   (* Check the level of an optional invariant *)
   let check_level ~types ~vardefs inv smv_file invs =
     if is_tautology inv ~types ~vardefs then
       tautology inv
-    else if inv_implied_by_old ~types ~vardefs inv invs then
-      implied inv
-    else if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
-      new_inv inv
     else begin
-      not_inv
+      let implied_by_old = inv_implied_by_old ~types ~vardefs inv invs in
+      match implied_by_old with
+      | Some(old) -> implied inv old
+      | None ->
+        if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
+          new_inv inv
+        else begin
+          not_inv
+        end
     end
 
   (* choose one pre in pres such that (imply pre cons) is an new inv *)
@@ -289,18 +307,11 @@ module Choose = struct
     wrapper pres
 
   (* Assign to formula *)
-  let assign_to_form statement =
-    match statement with
-    | Assign(v, e) -> eqn (var v) e
-    | Parallel(_) -> raise Unexhausted_flat_parallel
+  let assign_to_form (v, e) = eqn (var v) e
 
   (* Assignments on 0 dimension variables *)
   let assigns_on_0_dimen assigns =
-    List.filter assigns ~f:(fun assign -> 
-      match assign with
-      | Assign(Arr(_, paramrefs), _) -> List.length paramrefs = 0
-      | Parallel(_) -> raise Unexhausted_flat_parallel
-    )
+    List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.is_empty paramrefs)
   
   (* choose new inv about 0 dimension variables *)
   let choose_with_0_dimen_var ~types ~vardefs guards ants_0_dimen cons smv_file invs =
@@ -402,16 +413,23 @@ let deal_with_case_2 crule cinv (invs, relations) =
   }::relations)
 
 (* Deal with case invHoldForRule3 *)
-let deal_with_case_3 crule cinv obligation (invs, relations) =
-  let inv' = invs in (* TODO *)
-  (inv', { rule = crule;
+let deal_with_case_3 crule cinv cons (invs, relations) smv_file ~types ~vardefs =
+  let Rule(_, _, guard, statement) = concrete_rule_2_rule_inst crule in
+  let AndList(guards) = flat_to_andList guard in
+  let assigns = statement_2_assigns statement in
+  let level = Choose.choose ~types ~vardefs guards assigns cons smv_file invs in
+  let (new_invs, inv') =
+    match level with
+    | Tautology(_) -> (invs, chaos)
+    | Implied(_, old) -> (invs, old)
+    | New_inv(inv) -> (inv::invs, inv) (* refine inv: discard TRUE components *)
+  in
+  (new_invs, { rule = crule;
     inv = cinv;
     relation = invHoldForRule3 (form_2_concreate_prop inv');
   }::relations)
 
-
-
-let tabular_expans crule cinv (invs, relations) ~types ~vardefs =
+let tabular_expans crule cinv (invs, relations) smv_file ~types ~vardefs =
   let ConcreteRule(r, p) =  crule in
   let Rule(_, _, form, statement) = apply_rule r ~p in
   let ConcreteProp(property, p) = cinv in
@@ -426,7 +444,7 @@ let tabular_expans crule cinv (invs, relations) ~types ~vardefs =
     deal_with_case_1 crule cinv (invs, relations)
   (* case 3 *)
   else begin
-    deal_with_case_3 crule cinv obligation (invs, relations)
+    deal_with_case_3 crule cinv (neg obligation) (invs, relations) smv_file ~types ~vardefs
   end
 
 (** Find invs and causal relations of a protocol

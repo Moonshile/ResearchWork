@@ -127,6 +127,7 @@ let prop name paramdef f = Prop(name, paramdef, f)
 
 (** Represents the whole protocol *)
 type protocol = {
+  name: string;
   types: typedef list;
   vardefs: vardef list;
   init: statement;

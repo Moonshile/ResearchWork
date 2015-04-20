@@ -97,6 +97,7 @@ prop name params formula
 ]
 
 let protocol = {
+  name = "mutualEx";
   types;
   vardefs;
   init;

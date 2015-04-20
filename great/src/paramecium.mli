@@ -125,6 +125,7 @@ val prop : string -> paramdef list -> formula -> prop
 
 (** Represents the whole protocol *)
 type protocol = {
+  name: string;
   types: typedef list;
   vardefs: vardef list;
   init: statement;
