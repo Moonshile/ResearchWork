@@ -19,37 +19,39 @@ open Core.Std
 let is_tautology ?(filename="inv.smt2") ?(quiet=true) ~types ~vardefs form =
   not (is_satisfiable ~filename ~quiet (ToStr.Smt2.act ~types ~vardefs (neg form)))
 
+(** Cast a formula to a list of formulae with and relation between them *)
+let rec flat_and_to_list form =
+  match form with
+  | AndList(fl) -> List.concat (List.map fl ~f:flat_and_to_list)
+  | Chaos
+  | Miracle
+  | Eqn(_)
+  | Neg(_)
+  | OrList(_)
+  | Imply(_) -> [form]
+
 (** For andList, flat its all components,
     for others, flat to a single list
 *)
 let flat_to_andList form =
-  let rec to_list form =
-    match form with
-    | AndList(fl) -> List.concat (List.map fl ~f:to_list)
-    | Chaos
-    | Miracle
-    | Eqn(_)
-    | Neg(_)
-    | OrList(_)
-    | Imply(_) -> [form]
-  in
-  andList (to_list form)
+  andList (flat_and_to_list form)
+
+(** Cast a formula to a list of formulae with or relation between them *)
+let rec flat_or_to_list form =
+  match form with
+  | OrList(fl) -> List.concat (List.map fl ~f:flat_or_to_list)
+  | Chaos
+  | Miracle
+  | Eqn(_)
+  | Neg(_)
+  | AndList(_)
+  | Imply(_) -> [form]
 
 (** For orList, flat its all components,
     for others, flat to a single list
 *)
 let flat_to_orList form =
-  let rec to_list form =
-    match form with
-    | OrList(fl) -> List.concat (List.map fl ~f:to_list)
-    | Chaos
-    | Miracle
-    | Eqn(_)
-    | Neg(_)
-    | AndList(_)
-    | Imply(_) -> [form]
-  in
-  orList (to_list form)
+  orList (flat_or_to_list form)
 
 (** Judge if tow formulae are symmetric *)
 (* TODO what if variables of the formulae have chaos sequence? *)

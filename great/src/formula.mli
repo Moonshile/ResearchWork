@@ -16,10 +16,16 @@ open Paramecium
 *)
 val is_tautology : ?filename:string -> ?quiet:bool -> types:typedef list -> vardefs:vardef list -> formula -> bool
 
+(** Cast a formula to a list of formulae with and relation between them *)
+val flat_and_to_list : formula -> formula list
+
 (** For andList, flat its all components,
     for others, flat to a single list
 *)
 val flat_to_andList : formula -> formula
+
+(** Cast a formula to a list of formulae with or relation between them *)
+val flat_or_to_list : formula -> formula list
 
 (** For orList, flat its all components,
     for others, flat to a single list

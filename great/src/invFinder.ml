@@ -258,7 +258,7 @@ module Choose = struct
       (* Otherwise, check old with parameters of inv *)
       else begin
         let params = param_compatible inv_p old_p in
-        let forms = List.map params ~f:(fun p-> apply_form old_gened p) in
+        let forms = List.map params ~f:(fun p-> apply_form old_gened ~p) in
         let tautologies = List.filter forms ~f:(fun form ->
           is_tautology (imply form inv) ~types ~vardefs
         ) in
@@ -415,7 +415,7 @@ let deal_with_case_2 crule cinv (invs, relations) =
 (* Deal with case invHoldForRule3 *)
 let deal_with_case_3 crule cinv cons (invs, relations) smv_file ~types ~vardefs =
   let Rule(_, _, guard, statement) = concrete_rule_2_rule_inst crule in
-  let AndList(guards) = flat_to_andList guard in
+  let guards = flat_and_to_list guard in
   let assigns = statement_2_assigns statement in
   let level = Choose.choose ~types ~vardefs guards assigns cons smv_file invs in
   let (new_invs, inv') =
@@ -423,17 +423,17 @@ let deal_with_case_3 crule cinv cons (invs, relations) smv_file ~types ~vardefs 
     | Tautology(_) -> (invs, chaos)
     | Implied(_, old) -> (invs, old)
     | New_inv(inv) -> (inv::invs, inv) (* refine inv: discard TRUE components *)
+    | Not_inv -> raise Empty_exception
   in
   (new_invs, { rule = crule;
     inv = cinv;
     relation = invHoldForRule3 (form_2_concreate_prop inv');
   }::relations)
 
+(* Find new inv and relations with concrete rule and concrete invariant *)
 let tabular_expans crule cinv (invs, relations) smv_file ~types ~vardefs =
-  let ConcreteRule(r, p) =  crule in
-  let Rule(_, _, form, statement) = apply_rule r ~p in
-  let ConcreteProp(property, p) = cinv in
-  let Prop(_, _, inv_inst) = apply_prop property ~p in
+  let Rule(_, _, form, statement) = concrete_rule_2_rule_inst crule in
+  let inv_inst = concrete_prop_2_form cinv in
   (* preCond *)
   let obligation = preCond inv_inst statement in
   (* case 2 *)
@@ -446,6 +446,8 @@ let tabular_expans crule cinv (invs, relations) smv_file ~types ~vardefs =
   else begin
     deal_with_case_3 crule cinv (neg obligation) (invs, relations) smv_file ~types ~vardefs
   end
+
+
 
 (** Find invs and causal relations of a protocol
 
