@@ -304,17 +304,7 @@ module Choose = struct
     )
   
   (* choose new inv about 0 dimension variables *)
-  let choose_with_0_dimen_var ~types ~vardefs guards assigns cons smv_file invs =
-    let dimen_0 = assigns_on_0_dimen assigns in
-    let ants_0_dimen = 
-      if dimen_0 = [] then
-        []
-      else begin
-        dimen_0
-        |> List.map ~f:assign_to_form
-        |> List.map ~f:neg
-      end
-    in
+  let choose_with_0_dimen_var ~types ~vardefs guards ants_0_dimen cons smv_file invs =
     choose_one ~types ~vardefs (guards@ants_0_dimen) cons smv_file invs
 
   (* Formulae on 0 dimension variables *)
@@ -344,6 +334,49 @@ module Choose = struct
     end
 
   (* choose new inv with policy 2 *)
+  let choose_with_policy_2 ~types ~vardefs guards ant_0_dimen cons smv_file invs =
+    let enhancedGuards = List.map guards ~f:(fun g -> andList [g; ant_0_dimen]) in
+    choose_one ~types ~vardefs guards cons smv_file invs
+
+  (* get new inv by removing a component in the pres *)
+  let remove_one ~types ~vardefs guards cons smv_file invs =
+    
+
+  (* choose new inv *)
+  let choose ~types ~vardefs guards assigns cons smv_file invs =
+    let dimen_0 = assigns_on_0_dimen assigns in
+    let ants_0_dimen = 
+      if dimen_0 = [] then
+        []
+      else begin
+        dimen_0
+        |> List.map ~f:assign_to_form
+        |> List.map ~f:neg
+      end
+    in
+    let choosed_0_dimen = 
+      choose_with_0_dimen_var ~types ~vardefs guards ants_0_dimen cons smv_file invs
+    in
+    if not (choosed_0_dimen = None) then
+      choosed_0_dimen
+    else begin
+      let choosed_by_policy_1 = choose_with_policy_1 ~types ~vardefs guards cons smv_file invs in
+      if not (choosed_by_policy_1 = None) then
+        choosed_by_policy_1
+      else begin
+        let choosed_by_policy_2 =
+          match ants_0_dimen with
+          | [] -> None
+          | ant_0_dimen::_ ->
+            choose_with_policy_2 ~types ~vardefs guards ant_0_dimen cons smv_file invs
+        in
+        if not (choosed_by_policy_2 = None) then
+          choosed_by_policy_2
+        else begin
+          None
+        end
+      end
+    end
 end
 
 
