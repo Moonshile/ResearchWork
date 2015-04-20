@@ -9,6 +9,9 @@ open Paramecium
 (** Raised when parallel statements haven't been cast to assign list *)
 exception Unexhausted_flat_parallel
 
+(** Raised when circular parallel assignments detected *)
+exception Circular_parallel_assign
+
 (** Concrete rule
 
     + ConcreteRule: rule, concrete param list

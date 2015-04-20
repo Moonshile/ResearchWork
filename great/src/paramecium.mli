@@ -62,21 +62,20 @@ val arr : string -> paramref list -> var
 (** Represents expressions, including
     + Constants
     + Variable references
-    + Condition expressions
     + Parameter
 *)
 type exp =
   | Const of const
   | Var of var
-  | Cond of formula * exp * exp
   | Param of paramref
+
 (** Boolean expressions, including
     + Boolean constants, Chaos as True, Miracle as false
     + Equation expression
     + Other basic logical operations, including negation,
       conjuction, disjuction, and implication
 *)
-and formula =
+type formula =
   | Chaos
   | Miracle
   | Eqn of exp * exp
@@ -87,7 +86,6 @@ and formula =
 
 val const : const -> exp
 val var : var -> exp
-val cond : formula -> exp -> exp -> exp
 val param : paramref -> exp
 
 val chaos : formula
@@ -127,6 +125,7 @@ val prop : string -> paramdef list -> formula -> prop
 
 (** Represents the whole protocol *)
 type protocol = {
+  name: string;
   types: typedef list;
   vardefs: vardef list;
   init: statement;
@@ -145,6 +144,13 @@ exception Unmatched_parameters
 exception Unexhausted_inst
 
 (*----------------------------- Functions ----------------------------------*)
+
+(** Convert a int list to const list *)
+val int_consts : int list -> const list
+(** Convert a string list to const list *)
+val str_consts : string list -> const list
+(** Convert a boolean list to const list *)
+val bool_consts : bool list -> const list
 
 (** Find the letues range of a type by its name *)
 val name2type : tname:string -> types:typedef list -> const list

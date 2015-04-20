@@ -64,21 +64,20 @@ let arr name paramref = Arr(name, paramref)
 (** Represents expressions, including
     + Constants
     + Variable references
-    + Condition expressions
     + Parameter
 *)
 type exp =
   | Const of const
   | Var of var
-  | Cond of formula * exp * exp
   | Param of paramref
+
 (** Boolean expressions, including
     + Boolean constants, Chaos as True, Miracle as false
     + Equation expression
     + Other basic logical operations, including negation,
       conjuction, disjuction, and implication
 *)
-and formula =
+type formula =
   | Chaos
   | Miracle
   | Eqn of exp * exp
@@ -89,7 +88,6 @@ and formula =
 
 let const c = Const c
 let var v = Var v
-let cond f e1 e2 = Cond(f, e1, e2)
 let param paramref = Param(paramref)
 
 let chaos = Chaos
@@ -129,6 +127,7 @@ let prop name paramdef f = Prop(name, paramdef, f)
 
 (** Represents the whole protocol *)
 type protocol = {
+  name: string;
   types: typedef list;
   vardefs: vardef list;
   init: statement;
@@ -147,6 +146,13 @@ exception Unmatched_parameters
 exception Unexhausted_inst
 
 (*----------------------------- Functions ----------------------------------*)
+
+(** Convert a int list to const list *)
+let int_consts ints = List.map ints ~f:intc
+(** Convert a string list to const list *)
+let str_consts strs = List.map strs ~f:strc
+(** Convert a boolean list to const list *)
+let bool_consts bools = List.map bools ~f:boolc
 
 (** Find the letues range of a type by its name
 *)
@@ -221,15 +227,14 @@ let apply_array (Arr(name, params)) ~p =
   arr name (List.map params ~f:(apply_paramref ~p))
 
 (** Apply exp with param *)
-let rec apply_exp exp ~p =
+let apply_exp exp ~p =
   match exp with
   | Var(x) -> var (apply_array x ~p)
-  | Cond(f, e1, e2) -> 
-    cond (apply_form f ~p) (apply_exp e1 ~p) (apply_exp e2 ~p)
   | Param(pr) -> param (apply_paramref pr ~p)
   | Const(_) -> exp
+
 (** Apply formula with param *)
-and apply_form f ~p =
+let rec apply_form f ~p =
   match f with
   | Eqn(e1, e2) -> eqn (apply_exp e1 ~p) (apply_exp e2 ~p)
   | Neg(form) -> neg (apply_form form ~p)
@@ -283,14 +288,14 @@ module VarNames = struct
     of_list [name]
 
   (** Names of exp *)
-  let rec of_exp e =
+  let of_exp e =
     match e with
     | Const(_)
     | Param(_) -> of_list []
     | Var(v) -> of_var v
-    | Cond(f, e1, e2) -> union_list [of_form f; of_exp e1; of_exp e2]
+
   (** Names of formula *)
-  and of_form f =
+  let rec of_form f =
     match f with
     | Chaos
     | Miracle -> of_list []
