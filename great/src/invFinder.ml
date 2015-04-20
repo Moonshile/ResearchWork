@@ -140,12 +140,12 @@ module Choose = struct
     | Tautology of formula
     | Implied of formula
     | New_inv of formula
-    | Not_inv of formula
+    | Not_inv
 
   let tautology form = Tautology form
   let implied form = Implied form
   let new_inv form = New_inv form
-  let not_inv form = Not_inv form
+  let not_inv = Not_inv
 
   (* get type name of a concrete param *)
   let param_type_name param =
@@ -269,25 +269,24 @@ module Choose = struct
     else if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
       new_inv inv
     else begin
-      not_inv inv
+      not_inv
     end
 
   (* choose one pre in pres such that (imply pre cons) is an new inv *)
   let choose_one ~types ~vardefs pres cons smv_file invs =
-    let rec wrapper pres exist_invs =
+    let rec wrapper pres =
       match pres with
-      | [] -> (None, exist_invs)
+      | [] -> not_inv
       | pre::pres' ->
         let level = check_level ~types ~vardefs (imply pre cons) smv_file invs in (
           match level with
-          | New_inv(inv) -> (Some inv, exist_invs)
+          | New_inv(_)
           | Tautology(_)
-          | Implied(_) -> wrapper pres' (level::exist_invs)
-          | Not_inv(_) -> wrapper pres' exist_invs
+          | Implied(_) -> level
+          | Not_inv -> wrapper pres'
         )
     in
-    let (new_inv, exist_invs) = wrapper pres [] in
-    new_inv
+    wrapper pres
 
   (* Assign to formula *)
   let assign_to_form statement =
@@ -322,41 +321,29 @@ module Choose = struct
     let cons_pd_names = String.Set.of_list (List.map cons_pd ~f:(fun (Paramdef(n, _)) -> n)) in
     let inter_is_empty = String.Set.is_empty (String.Set.inter guard_pd_names cons_pd_names) in
     if not inter_is_empty then
-      None
+      not_inv
     else begin
       let inv_on_0_dimen = imply (andList (form_on_0_dimen guards)) cons in
-      let level = check_level ~types ~vardefs inv_on_0_dimen smv_file invs in
-      match level with
-      | New_inv(inv) -> Some inv
-      | Tautology(_)
-      | Implied(_)
-      | Not_inv(_) -> None
+      check_level ~types ~vardefs inv_on_0_dimen smv_file invs
     end
 
   (* choose new inv with policy 2 *)
   let choose_with_policy_2 ~types ~vardefs guards ant_0_dimen cons smv_file invs =
     let enhancedGuards = List.map guards ~f:(fun g -> andList [g; ant_0_dimen]) in
-    choose_one ~types ~vardefs guards cons smv_file invs
+    choose_one ~types ~vardefs enhancedGuards cons smv_file invs
 
   (* get new inv by removing a component in the pres *)
   let remove_one ~types ~vardefs guards cons smv_file invs =
     let rec wrapper guards necessary =
       match guards with
-      | [] -> (
-          let op_inv = (imply (andList necessary) cons) in
-          match check_level ~types ~vardefs op_inv smv_file invs with
-          | New_inv(inv) -> Some inv
-          | Tautology(_)
-          | Implied(_)
-          | Not_inv(_) -> None
-        )
+      | [] -> check_level ~types ~vardefs (imply (andList necessary) cons) smv_file invs
       | g::guards' -> (
           let op_inv = (imply (andList (guards'@necessary)) cons) in
           match check_level ~types ~vardefs op_inv smv_file invs with
-          | New_inv(_) -> wrapper guards' necessary
+          | New_inv(_)
           | Tautology(_)
-          | Implied(_)
-          | Not_inv(_) -> wrapper guards' (g::necessary)
+          | Implied(_) -> wrapper guards' necessary
+          | Not_inv -> wrapper guards' (g::necessary)
         )
     in
     wrapper guards []
@@ -376,26 +363,27 @@ module Choose = struct
     let choosed_0_dimen = 
       choose_with_0_dimen_var ~types ~vardefs guards ants_0_dimen cons smv_file invs
     in
-    if not (choosed_0_dimen = None) then
+    if not (choosed_0_dimen = Not_inv) then
       choosed_0_dimen
     else begin
       let choosed_by_policy_1 = choose_with_policy_1 ~types ~vardefs guards cons smv_file invs in
-      if not (choosed_by_policy_1 = None) then
+      if not (choosed_by_policy_1 = Not_inv) then
         choosed_by_policy_1
       else begin
         let choosed_by_policy_2 =
           match ants_0_dimen with
-          | [] -> None
+          | [] -> Not_inv
           | ant_0_dimen::_ ->
             choose_with_policy_2 ~types ~vardefs guards ant_0_dimen cons smv_file invs
         in
-        if not (choosed_by_policy_2 = None) then
+        if not (choosed_by_policy_2 = Not_inv) then
           choosed_by_policy_2
         else begin
           remove_one ~types ~vardefs guards cons smv_file invs
         end
       end
     end
+
 end
 
 
