@@ -152,7 +152,8 @@ let read_to_end filedsr =
     else
       read filedsr ((String.sub buf ~pos:0 ~len:size)::results)
   in
-  String.concat (List.rev (read filedsr []))
+  let res = String.concat (List.rev (read filedsr [])) in
+  Unix.close filedsr; res
 
 (** Execute a program with some arguments then fetch the output.
     This function will block the main process.

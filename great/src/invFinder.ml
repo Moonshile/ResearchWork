@@ -78,14 +78,14 @@ let concrete_prop_2_form cprop =
   form
 
 (* Convert formula to concrete property *)
-let form_2_concreate_prop ?(new_invs=[]) form =
+let form_2_concreate_prop ?(id=0) form =
   let new_inv_name_base = "inv__" in
   (* Generate names for new invariants found *)
-  let next_inv_name new_invs = sprintf "%s%d" new_inv_name_base (List.length new_invs) in
+  let next_inv_name id = sprintf "%s%d" new_inv_name_base id in
   let (form', Generalize.Paraminfo(paramdefs, params)) =
     Generalize.form_act form (Generalize.paraminfo [] [])
   in
-  let property = prop (next_inv_name new_invs) paramdefs form' in
+  let property = prop (next_inv_name id) paramdefs form' in
   concrete_prop property params
 
 (* Convert statements to a list of assignments *)
@@ -183,7 +183,7 @@ module Choose = struct
     (*  permutation,  result is like
         [[[a;b];[b;a];[b;c];[c;b];[a;c];[c;a]]; [[1;2];[2;1];...]]
     *)
-    |> List.map ~f:(fun x -> List.map x ~f:(fun y -> List.concat (permutation y)))
+    |> List.map ~f:(fun x -> List.concat (List.map x ~f:(fun y -> permutation y)))
     (* rename to names of partition2 *)
     |> List.map2_exn params_names_part2 ~f:rename_all
     (* result is like [[[a;b];[1;2]]; [[a;b];[2;1]]; ...] *)
@@ -395,53 +395,87 @@ end
 
 
 (* Deal with case invHoldForRule1 *)
-let deal_with_case_1 crule cinv (invs, relations) =
-  (invs, { rule = crule;
+let deal_with_case_1 crule cinv =
+  { rule = crule;
     inv = cinv;
     relation = invHoldForRule1;
-  }::relations)
+  }
 
 (* Deal with case invHoldForRule2 *)
-let deal_with_case_2 crule cinv (invs, relations) =
-  (invs, { rule = crule;
+let deal_with_case_2 crule cinv =
+  { rule = crule;
     inv = cinv;
     relation = invHoldForRule2;
-  }::relations)
+  }
 
 (* Deal with case invHoldForRule3 *)
-let deal_with_case_3 crule cinv cons (invs, relations) smv_file ~types ~vardefs =
+let deal_with_case_3 crule cinv cons old_invs smv_file ~types ~vardefs =
   let Rule(_, _, guard, statement) = concrete_rule_2_rule_inst crule in
   let guards = flat_and_to_list guard in
   let assigns = statement_2_assigns statement in
-  let level = Choose.choose ~types ~vardefs guards assigns cons smv_file invs in
-  let (new_invs, inv') =
+  let level = Choose.choose ~types ~vardefs guards assigns cons smv_file old_invs in
+  let (new_inv, causal_inv) =
     match level with
-    | Choose.Tautology(_) -> (invs, chaos)
-    | Choose.Implied(_, old) -> (invs, old)
-    | Choose.New_inv(inv) -> (inv::invs, inv) (* refine inv: discard TRUE components *)
-    | Choose.Not_inv -> raise Empty_exception
+    | Choose.Tautology(_) -> ([], chaos)
+    | Choose.Implied(_, old) -> ([], old)
+    | Choose.New_inv(inv) -> 
+      let simplified = simplify inv ~types ~vardefs in
+      ([simplified], simplified)
+    | Choose.Not_inv -> 
+      Prt.warning "Not inv found, which shouldn't occur\n";
+      ([], miracle)(* TODO raise Empty_exception? *)
   in
-  (new_invs, { rule = crule;
+  (new_inv, { rule = crule;
     inv = cinv;
-    relation = invHoldForRule3 (form_2_concreate_prop inv');
-  }::relations)
+    relation = invHoldForRule3 (form_2_concreate_prop causal_inv);
+  })
 
-(* Find new inv and relations with concrete rule and concrete invariant *)
-let tabular_expans crule cinv (invs, relations) smv_file ~types ~vardefs =
+(* Find new inv and relations with concrete rule and a concrete invariant *)
+let tabular_expans crule ~cinv ~old_invs ~smv_file ~types ~vardefs =
   let Rule(_, _, form, statement) = concrete_rule_2_rule_inst crule in
   let inv_inst = concrete_prop_2_form cinv in
   (* preCond *)
-  let obligation = preCond inv_inst statement in
+  let obligation =
+    preCond inv_inst statement
+    |> simplify ~types ~vardefs
+  in
   (* case 2 *)
   if obligation = inv_inst then
-    deal_with_case_2 crule cinv (invs, relations)
+    ([], deal_with_case_2 crule cinv)
   (* case 1 *)
-  else if is_tautology (imply form obligation) ~types ~vardefs then
-    deal_with_case_1 crule cinv (invs, relations)
+  else if is_tautology (imply form (neg obligation)) ~types ~vardefs then
+    ([], deal_with_case_1 crule cinv)
   (* case 3 *)
   else begin
-    deal_with_case_3 crule cinv (neg obligation) (invs, relations) smv_file ~types ~vardefs
+    deal_with_case_3 crule cinv (neg obligation) old_invs smv_file ~types ~vardefs
   end
+
+(* Find new inv and relations with concrete rules and a concrete invariant *)
+let tabular_crules_cinv crules cinv ~new_inv_id ~smv_file ~types ~vardefs =
+  let rec wrapper cinvs new_inv_id old_invs relations =
+    match cinvs with
+    | [] -> (new_inv_id, old_invs, relations)
+    | cinv::cinvs' ->
+      let (new_invs, new_relation) =
+        List.map crules ~f:(tabular_expans ~cinv ~old_invs ~smv_file ~types ~vardefs)
+        |> List.unzip
+      in
+      let real_new_invs = List.dedup (List.concat new_invs) in
+      let old_invs' = List.dedup (real_new_invs@old_invs) in
+      let rec invs_to_cinvs invs cinvs new_inv_id =
+        match invs with
+        | [] -> (cinvs, new_inv_id)
+        | inv::invs' ->
+          let cinv = form_2_concreate_prop ~id:new_inv_id inv in
+          invs_to_cinvs invs' (cinv::cinvs) (new_inv_id + 1)
+      in
+      let (new_cinvs, new_inv_id') = invs_to_cinvs real_new_invs [] new_inv_id in
+      let cinvs'' = List.dedup (cinvs'@new_cinvs) in
+      wrapper cinvs'' new_inv_id' old_invs' (new_relation@relations)
+  in
+  let init_lib = [neg (concrete_prop_2_form cinv)] in
+  wrapper [cinv] new_inv_id init_lib []
+
 
 (* Rule instant policy *)
 let rule_inst_policy r ~cinv ~types =
@@ -453,26 +487,20 @@ let rule_inst_policy r ~cinv ~types =
 (** Find invs and causal relations of a protocol
 
     @param protocol the protocol
+    @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol:{name; types; vardefs; init; rules; properties} prop_params =
+let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_params =
   let smv_file = sprintf "%s.smv" name in
-  let cs_invs = List.map2_exn properties prop_params ~f:(fun prop ps ->
-    let Prop(name, _, _) = prop in
-    (name, prop_2_concrete prop ps)
-  ) in
-  let find_by_cinv cinv =
-    let concrete_rules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types)) in
-    let rec find_by_rules rules new_invs relations =
-      match rules with
-      | [] -> (new_invs, relations)
-      | r::rules' -> 
-        let (new_invs', relations') = 
-          tabular_expans r cinv (new_invs, relations) smv_file ~types ~vardefs
-        in
-        find_by_rules rules' new_invs' relations'
-    in
-    find_by_rules concrete_rules [] []
+  let rec wrapper cinvs new_inv_id table =
+    match cinvs with
+    | [] -> table
+    | cinv::cinvs' ->
+      let crules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types)) in
+      let (new_inv_id', invs_lib, relations) =
+        tabular_crules_cinv crules cinv ~new_inv_id ~smv_file ~types ~vardefs
+      in
+      wrapper cinvs' new_inv_id' ((cinv, invs_lib, relations)::table)
   in
-  List.map cs_invs ~f:(fun (n, cinvs) -> (n, List.map cinvs ~f:find_by_cinv))
-(* init is not used yet *)
+  let cinvs = List.map2_exn properties prop_params ~f:(concrete_prop) in
+  wrapper cinvs 0 []
