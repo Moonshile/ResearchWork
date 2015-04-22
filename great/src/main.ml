@@ -119,5 +119,6 @@ let invs_str =
 let relations_str = List.map relations ~f:to_str;;
 
 Prt.info (String.concat ~sep:"\n" relations_str);;
+printf "\n";;
 Prt.warning (String.concat ~sep:"\n" invs_str);;
 printf "\n";;

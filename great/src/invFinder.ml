@@ -109,7 +109,7 @@ let to_str {rule; inv; relation} =
   let rule_str = sprintf "%s%s" rname (String.concat rps) in
   let inv_str = ToStr.Smv.form_act (concrete_prop_2_form inv) in
   let rel_str = relation_2_str relation in
-  sprintf "rule: %s; inv: %s; rel: %s\n" rule_str inv_str rel_str
+  sprintf "rule: %s; inv: %s; rel: %s" rule_str inv_str rel_str
 
 
 (* Evaluate exp with assignments
