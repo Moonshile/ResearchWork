@@ -9,6 +9,9 @@
 (* This exception is for stop warnings. It will never be raised. *)
 exception Empty_exception
 
+(** Exception raised when could not find something *)
+exception Cannot_find of string
+
 (*----------------------------- Functions ----------------------------------*)
 
 (** Generate the permutation of a list *)

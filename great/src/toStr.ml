@@ -135,17 +135,19 @@ module Smv = struct
     | Strc(s) -> s
     | Boolc(b) -> String.uppercase (Bool.to_string b)
 
+  (** Translate a paramref to smv string *)
+  let paramref_act pr =
+    match pr with
+    | Paramfix(_, c) -> sprintf "[%s]" (const_act c)
+    | Paramref(_) -> raise Unexhausted_inst
+
   (* Translate a variable to smv variable *)
   let var_act v =
     let Arr(name, params) = v in
     if params = [] then
       name
     else begin
-      let actual_ps = List.map params ~f:(fun p ->
-        match p with
-        | Paramfix(_, c) -> sprintf "[%s]" (const_act c)
-        | Paramref(_) -> raise Unexhausted_inst
-      ) in
+      let actual_ps = List.map params ~f:paramref_act in
       sprintf "%s%s" name (String.concat actual_ps)
     end
 
@@ -154,13 +156,70 @@ module Smv = struct
     match exp with
     | Const(c) -> const_act c
     | Var(v) -> var_act v
-    | Param(Paramfix(_, c)) -> const_act c
-    | Param(Paramref _) -> raise Unexhausted_inst
+    | Param(pr) -> paramref_act pr
 
   (** Translate formula to smv string
 
       @param form the formula to be translated
       @return the smv string
+  *)
+  let rec form_act form =
+    match form with
+    | Chaos -> "TRUE"
+    | Miracle -> "FALSE"
+    | Eqn(e1, e2) -> sprintf "(%s = %s)" (exp_act e1) (exp_act e2)
+    | Neg(form) -> sprintf "(!%s)" (form_act form)
+    | AndList(fl) ->
+      List.map fl ~f:form_act
+      |> reduce ~default:"TRUE" ~f:(fun res x -> sprintf "%s & %s" res x)
+      |> sprintf "(%s)"
+    | OrList(fl) ->
+      List.map fl ~f:form_act
+      |> reduce ~default:"FALSE" ~f:(fun res x -> sprintf "%s | %s" res x)
+      |> sprintf "(%s)"
+    | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
+
+end
+
+(*----------------------------- Module To Debug String ----------------------------------*)
+
+(** Translate to Debug string *)
+module Debug = struct
+
+  (* Translate a const to Debug const *)
+  let const_act c =
+    match c with
+    | Intc(i) -> Int.to_string i
+    | Strc(s) -> s
+    | Boolc(b) -> String.uppercase (Bool.to_string b)
+
+  (** Translate a paramref to Debug string *)
+  let paramref_act pr =
+    match pr with
+    | Paramfix(tname, c) -> sprintf "[%s:%s]" (const_act c) tname
+    | Paramref(name) -> sprintf "[%s:__ref__]" name
+
+  (* Translate a variable to Debug variable *)
+  let var_act v =
+    let Arr(name, params) = v in
+    if params = [] then
+      name
+    else begin
+      let actual_ps = List.map params ~f:paramref_act in
+      sprintf "%s%s" name (String.concat actual_ps)
+    end
+
+  (* Translate an exp to Debug exp *)
+  let exp_act exp =
+    match exp with
+    | Const(c) -> const_act c
+    | Var(v) -> var_act v
+    | Param(pr) -> paramref_act pr
+
+  (** Translate formula to Debug string
+
+      @param form the formula to be translated
+      @return the Debug string
   *)
   let rec form_act form =
     match form with

@@ -1,6 +1,7 @@
 
 
 open Core.Std
+open Utils
 open Paramecium
 open Formula
 
@@ -105,74 +106,18 @@ let protocol = {
 
 open InvFinder;;
 
-let rule_params = [("i", paramfix "node" (intc 1));]
 let prop_params = [("i", paramfix "node" (intc 1)); ("j", paramfix "node" (intc 2))]
 
-let crule = concrete_rule rule_crit rule_params
-let cinv = concrete_prop coherence prop_params
+let [(cinv, invs, relations)] = find ~protocol ~prop_params:[prop_params];;
 
-let table = tabular_crules_cinv [crule] cinv
-  ~new_inv_id:0 ~smv_file:"mutualEx.smv" ~types ~vardefs
+let invs_str = 
+  invs
+  |> List.map ~f:neg
+  |> List.map ~f:(simplify ~types ~vardefs)
+  |> List.map ~f:ToStr.Smv.form_act;;
 
-let tables = find ~protocol ~prop_params:[prop_params]
+let relations_str = List.map relations ~f:to_str;;
 
-let [(cinv, invs, relations)] = tables
-
-let invs_str = List.map invs ~f:ToStr.Smv.form_act
-
-(*let [(_, [(invs, relations)])] = find protocol [[prop_params]]*)
-
-(*
-let form =
-  let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "c")) in
-  let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "c")) in
-  andList [f1; f2]
-in
-form
-|> is_tautology ~quiet:false ~types:protocol.types ~vardefs:protocol.vardefs
-|> printf "%b\n";;
-
-let form =
-  let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "c")) in
-  let f2 = neg (eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "c"))) in
-  orList [f1; f2]
-in
-form
-|> is_tautology ~quiet:false ~types:protocol.types ~vardefs:protocol.vardefs
-|> printf "%b\n";;
-
-try
-  let form =
-    let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "c")) in
-    let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "ee")) in
-    andList [f1; f2]
-  in
-  form
-  |> is_tautology ~quiet:false ~types:protocol.types ~vardefs:protocol.vardefs
-  |> printf "%b\n"
-with _ -> ();;
-
-try
-  let form =
-    let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "c")) in
-    let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "c")) in
-    andList [f1; f2]
-  in
-  ToStr.Smv.form_act (neg form)
-  |> Smv.is_inv_by_smv ~quiet:false ~smv_file:"/home/duan/mutualEx.smv"
-  |> printf "%b\n"
-with _ -> ();;
-
-let form1 =
-  let f1 = eqn (var (arr "n" [paramfix "node" (intc 1)])) (const (strc "c")) in
-  let f2 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "c")) in
-  andList [f1; f2]
-in
-let form2 =
-  let f1 = eqn (var (arr "n" [paramfix "node" (intc 2)])) (const (strc "c")) in
-  let f2 = eqn (var (arr "n" [paramfix "node" (intc 3)])) (const (strc "c")) in
-  andList [f1; f2]
-in
-printf "\nThe two formulae:\n%s\n%s\nare %ssymmetric\n" (ToStr.Smv.form_act form1) 
-  (ToStr.Smv.form_act form2) (if Formula.form_are_symmetric form1 form2 then "" else "not ");;
-*)
+Prt.info (String.concat ~sep:"\n" relations_str);;
+Prt.warning (String.concat ~sep:"\n" invs_str);;
+printf "\n";;

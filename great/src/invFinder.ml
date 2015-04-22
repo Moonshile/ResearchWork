@@ -94,6 +94,23 @@ let rec statement_2_assigns statement =
   | Parallel(sl) -> List.concat (List.map sl ~f:statement_2_assigns)
   | Assign(v, e) -> [(v, e)]
 
+(** Convert relation to a string *)
+let relation_2_str relation =
+  match relation with
+  | InvHoldForRule1 -> "invHoldForRule1"
+  | InvHoldForRule2 -> "invHoldForRule2"
+  | InvHoldForRule3(cp) -> 
+    sprintf "invHoldForRule3 - %s" (ToStr.Smv.form_act (concrete_prop_2_form cp))
+
+(** Convert t to a string *)
+let to_str {rule; inv; relation} =
+  let ConcreteRule(Rule(rname, _, _, _), rps) = rule in
+  let rps = List.map rps ~f:(fun (_, pr) -> ToStr.Smv.paramref_act pr) in
+  let rule_str = sprintf "%s%s" rname (String.concat rps) in
+  let inv_str = ToStr.Smv.form_act (concrete_prop_2_form inv) in
+  let rel_str = relation_2_str relation in
+  sprintf "rule: %s; inv: %s; rel: %s\n" rule_str inv_str rel_str
+
 
 (* Evaluate exp with assignments
     Result has format (condition, value)
@@ -243,15 +260,12 @@ module Choose = struct
         None
       (* If length of parameters in old is 0, then check directly *)
       else if List.length old_pd = 0 then
-        if is_tautology (imply old inv) ~types ~vardefs then
-          Some old
-        else begin
-          None
-        end
+        if is_tautology (imply old inv) ~types ~vardefs then Some old
+        else begin None end
       (* If old has more paramters, then false *)
-      else if param_compatible inv_p old_p = [] then
-        None
+      else if param_compatible inv_p old_p = [] then None
       (* Otherwise, check old with parameters of inv *)
+      else if form_are_symmetric inv old then Some old
       else begin
         let params = param_compatible inv_p old_p in
         let forms = List.map params ~f:(fun p-> apply_form old_gened ~p) in
@@ -282,6 +296,9 @@ module Choose = struct
         if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
           new_inv inv
         else begin
+          Prt.warning (sprintf "%s is not inv, which shouldn't occur\n" (
+            ToStr.Smv.form_act inv
+          ));
           not_inv
         end
     end
@@ -421,9 +438,7 @@ let deal_with_case_3 crule cinv cons old_invs smv_file ~types ~vardefs =
     | Choose.New_inv(inv) -> 
       let simplified = simplify inv ~types ~vardefs in
       ([simplified], simplified)
-    | Choose.Not_inv -> 
-      Prt.warning "Not inv found, which shouldn't occur\n";
-      ([], miracle)(* TODO raise Empty_exception? *)
+    | Choose.Not_inv -> ([], miracle)(* TODO raise Empty_exception? *)
   in
   (new_inv, { rule = crule;
     inv = cinv;
@@ -440,7 +455,7 @@ let tabular_expans crule ~cinv ~old_invs ~smv_file ~types ~vardefs =
     |> simplify ~types ~vardefs
   in
   (* case 2 *)
-  if obligation = inv_inst then
+  if form_are_symmetric obligation inv_inst then
     ([], deal_with_case_2 crule cinv)
   (* case 1 *)
   else if is_tautology (imply form (neg obligation)) ~types ~vardefs then
@@ -460,13 +475,17 @@ let tabular_crules_cinv crules cinv ~new_inv_id ~smv_file ~types ~vardefs =
         List.map crules ~f:(tabular_expans ~cinv ~old_invs ~smv_file ~types ~vardefs)
         |> List.unzip
       in
-      let real_new_invs = List.dedup (List.concat new_invs) in
+      let real_new_invs =
+        List.concat new_invs
+        |> List.dedup ~compare:(fun x y -> if form_are_symmetric x y then 0 else 1)
+        |> List.map ~f:(normalize ~types)
+      in
       let old_invs' = List.dedup (real_new_invs@old_invs) in
       let rec invs_to_cinvs invs cinvs new_inv_id =
         match invs with
         | [] -> (cinvs, new_inv_id)
         | inv::invs' ->
-          let cinv = form_2_concreate_prop ~id:new_inv_id inv in
+          let cinv = form_2_concreate_prop ~id:new_inv_id (neg inv) in
           invs_to_cinvs invs' (cinv::cinvs) (new_inv_id + 1)
       in
       let (new_cinvs, new_inv_id') = invs_to_cinvs real_new_invs [] new_inv_id in

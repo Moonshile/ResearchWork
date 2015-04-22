@@ -34,3 +34,12 @@ val flat_to_orList : formula -> formula
 
 (** Judge if tow formulae are symmetric *)
 val form_are_symmetric : formula -> formula -> bool
+
+(** Simplify a formula *)
+val simplify : types:typedef list -> vardefs:vardef list -> formula -> formula
+
+(** Raises when there are many parameter references more than range of its type *)
+exception Too_many_parameters_of_same_type
+
+(** Normalize a parameterized formula *)
+val normalize : formula -> types:typedef list -> formula

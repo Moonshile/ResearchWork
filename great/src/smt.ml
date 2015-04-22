@@ -35,7 +35,7 @@ let is_satisfiable ?(filename="inv.smt2") ?(quiet=true) formula =
     Unix.remove filename; res
   in
   if not quiet then Prt.info "The smt2 formula to be checked is:\n";printf "%s\n" formula;
-  let print_smt printer = printer (sprintf "Result of smt check is:\n%s" smt) in
+  let print_smt printer = printer (sprintf "Result of smt check is:\n%s" formula) in
   if not (any ["sat"; "unsat"] ~f:(fun prefix -> String.is_prefix smt ~prefix)) then
     (print_smt Prt.error; raise Error_in_formula)
   else begin

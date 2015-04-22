@@ -157,8 +157,10 @@ let bool_consts bools = List.map bools ~f:boolc
 (** Find the letues range of a type by its name
 *)
 let name2type ~tname ~types =
-  let Enum(_, consts) = List.find_exn types ~f:(fun (Enum(n, _)) -> n = tname) in
-  consts
+  let op_t = List.find types ~f:(fun (Enum(n, _)) -> n = tname) in
+  match op_t with
+  | None -> raise (Cannot_find (sprintf "type %s" tname))
+  | Some (Enum(_, consts)) -> consts
 
 (* Generate Cartesian production of all possible values of a `paramdef` set
     Result is like [[Boolc true; Intc 1]; [Boolc false; Intc 1]]
@@ -219,7 +221,12 @@ let attach_list name i_list =
 (** Apply a paramref with param, i.e., cast it to consts *)
 let apply_paramref pr ~p =
   match pr with
-  | Paramref(s) -> List.Assoc.find_exn p s
+  | Paramref(s) -> 
+    let op_pf = List.Assoc.find p s in (
+      match op_pf with
+      | None -> raise (Cannot_find (sprintf "parameter reference for %s" s))
+      | Some pf -> pf
+    )
   | Paramfix(_) -> pr
 
 (** Apply array with param *)

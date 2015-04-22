@@ -11,6 +11,9 @@ open Core.Std
 (* This exception is for stop warnings. It will never be raised. *)
 exception Empty_exception
 
+(** Exception raised when could not find something *)
+exception Cannot_find of string
+
 (*----------------------------- Functions ----------------------------------*)
 
 let up_to n =
@@ -165,6 +168,7 @@ let read_to_end filedsr =
 let exec ~prog ~args =
   let open Unix.Process_info in
   let sub = Unix.create_process ~prog ~args in
+  Unix.close sub.stdin;
   (read_to_end sub.stdout, read_to_end sub.stderr)
 
 (** Execute a program with some arguments and some input strings then fetch the output.

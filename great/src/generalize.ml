@@ -4,6 +4,7 @@
     @author Kaiqiang Duan <duankq@ios.ac.cn>
 *)
 
+open Utils
 open Paramecium
 
 open Core.Std
@@ -30,13 +31,15 @@ let paramref_act pr param_info =
     (paramref name, paraminfo (new_def::paramdefs) (new_param::params))
 
 (** Convert a list of components *)
-let rec components_act components param_info f =
-  match components with
-  | [] -> ([], param_info)
-  | c::components' ->
-    let (c', param_info') = f c param_info in
-    let (c'', param_info'') = components_act components' param_info' f in
-    (c'::c'', param_info'')
+let components_act components param_info f =
+  let rec wrapper components gened_comp param_info =
+    match components with
+    | [] -> (gened_comp, param_info)
+    | c::components' ->
+      let (c', param_info') = f c param_info in
+      wrapper components' (c'::gened_comp) param_info'
+  in
+  wrapper components [] param_info
 
 (** Convert var *)
 let var_act v param_info =

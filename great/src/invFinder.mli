@@ -52,6 +52,12 @@ type t = {
   relation: relation;
 }
 
+(** Convert relation to a string *)
+val relation_2_str : relation -> string
+
+(** Convert t to a string *)
+val to_str : t -> string
+
 (** Find new inv and relations with concrete rule and concrete invariant
     
     @param cinv a concrete property

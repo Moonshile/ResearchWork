@@ -27,6 +27,11 @@ end
 (** Translate to smv string *)
 module Smv : sig
 
+  val const_act : const -> string
+  val paramref_act : paramref -> string
+  val var_act : var -> string
+  val exp_act : exp -> string
+
   (** Translate formula to smv string
 
       @param form the formula to be translated
@@ -34,4 +39,14 @@ module Smv : sig
   *)
   val form_act : formula -> string
 
+end
+
+(*----------------------------- Module To Debug String ----------------------------------*)
+
+module Debug : sig
+  val const_act : const -> string
+  val paramref_act : paramref -> string
+  val var_act : var -> string
+  val exp_act : exp -> string
+  val form_act : formula -> string
 end
