@@ -100,7 +100,7 @@ let relation_2_str relation =
   | InvHoldForRule1 -> "invHoldForRule1"
   | InvHoldForRule2 -> "invHoldForRule2"
   | InvHoldForRule3(cp) -> 
-    sprintf "invHoldForRule3 - %s" (ToStr.Smv.form_act (concrete_prop_2_form cp))
+    sprintf "invHoldForRule3-%s" (ToStr.Smv.form_act (concrete_prop_2_form cp))
 
 (** Convert t to a string *)
 let to_str {rule; inv; relation} =

@@ -36,7 +36,7 @@ let is_satisfiable ?(filename="inv.smt2") ?(quiet=true) formula =
   in
   let not_quiet () =
     if not quiet then
-      (Prt.info "The smt2 formula to be checked is:\n";printf "%s\n" formula;)
+      (Prt.info "The smt2 formula to be checked is:\n";printf "%s\n" formula)
     else begin () end
   in
   not_quiet ();

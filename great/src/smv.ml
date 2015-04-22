@@ -26,7 +26,12 @@ let is_inv_by_smv ?(quiet=true) ~smv_file inv =
     let args = ["-dcx"; "-int"; "-old"; smv_file] in
     exec_with_input ~prog:smv_path ~args check_str
   in
-  if not quiet then Prt.info "The invariant to be checked is:\n";printf "%s\n" inv;
+  let not_quiet () =
+    if not quiet then
+      (Prt.info "The invariant to be checked is:\n";printf "%s\n" inv)
+    else begin () end
+  in
+  not_quiet ();
   let pattern = Re2.Regex.create_exn "-- inv.+\n" in
   try
     let smv_res = String.strip (Re2.Regex.find_first_exn pattern stdout) in
