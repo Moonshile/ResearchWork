@@ -103,11 +103,11 @@ let relation_2_str relation =
     sprintf "invHoldForRule3-%s" (ToStr.Smv.form_act (concrete_prop_2_form cp))
 
 (** Convert t to a string *)
-let to_str {rule; inv; relation} =
+let to_str {rule; inv; relation} ~types ~vardefs =
   let ConcreteRule(Rule(rname, _, _, _), rps) = rule in
   let rps = List.map rps ~f:(fun (_, pr) -> ToStr.Smv.paramref_act pr) in
   let rule_str = sprintf "%s%s" rname (String.concat rps) in
-  let inv_str = ToStr.Smv.form_act (concrete_prop_2_form inv) in
+  let inv_str = ToStr.Smv.form_act (simplify ~types ~vardefs (concrete_prop_2_form inv)) in
   let rel_str = relation_2_str relation in
   sprintf "rule: %s; inv: %s; rel: %s" rule_str inv_str rel_str
 
@@ -465,12 +465,19 @@ let tabular_expans crule ~cinv ~old_invs ~smv_file ~types ~vardefs =
     deal_with_case_3 crule cinv (neg obligation) old_invs smv_file ~types ~vardefs
   end
 
+(* Rule instant policy *)
+let rule_inst_policy r ~cinv ~types =
+  let Rule(_, paramdefs, _, _) = r in
+  let ps = cart_product_with_paramfix paramdefs types in
+  rule_2_concrete r ps
+
 (* Find new inv and relations with concrete rules and a concrete invariant *)
-let tabular_crules_cinv crules cinv ~new_inv_id ~smv_file ~types ~vardefs =
+let tabular_rules_cinv rules cinv ~new_inv_id ~smv_file ~types ~vardefs =
   let rec wrapper cinvs new_inv_id old_invs relations =
     match cinvs with
     | [] -> (new_inv_id, old_invs, relations)
     | cinv::cinvs' ->
+      let crules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types)) in
       let (new_invs, new_relation) =
         List.map crules ~f:(tabular_expans ~cinv ~old_invs ~smv_file ~types ~vardefs)
         |> List.unzip
@@ -496,13 +503,6 @@ let tabular_crules_cinv crules cinv ~new_inv_id ~smv_file ~types ~vardefs =
   wrapper [cinv] new_inv_id init_lib []
 
 
-(* Rule instant policy *)
-let rule_inst_policy r ~cinv ~types =
-  let Rule(_, paramdefs, _, _) = r in
-  let ps = cart_product_with_paramfix paramdefs types in
-  rule_2_concrete r ps
-
-
 (** Find invs and causal relations of a protocol
 
     @param protocol the protocol
@@ -515,9 +515,8 @@ let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_param
     match cinvs with
     | [] -> table
     | cinv::cinvs' ->
-      let crules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types)) in
       let (new_inv_id', invs_lib, relations) =
-        tabular_crules_cinv crules cinv ~new_inv_id ~smv_file ~types ~vardefs
+        tabular_rules_cinv rules cinv ~new_inv_id ~smv_file ~types ~vardefs
       in
       wrapper cinvs' new_inv_id' ((cinv, invs_lib, relations)::table)
   in

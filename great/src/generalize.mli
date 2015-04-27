@@ -16,9 +16,6 @@ val paraminfo : paramdef list -> (string * paramref) list -> t
 (** Convert paramref *)
 val paramref_act : paramref -> t -> paramref * t
 
-(** Convert a list of components *)
-val components_act : 'a list -> 'b -> ('a -> 'b -> 'c * 'b) -> 'c list * 'b
-
 (** Convert var *)
 val var_act : var -> t -> var * t
 

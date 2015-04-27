@@ -56,7 +56,7 @@ type t = {
 val relation_2_str : relation -> string
 
 (** Convert t to a string *)
-val to_str : t -> string
+val to_str : t -> types:typedef list -> vardefs:vardef list -> string
 
 (** Find new inv and relations with concrete rule and concrete invariant
     
@@ -74,7 +74,7 @@ val tabular_expans : concrete_rule -> cinv:concrete_prop -> old_invs:formula lis
     @param new_inv_id the id generated for new invariant
     @return a triple: next id of new inv, new invs discovered, relations
 *)
-val tabular_crules_cinv : concrete_rule list -> concrete_prop -> 
+val tabular_rules_cinv : rule list -> concrete_prop -> 
   new_inv_id:int -> smv_file:string -> types:typedef list -> vardefs:vardef list -> 
   int * formula list * t list
 
