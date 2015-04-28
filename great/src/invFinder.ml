@@ -449,7 +449,7 @@ let deal_with_case_3 crule cinv cons old_invs smv_file ~types ~vardefs =
 (* Find new inv and relations with concrete rule and a concrete invariant *)
 let tabular_expans crule ~cinv ~old_invs ~smv_file ~types ~vardefs =
   let Rule(_, _, form, statement) = concrete_rule_2_rule_inst crule in
-  let inv_inst = concrete_prop_2_form cinv in
+  let inv_inst = simplify ~types ~vardefs (concrete_prop_2_form cinv) in
   (* preCond *)
   let obligation =
     preCond inv_inst statement
