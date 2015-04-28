@@ -52,9 +52,6 @@ type t = {
   relation: relation;
 }
 
-(** Convert relation to a string *)
-val relation_2_str : relation -> string
-
 (** Convert t to a string *)
 val to_str : t -> types:typedef list -> vardefs:vardef list -> string
 

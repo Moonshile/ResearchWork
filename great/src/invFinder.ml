@@ -95,12 +95,13 @@ let rec statement_2_assigns statement =
   | Assign(v, e) -> [(v, e)]
 
 (** Convert relation to a string *)
-let relation_2_str relation =
+let relation_2_str relation ~types ~vardefs =
   match relation with
   | InvHoldForRule1 -> "invHoldForRule1"
   | InvHoldForRule2 -> "invHoldForRule2"
   | InvHoldForRule3(cp) -> 
-    sprintf "invHoldForRule3-%s" (ToStr.Smv.form_act (concrete_prop_2_form cp))
+    let form = simplify ~types ~vardefs (neg (concrete_prop_2_form cp)) in
+    sprintf "invHoldForRule3-%s" (ToStr.Smv.form_act form)
 
 (** Convert t to a string *)
 let to_str {rule; inv; relation} ~types ~vardefs =
@@ -108,7 +109,7 @@ let to_str {rule; inv; relation} ~types ~vardefs =
   let rps = List.map rps ~f:(fun (_, pr) -> ToStr.Smv.paramref_act pr) in
   let rule_str = sprintf "%s%s" rname (String.concat rps) in
   let inv_str = ToStr.Smv.form_act (simplify ~types ~vardefs (concrete_prop_2_form inv)) in
-  let rel_str = relation_2_str relation in
+  let rel_str = relation_2_str ~types ~vardefs relation in
   sprintf "rule: %s; inv: %s; rel: %s" rule_str inv_str rel_str
 
 
@@ -212,7 +213,7 @@ module Choose = struct
       This algorithm is for judge if a invariant inv1 is compatible with inv2.
 
       Compatible definition
-      Suppose parameter type set of inv1 is types1, and types2of inv2; suppose
+      Suppose parameter type set of inv1 is types1, and types2 of inv2; suppose
       |types1| = m, |types2| = n; inv1 is
       compatible with inv2 iff:
       1. types2 is subset of types1 (so n <= m), and
@@ -319,17 +320,6 @@ module Choose = struct
     in
     wrapper pres
 
-  (* Assign to formula *)
-  let assign_to_form (v, e) = eqn (var v) e
-
-  (* Assignments on 0 dimension variables *)
-  let assigns_on_0_dimen assigns =
-    List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.is_empty paramrefs)
-  
-  (* choose new inv about 0 dimension variables *)
-  let choose_with_0_dimen_var ~types ~vardefs guards ants_0_dimen cons smv_file invs =
-    choose_one ~types ~vardefs (guards@ants_0_dimen) cons smv_file invs
-
   (* Formulae on 0 dimension variables *)
   let form_on_0_dimen forms =
     List.filter forms ~f:(fun f ->
@@ -371,6 +361,17 @@ module Choose = struct
         )
     in
     wrapper guards []
+
+  (* Assign to formula *)
+  let assign_to_form (v, e) = eqn (var v) e
+
+  (* Assignments on 0 dimension variables *)
+  let assigns_on_0_dimen assigns =
+    List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.is_empty paramrefs)
+  
+  (* choose new inv about 0 dimension variables *)
+  let choose_with_0_dimen_var ~types ~vardefs guards ants_0_dimen cons smv_file invs =
+    choose_one ~types ~vardefs (guards@ants_0_dimen) cons smv_file invs
 
   (* choose new inv *)
   let choose ~types ~vardefs guards assigns cons smv_file invs =
