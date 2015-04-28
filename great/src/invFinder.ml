@@ -297,9 +297,6 @@ module Choose = struct
         if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
           new_inv inv
         else begin
-          Prt.warning (sprintf "%s is not inv, which shouldn't occur\n" (
-            ToStr.Smv.form_act inv
-          ));
           not_inv
         end
     end
@@ -439,7 +436,7 @@ let deal_with_case_3 crule cinv cons old_invs smv_file ~types ~vardefs =
     | Choose.New_inv(inv) -> 
       let simplified = simplify inv ~types ~vardefs in
       ([simplified], simplified)
-    | Choose.Not_inv -> ([], miracle)(* TODO raise Empty_exception? *)
+    | Choose.Not_inv -> raise Empty_exception
   in
   (new_inv, { rule = crule;
     inv = cinv;
