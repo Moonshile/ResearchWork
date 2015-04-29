@@ -182,7 +182,10 @@ let exec ~prog ~args =
 let exec_with_input ~prog ~args input =
   let open Unix.Process_info in
   let sub = Unix.create_process ~prog ~args in
-  let size = Unix.write sub.stdin ~buf:input in
+  let size = 
+    let s = Unix.write sub.stdin ~buf:input in
+    Unix.close sub.stdin; s
+  in
   if size = 0 then
     raise Empty_exception
   else
