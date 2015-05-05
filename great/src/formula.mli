@@ -14,7 +14,7 @@ open Paramecium
     @param types type definitions
     @param vardefs variable definitions
 *)
-val is_tautology : ?filename:string -> ?quiet:bool -> types:typedef list -> vardefs:vardef list -> formula -> bool
+val is_tautology : ?quiet:bool -> types:typedef list -> vardefs:vardef list -> formula -> bool
 
 (** Cast a formula to a list of formulae with and relation between them *)
 val flat_and_to_list : formula -> formula list

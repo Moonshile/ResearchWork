@@ -16,12 +16,12 @@ open Core.Std
     @param types type definitions
     @param vardefs variable definitions
 *)
-let is_tautology ?(filename="inv.smt2") ?(quiet=true) ~types ~vardefs form =
-  not (Smt.is_satisfiable ~filename ~quiet (ToStr.Smt2.act ~types ~vardefs (neg form)))
+let is_tautology ?(quiet=true) ~types ~vardefs form =
+  not (Smt.is_satisfiable ~quiet (ToStr.Smt2.act ~types ~vardefs (neg form)))
 
 (** Judge if a formula is satisfiable *)
-let is_satisfiable ?(filename="inv.smt2") ?(quiet=true) ~types ~vardefs form =
-  Smt.is_satisfiable ~filename ~quiet (ToStr.Smt2.act ~types ~vardefs form)
+let is_satisfiable ?(quiet=true) ~types ~vardefs form =
+  Smt.is_satisfiable ~quiet (ToStr.Smt2.act ~types ~vardefs form)
 
 (** Cast a formula to a list of formulae with and relation between them *)
 let rec flat_and_to_list form =

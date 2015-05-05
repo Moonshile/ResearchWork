@@ -14,4 +14,4 @@ exception Error_in_formula
     @param formula the formula to be judged
     @return true if is satisfiable else false
 *)
-val is_satisfiable : ?filename:string -> ?quiet:bool -> string -> bool
+val is_satisfiable : ?quiet:bool -> string -> bool

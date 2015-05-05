@@ -26,13 +26,9 @@ let create_file filename content =
     @param formula the formula to be judged
     @return true if is satisfiable else false
 *)
-let is_satisfiable ?(filename="inv.smt2") ?(quiet=true) formula =
+let is_satisfiable ?(quiet=true) formula =
   let (smt, _) =
-    let res =
-      create_file filename formula;
-      exec ~prog:smt_solver ~args:["-smt2"; filename]
-    in
-    Unix.remove filename; res
+    exec_with_input ~prog:smt_solver ~args:["-smt2"; "-in"] formula
   in
   let not_quiet () =
     if not quiet then
