@@ -8,3 +8,5 @@
 *.native
 _build
 *.smt2
+*.o
+checker

@@ -13,12 +13,6 @@ let smt_solver = "z3"
 (** Raises when there is an error in the formula to be judged *)
 exception Error_in_formula
 
-(* create a file named filename and fill it with content *)
-let create_file filename content =
-  let outf = Out_channel.create filename in
-  fprintf outf "%s\n" content;
-  Out_channel.close outf
-
 (** Judge if a given formula is satisfiable
 
     @param filename is the temp file to store smt2 formula, default is "inv.smt2"
