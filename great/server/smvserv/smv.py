@@ -22,6 +22,7 @@ class SMV(object):
         res = self.process.expect(['\.\s+NuSMV > ', EOF, TIMEOUT])
         if res == 0:
             return self.process.before
+        return '0'
 
     def check(self, invariant):
         pass
