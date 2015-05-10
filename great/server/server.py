@@ -14,6 +14,7 @@ OK = '0'
 COMPUTE_REACHABLE = '1'
 QUERY_REACHABLE = '2'
 CHECK_INV = '3'
+SMV_QUIT = '7'
 SET_SMT2_CONTEXT = '4'
 QUERY_SMT2 = '5'
 QUERY_STAND_SMT2 = '6'
@@ -37,6 +38,9 @@ def smv_handler(to_parent, from_parent, smv):
         elif data[0] == CHECK_INV:
             is_inv = smv.check(args[2])
             to_parent.send([data[1], is_inv])
+        elif data[0] == SMV_QUIT:
+            res = smv.exit()
+            to_parent.send([data[1], res])
 
 
 def start_smv(name, content, smv_path, smv_file_dir):
@@ -82,6 +86,12 @@ def serv(conn, addr):
         while not res:
             res = smv_pool.recv(cmd[2])
         conn.sendall(','.join([OK] + res))
+    elif cmd[0] == SMV_QUIT:
+        """
+        In this case, cmd should be [command, command_id, name]
+        """
+        smv_pool.exit(cmd[2])
+        conn.sendall(OK)
     elif cmd[0] == SET_SMT2_CONTEXT:
         """
         In this case, cmd should be [command, command_id, name, context]

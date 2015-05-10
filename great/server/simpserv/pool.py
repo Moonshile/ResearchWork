@@ -35,4 +35,3 @@ class Pool(object):
         Try to receive data from process named name, if no data, None returned
         """
         return self.comm_from_child_pool[name].recv() if self.comm_from_child_pool[name].poll() else None
-
