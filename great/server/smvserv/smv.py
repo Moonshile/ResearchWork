@@ -33,3 +33,17 @@ class SMV(object):
         if res == 0:
             return self.process.before
         return '0'
+
+    def exit(self):
+        self.process.send('quit\n')
+        res = self.process.expect([EOF, TIMEOUT], timeout=1)
+        return res == 0
+
+"""
+smv = SMV('/home/duan/Downloads/NuSMV/bin/NuSMV', '../mutualEx.smv')
+print smv.go_and_compute_reachable()
+print smv.check('af')
+print smv.check('n[1] = i')
+print smv.check('n[1] = c -> n[2] != c')
+print smv.exit()
+"""
