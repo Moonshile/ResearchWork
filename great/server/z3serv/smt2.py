@@ -9,7 +9,12 @@ Functions for checking smt2 formulae
 
 from z3 import Solver, parse_smt2_string
 
-def check(smt2_str):
-    s = Solver()
-    s.add(parse_smt2_string(smt2_str))
-    return str(s.check())
+class SMT2(object):
+    def __init__(self, context):
+        super(SMT2, self).__init__()
+        self.context = context
+
+    def check(self, smt2_formula, context=None):
+        s = Solver()
+        s.add(parse_smt2_string((context if context else self.context) + smt2_formula))
+        return str(s.check())

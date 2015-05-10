@@ -15,7 +15,6 @@ def start_server(host, port, serv=echo, timeout=5):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((host, port))
     s.listen(1)
-    serv = echo
     while True:
         conn, addr = s.accept()
         conn.settimeout(timeout)

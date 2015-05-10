@@ -7,7 +7,7 @@ Functions for checking invariants with NuSMV
 @author Kaiqiang Duan <duankq@ios.ac.cn>
 """
 
-from expect import spawn, EOF
+from pexpect import spawn, EOF
 
 class SMV(object):
     def __init__(self, smv_path, smv_file, timeout=-1):

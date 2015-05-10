@@ -3,7 +3,8 @@
 import time, os
 
 from simpserv import start_server, Pool
-from smv import SMV
+from smvserv import SMV
+from z3serv import SMT2
 
 from settings import MAX_SLEEP_TIME, TIME_OUT, SMV_PATH, SMV_FILE_DIR, HOST, PORT
 
@@ -11,10 +12,15 @@ ERROR = '-2'
 WAITING = '-1'
 OK = '0'
 COMPUTE_REACHABLE = '1'
-CHECK_INV = '2'
+QUERY_REACHABLE = '2'
+CHECK_INV = '3'
+SET_SMT2_CONTEXT = '4'
+QUERY_SMT2 = '5'
+QUERY_STAND_SMT2 = '6'
 
 
-pool = Pool()
+smv_pool = Pool()
+smt2_pool = {}
 
 def smv_handler(to_parent, from_parent, smv):
     sleep_time = 0.1
@@ -45,7 +51,7 @@ def start_smv(name, content, smv_path, smv_file_dir):
         with open(smv_file, 'w') as f:
             f.write(content)
     smv = SMV(smv_path, smv_file)
-    pool.add(name, smv_handler, smv)
+    smv_pool.add(name, smv_handler, smv)
 
 def serv(conn, addr):
     data = ''
@@ -59,23 +65,46 @@ def serv(conn, addr):
         In this case, cmd should be [command, command_id, name, smv file content]
         """
         start_smv(cmd[2], cmd[3], SMV_PATH, SMV_FILE_DIR)
-        pool.send(cmd[2], [COMPUTE_REACHABLE, cmd[1]])
+        smv_pool.send(cmd[2], [COMPUTE_REACHABLE, cmd[1]])
         conn.sendall(OK)
     elif cmd[0] == QUERY_REACHABLE:
         """
         In this case, cmd should be [command, command_id, name]
         """
-        data = pool.recv(cmd[2])
+        data = smv_pool.recv(cmd[2])
         conn.sendall(','.join([OK] + data) if data else WAITING)
     elif cmd[0] == CHECK_INV:
         """
         In this case, cmd should be [command, command_id, name, inv]
         """
-        pool.send(cmd[2], [CHECK_INV, cmd[1], cmd[3]])
-        res = pool.recv(cmd[2])
+        smv_pool.send(cmd[2], [CHECK_INV, cmd[1], cmd[3]])
+        res = smv_pool.recv(cmd[2])
         while not res:
-            res = pool.recv(cmd[2])
+            res = smv_pool.recv(cmd[2])
         conn.sendall(','.join([OK] + res))
+    elif cmd[0] == SET_SMT2_CONTEXT:
+        """
+        In this case, cmd should be [command, command_id, name, context]
+        """
+        smt2 = SMT2(cmd[3])
+        smt2_pool[cmd[2]] = smt2
+        conn.sendall(OK)
+    elif cmd[0] == QUERY_SMT2:
+        """
+        In this case, cmd should be [command, command_id, name, formula]
+        """
+        if cmd[2] in smt2_pool:
+            res = smt2_pool[cmd[2]].check(cmd[3])
+            conn.sendall(','.join([OK, res]))
+        else:
+            conn.sendall(ERROR)
+    elif cmd[0] == QUERY_STAND_SMT2:
+        """
+        In this case, cmd should be [command, command_id, context, formula]
+        """
+        smt2 = SMT2(cmd[2])
+        res = smt2.check(cmd[3])
+        conn.sendall(','.join([OK, res]))
     conn.close()
 
 if __name__ == '__main__':
