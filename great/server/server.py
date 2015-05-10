@@ -1,6 +1,6 @@
 #coding=utf-8
 
-import time, os
+import time, os, socket
 
 from simpserv import start_server, Pool
 from smvserv import SMV

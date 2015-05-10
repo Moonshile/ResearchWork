@@ -3,7 +3,7 @@
 import time
 import socket
 
-HOST = 'localhost'
+HOST = '192.168.1.204'
 PORT = 50008
 
 while True:
