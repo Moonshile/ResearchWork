@@ -11,7 +11,7 @@ let host = UnixLabels.inet_addr_of_string "192.168.1.204"
 
 let port = 50008
 
-type requst_type =
+type request_type =
   | ERROR
   | WAITING
   | OK
@@ -23,7 +23,7 @@ type requst_type =
   | QUERY_SMT2
   | QUERY_STAND_SMT2
 
-let requst_type_to_str rt =
+let request_type_to_str rt =
   match rt with
   | ERROR -> "-2"
   | WAITING -> "-1"
@@ -58,62 +58,41 @@ let make_request str =
   let len = Unix.read sock ~buf:res in
   String.sub res ~pos:0 ~len
 
-let command_id = ref 0;
+let command_id = ref 0
+
+let request cmd req_str =
+  let cmd  = request_type_to_str cmd in
+  let cmd_id = !command_id in
+  let req = sprintf "%s,%d,%s" cmd cmd_id req_str in
+  incr command_id; printf "%d\n" (!command_id);
+  make_request req
 
 module Smv = struct
   
   let compute_reachable name content =
-    let cmd = requst_type_to_str COMPUTE_REACHABLE in
-    let cmd_id = !command_id in
-    let req = sprintf "%s,%d,%s,%s" cmd cmd_id name content in
-    incr command_id; printf "%d" (!command_id);
-    make_request req
+    request COMPUTE_REACHABLE (sprintf "%s,%s" name content)
 
   let query_reachable name =
-    let cmd = requst_type_to_str QUERY_REACHABLE in
-    let cmd_id = !command_id in
-    let req = sprintf "%s,%d,%s" cmd cmd_id name in
-    incr command_id; printf "%d" (!command_id);
-    make_request req
+    request QUERY_REACHABLE name
 
   let check_inv name inv =
-    let cmd = requst_type_to_str CHECK_INV in
-    let cmd_id = !command_id in
-    let req = sprintf "%s,%d,%s,%s" cmd cmd_id name inv in
-    incr command_id; printf "%d" (!command_id);
-    make_request req
+    request CHECK_INV (sprintf "%s,%s" name inv)
 
   let quit name =
-    let cmd = requst_type_to_str SMV_QUIT in
-    let cmd_id = !command_id in
-    let req = sprintf "%s,%d,%s" cmd cmd_id name in
-    incr command_id; printf "%d" (!command_id);
-    make_request req
+    request SMV_QUIT name
 
 end
 
 module Smt2 = struct
 
   let set_context name context =
-    let cmd = requst_type_to_str SET_SMT2_CONTEXT in
-    let cmd_id = !command_id in
-    let req = sprintf "%s,%d,%s,%s" cmd cmd_id name context in
-    incr command_id; printf "%d" (!command_id);
-    make_request req
+    request SET_SMT2_CONTEXT (sprintf "%s,%s" name context)
 
   let check name f =
-    let cmd = requst_type_to_str QUERY_SMT2 in
-    let cmd_id = !command_id in
-    let req = sprintf "%s,%d,%s,%s" cmd cmd_id name f in
-    incr command_id; printf "%d" (!command_id);
-    make_request req
+    request QUERY_SMT2 (sprintf "%s,%s" name f)
 
   let check_stand context f =
-    let cmd = requst_type_to_str QUERY_STAND_SMT2 in
-    let cmd_id = !command_id in
-    let req = sprintf "%s,%d,%s,%s" cmd cmd_id context f in
-    incr command_id; printf "%d" (!command_id);
-    make_request req
+    request QUERY_STAND_SMT2 (sprintf "%s,%s" context f)
 
 end
 
