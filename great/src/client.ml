@@ -85,6 +85,7 @@ module Smv = struct
     let (status, diameter) = request QUERY_REACHABLE name in
     if status = OK then 
       match diameter with
+      | "-1"::[] -> raise Server_exception
       | d::[] -> Int.of_string d
       | _ -> raise Server_exception
     else begin 0 end

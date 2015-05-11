@@ -18,11 +18,16 @@ class SMV(object):
 
     def go_and_compute_reachable(self):
         self.process.send('go\ncompute_reachable\n')
-        self.process.expect(['The diameter of the FSM is ', EOF, TIMEOUT], timeout=-1)
-        res = self.process.expect(['\.\s+NuSMV > ', EOF, TIMEOUT])
-        if res == 0:
-            return self.process.before
-        return '0'
+
+    def query_reachable(self):
+        computed = self.process.expect(['The diameter of the FSM is ', EOF, TIMEOUT], timeout=0)
+        if computed == 2:
+            return None
+        elif computed == 0:
+            res = self.process.expect(['\.\s+NuSMV > ', EOF, TIMEOUT])
+            if res == 0:
+                return self.process.before
+            return '-1'
 
     def check(self, invariant):
         self.process.send('check_invar -p \"' + invariant + '\"\n')
