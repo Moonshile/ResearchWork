@@ -18,7 +18,7 @@ class SMV(object):
 
     def go_and_compute_reachable(self):
         self.process.send('go\ncompute_reachable\n')
-        self.process.expect(['The diameter of the FSM is ', EOF, TIMEOUT], timeout=100)
+        self.process.expect(['The diameter of the FSM is ', EOF, TIMEOUT], timeout=-1)
         res = self.process.expect(['\.\s+NuSMV > ', EOF, TIMEOUT])
         if res == 0:
             return self.process.before
