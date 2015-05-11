@@ -53,7 +53,7 @@ type t = {
 }
 
 (** Convert t to a string *)
-val to_str : t -> types:typedef list -> vardefs:vardef list -> string
+val to_str : t -> string
 
 (** Find new inv and relations with concrete rule and concrete invariant
     
@@ -63,8 +63,7 @@ val to_str : t -> types:typedef list -> vardefs:vardef list -> string
     @return a tuple of new invariant and relation, the new invariant list is empty or contains 1 inv
 *)
 val tabular_expans : concrete_rule -> cinv:concrete_prop -> old_invs:formula list -> 
-  smv_file:string -> types:typedef list -> vardefs:vardef list -> 
-  formula list * t
+  smv_file:string -> formula list * t
 
 (** Find new inv and relations with concrete rules and a concrete invariant
     
@@ -72,8 +71,7 @@ val tabular_expans : concrete_rule -> cinv:concrete_prop -> old_invs:formula lis
     @return a triple: next id of new inv, new invs discovered, relations
 *)
 val tabular_rules_cinv : rule list -> concrete_prop -> 
-  new_inv_id:int -> smv_file:string -> types:typedef list -> vardefs:vardef list -> 
-  int * formula list * t list
+  new_inv_id:int -> smv_file:string -> types:typedef list -> int * formula list * t list
 
 (** Find invs and causal relations of a protocol
 
