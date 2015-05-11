@@ -11,6 +11,10 @@ open Paramecium
 (** Translate to smt2 string *)
 module Smt2 : sig
 
+  val form_of: formula -> string
+
+  val context_of: types:typedef list -> vardefs:vardef list -> string
+
   (** Translate to smt2 string
 
       @param types the type definitions of the protocol

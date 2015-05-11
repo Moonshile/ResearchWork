@@ -7,7 +7,9 @@
 open Core.Std;;
 open Utils;;
 
-let host = UnixLabels.inet_addr_of_string "192.168.1.204"
+exception Server_exception
+
+let host = UnixLabels.inet_addr_of_string "127.0.0.1"
 
 let port = 50008
 
@@ -51,9 +53,9 @@ let str_to_request_type str =
   | _ -> raise Empty_exception
 
 let make_request str =
-  let sock = Unix.socket UnixLabels.PF_INET UnixLabels.SOCK_STREAM 0 in
+  let sock = Unix.socket ~domain:UnixLabels.PF_INET ~kind:UnixLabels.SOCK_STREAM ~protocol:0 in
   let res = String.make 1024 '\000' in
-  Unix.connect sock (UnixLabels.ADDR_INET(host, port));
+  Unix.connect sock ~addr:(UnixLabels.ADDR_INET(host, port));
   let _writed = Unix.write sock ~buf:str in
   let len = Unix.read sock ~buf:res in
   String.sub res ~pos:0 ~len
@@ -64,35 +66,64 @@ let request cmd req_str =
   let cmd  = request_type_to_str cmd in
   let cmd_id = !command_id in
   let req = sprintf "%s,%d,%s" cmd cmd_id req_str in
-  incr command_id; printf "%d\n" (!command_id);
-  make_request req
+  incr command_id; (*printf "%d\n" (!command_id);*)
+  let res = String.split (make_request req) ~on:',' in
+  match res with
+  | [] -> raise Empty_exception
+  | status::res' -> 
+    let s = str_to_request_type status in
+    if s = ERROR then raise Server_exception
+    else begin (s, res') end
 
 module Smv = struct
   
   let compute_reachable name content =
-    request COMPUTE_REACHABLE (sprintf "%s,%s" name content)
+    let (status, _) = request COMPUTE_REACHABLE (sprintf "%s,%s" name content) in
+    status = OK
 
   let query_reachable name =
-    request QUERY_REACHABLE name
+    let (status, diameter) = request QUERY_REACHABLE name in
+    if status = OK then 
+      match diameter with
+      | d::[] -> Int.of_string d
+      | _ -> raise Server_exception
+    else begin 0 end
 
   let check_inv name inv =
-    request CHECK_INV (sprintf "%s,%s" name inv)
+    let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) in
+    match res with
+    | r::[] -> r
+    | _ -> raise Server_exception
 
   let quit name =
-    request SMV_QUIT name
+    let (s, _) = request SMV_QUIT name in
+    s = OK
 
 end
 
 module Smt2 = struct
 
   let set_context name context =
-    request SET_SMT2_CONTEXT (sprintf "%s,%s" name context)
+    let (s, _) = request SET_SMT2_CONTEXT (sprintf "%s,%s" name context) in
+    s = OK
 
   let check name f =
-    request QUERY_SMT2 (sprintf "%s,%s" name f)
+    let (_, res) = request QUERY_SMT2 (sprintf "%s,%s" name f) in
+    match res with
+    | r::[] ->
+      if r = "unsat" then false
+      else if r = "sat" then true
+      else raise Server_exception
+    | _ -> raise Server_exception
 
   let check_stand context f =
-    request QUERY_STAND_SMT2 (sprintf "%s,%s" context f)
+    let (_, res) = request QUERY_STAND_SMT2 (sprintf "%s,%s" context f) in
+    match res with
+    | r::[] -> 
+      if r = "unsat" then false
+      else if r = "sat" then true
+      else raise Server_exception
+    | _ -> raise Server_exception
 
 end
 

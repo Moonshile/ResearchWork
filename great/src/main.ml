@@ -113,7 +113,7 @@ let [(cinv, invs, relations)] = find ~protocol ~prop_params:[prop_params];;
 let invs_str = 
   invs
   |> List.map ~f:neg
-  |> List.map ~f:(simplify ~types ~vardefs)
+  |> List.map ~f:simplify
   |> List.map ~f:ToStr.Smv.form_act;;
 
 let relations_str = List.map relations ~f:(to_str ~types ~vardefs);;

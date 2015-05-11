@@ -102,14 +102,7 @@ module Smt2 = struct
       |> reduce ~default:"false" ~f:(fun res x -> sprintf "(or %s %s)" res x)
     | Imply(f1, f2) -> sprintf "(=> %s %s)" (form_act f1) (form_act f2)
 
-  (** Translate to smt2 string
-
-      @param types the type definitions of the protocol
-      @param vardefs the variable definitions of the protocol
-      @param form the formula to be translated
-      @return the smt2 string
-  *)
-  let act ~types ~vardefs form =
+  let context_of ~types ~vardefs =
     let type_str =
       List.map types ~f:type_act
       |> List.filter ~f:(fun x -> not (x = ""))
@@ -119,7 +112,20 @@ module Smt2 = struct
       List.map vardefs ~f:(vardef_act ~types)
       |> String.concat ~sep:"\n"
     in
-    sprintf "%s\n%s\n(assert %s)\n(check-sat)" type_str vardef_str (form_act form)
+    sprintf "%s%s" type_str vardef_str
+
+  let form_of form =
+    sprintf "(assert %s)" (form_act form)
+
+  (** Translate to smt2 string
+
+      @param types the type definitions of the protocol
+      @param vardefs the variable definitions of the protocol
+      @param form the formula to be translated
+      @return the smt2 string
+  *)
+  let act ~types ~vardefs form =
+    sprintf "%s\n%s\n(check-sat)" (context_of ~types ~vardefs) (form_of form)
 
 end
 

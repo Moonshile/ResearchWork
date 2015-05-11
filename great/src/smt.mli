@@ -7,6 +7,8 @@
 (** Raises when there is an error in the formula to be judged *)
 exception Error_in_formula
 
+val set_context : string -> string -> bool
+
 (** Judge if a given formula is satisfiable
 
     @param filename is the temp file to store smt2 formula, default is "inv.smt2"

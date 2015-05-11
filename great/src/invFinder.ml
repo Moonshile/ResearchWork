@@ -100,7 +100,7 @@ let relation_2_str relation ~types ~vardefs =
   | InvHoldForRule1 -> "invHoldForRule1"
   | InvHoldForRule2 -> "invHoldForRule2"
   | InvHoldForRule3(cp) -> 
-    let form = simplify ~types ~vardefs (neg (concrete_prop_2_form cp)) in
+    let form = simplify (neg (concrete_prop_2_form cp)) in
     sprintf "invHoldForRule3-%s" (ToStr.Smv.form_act form)
 
 (** Convert t to a string *)
@@ -108,7 +108,7 @@ let to_str {rule; inv; relation} ~types ~vardefs =
   let ConcreteRule(Rule(rname, _, _, _), rps) = rule in
   let rps = List.map rps ~f:(fun (_, pr) -> ToStr.Smv.paramref_act pr) in
   let rule_str = sprintf "%s%s" rname (String.concat rps) in
-  let inv_str = ToStr.Smv.form_act (simplify ~types ~vardefs (concrete_prop_2_form inv)) in
+  let inv_str = ToStr.Smv.form_act (simplify (concrete_prop_2_form inv)) in
   let rel_str = relation_2_str ~types ~vardefs relation in
   sprintf "rule: %s; inv: %s; rel: %s" rule_str inv_str rel_str
 
@@ -261,7 +261,7 @@ module Choose = struct
         None
       (* If length of parameters in old is 0, then check directly *)
       else if List.length old_pd = 0 then
-        if is_tautology (imply old inv) ~types ~vardefs then Some old
+        if is_tautology (imply old inv) then Some old
         else begin None end
       (* If old has more paramters, then false *)
       else if param_compatible inv_p old_p = [] then None
@@ -271,7 +271,7 @@ module Choose = struct
         let params = param_compatible inv_p old_p in
         let forms = List.map params ~f:(fun p-> apply_form old_gened ~p) in
         let tautologies = List.filter forms ~f:(fun form ->
-          is_tautology (imply form inv) ~types ~vardefs
+          is_tautology (imply form inv)
         ) in
         match tautologies with
         | [] -> None
@@ -287,7 +287,7 @@ module Choose = struct
 
   (* Check the level of an optional invariant *)
   let check_level ~types ~vardefs inv smv_file invs =
-    if is_tautology inv ~types ~vardefs then
+    if is_tautology inv then
       tautology inv
     else begin
       let implied_by_old = inv_implied_by_old ~types ~vardefs inv invs in
@@ -434,7 +434,7 @@ let deal_with_case_3 crule cinv cons old_invs smv_file ~types ~vardefs =
     | Choose.Tautology(_) -> ([], chaos)
     | Choose.Implied(_, old) -> ([], old)
     | Choose.New_inv(inv) -> 
-      let simplified = simplify inv ~types ~vardefs in
+      let simplified = simplify inv in
       ([simplified], simplified)
     | Choose.Not_inv -> raise Empty_exception
   in
@@ -446,17 +446,17 @@ let deal_with_case_3 crule cinv cons old_invs smv_file ~types ~vardefs =
 (* Find new inv and relations with concrete rule and a concrete invariant *)
 let tabular_expans crule ~cinv ~old_invs ~smv_file ~types ~vardefs =
   let Rule(_, _, form, statement) = concrete_rule_2_rule_inst crule in
-  let inv_inst = simplify ~types ~vardefs (concrete_prop_2_form cinv) in
+  let inv_inst = simplify (concrete_prop_2_form cinv) in
   (* preCond *)
   let obligation =
     preCond inv_inst statement
-    |> simplify ~types ~vardefs
+    |> simplify
   in
   (* case 2 *)
   if form_are_symmetric obligation inv_inst then
     ([], deal_with_case_2 crule cinv)
   (* case 1 *)
-  else if is_tautology (imply form (neg obligation)) ~types ~vardefs then
+  else if is_tautology (imply form (neg obligation)) then
     ([], deal_with_case_1 crule cinv)
   (* case 3 *)
   else begin
@@ -508,6 +508,7 @@ let tabular_rules_cinv rules cinv ~new_inv_id ~smv_file ~types ~vardefs =
     @return causal relation table
 *)
 let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_params =
+  let _smt_context = set_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let smv_file = sprintf "%s.smv" name in
   let rec wrapper cinvs new_inv_id table =
     match cinvs with

@@ -14,7 +14,7 @@ open Paramecium
     @param types type definitions
     @param vardefs variable definitions
 *)
-val is_tautology : ?quiet:bool -> types:typedef list -> vardefs:vardef list -> formula -> bool
+val is_tautology : ?quiet:bool -> formula -> bool
 
 (** Cast a formula to a list of formulae with and relation between them *)
 val flat_and_to_list : formula -> formula list
@@ -36,7 +36,7 @@ val flat_to_orList : formula -> formula
 val form_are_symmetric : formula -> formula -> bool
 
 (** Simplify a formula *)
-val simplify : types:typedef list -> vardefs:vardef list -> formula -> formula
+val simplify : formula -> formula
 
 (** Raises when there are many parameter references more than range of its type *)
 exception Too_many_parameters_of_same_type
