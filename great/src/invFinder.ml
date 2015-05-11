@@ -294,7 +294,7 @@ module Choose = struct
       match implied_by_old with
       | Some(old) -> implied inv old
       | None ->
-        if is_inv_by_smv ~smv_file (ToStr.Smv.form_act inv) then
+        if is_inv_by_smv (ToStr.Smv.form_act inv) then
           new_inv inv
         else begin
           not_inv
@@ -508,8 +508,9 @@ let tabular_rules_cinv rules cinv ~new_inv_id ~smv_file ~types =
     @return causal relation table
 *)
 let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_params =
-  let _smt_context = set_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let smv_file = sprintf "%s.smv" name in
+  let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
+  let _smv_context = set_smv_context name (In_channel.input_all (In_channel.create smv_file)) in
   let rec wrapper cinvs new_inv_id table =
     match cinvs with
     | [] -> table

@@ -8,35 +8,29 @@ open Utils
 
 open Core.Std
 
-let smv_path = "/home/duan/Downloads/NuSMV/bin/NuSMV"
-
 (* Raises when there are some errors in the NuSMV code *)
 exception Error_in_smv
+exception Name_not_known
+
+let protocol_name = ref ""
+
+let set_smv_context name smv_file_content =
+  protocol_name := name;
+  let _res = Client.Smv.compute_reachable name smv_file_content in
+  let diameter = ref 0 in
+  while !diameter = 0 do
+    Unix.sleep 1;
+    diameter := Client.Smv.query_reachable name;
+  done;
+  !diameter
+
 
 (** Judge if a given invariant is true invariant
 
     @param quiet true (default) to prevent to print output of smt solver to screen
-    @param smv_file the original smv file for computing reachable set
     @param inv the inv to be judged
     @return true if is true invariant else false
 *)
-let is_inv_by_smv ?(quiet=true) ~smv_file inv =
-  let (stdout, stderr) =
-    let check_str = sprintf "go\ncompute_reachable\ncheck_invar -p \"%s\"\nquit\n" inv in
-    let args = ["-dcx"; "-int"; "-old"; smv_file] in
-    exec_with_input ~prog:smv_path ~args check_str
-  in
-  let not_quiet () =
-    if not quiet then
-      (Prt.info "The invariant to be checked is:\n";printf "%s\n" inv)
-    else begin () end
-  in
-  not_quiet ();
-  let pattern = Re2.Regex.create_exn "-- inv.+\n" in
-  try
-    let smv_res = String.strip (Re2.Regex.find_first_exn pattern stdout) in
-    let res = String.is_suffix smv_res ~suffix:"true" in
-    if quiet then res else (Prt.info "Result of smv check is:\n";printf "%s\n" smv_res; res)
-  with
-  | _ -> Prt.error "NuSMV error info:\n";printf "%s" stderr; raise Error_in_smv
-
+let is_inv_by_smv ?(quiet=true) inv =
+  if (!protocol_name) = "" then raise Name_not_known
+  else begin Client.Smv.check_inv (!protocol_name) inv end

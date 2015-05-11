@@ -9,7 +9,7 @@ exception Server_exception
 module Smv : sig
   val compute_reachable : string -> string -> bool
   val query_reachable : string -> int
-  val check_inv : string -> string -> string
+  val check_inv : string -> string -> bool
   val quit : string -> bool
 end
 

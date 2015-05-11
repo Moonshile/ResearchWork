@@ -1,6 +1,6 @@
 #coding=utf-8
 
-import time, os, socket
+import time, os, socket, hashlib
 
 from simpserv import start_server, Pool
 from smvserv import SMV
@@ -44,38 +44,44 @@ def smv_handler(to_parent, from_parent, smv):
 
 
 def start_smv(name, content, smv_path, smv_file_dir):
-    smv_file = smv_file_dir + hashlib.md5(name).hexdigest()
+    smv_file = smv_file_dir + hashlib.md5(name).hexdigest() + '.smv'
     new_smv_file = True
     if os.path.isfile(smv_file):
         with open(smv_file, 'r') as f:
             c = f.read()
-            if hashlib.md5(content).hexdigest() == hashlib.md5(c).hexdigest():
+            if content == c:
                 new_smv_file = False
     if new_smv_file:
         with open(smv_file, 'w') as f:
             f.write(content)
     smv = SMV(smv_path, smv_file)
-    smv_pool.add(name, smv_handler, smv)
+    smv_pool.add(name, smv_handler, [smv])
 
 def serv(conn, addr):
     data = ''
-    try:
-        data += conn.recv(1024)
-    except socket.timeout, e:
-        pass
+    recv_len = 1024
+    while recv_len == 1024:
+        try:
+            d = conn.recv(1024)
+            data += d
+            recv_len = len(d)
+        except socket.timeout, e:
+            pass
+    print data
     cmd = data.split(',')
     if cmd[0] == COMPUTE_REACHABLE:
         """
         In this case, cmd should be [command, command_id, name, smv file content]
         """
-        start_smv(cmd[2], cmd[3], SMV_PATH, SMV_FILE_DIR)
+        # There are many ',' in smv file, so should concat the parts splited
+        start_smv(cmd[2], ','.join(cmd[3:]), SMV_PATH, SMV_FILE_DIR)
         smv_pool.send(cmd[2], [COMPUTE_REACHABLE, cmd[1]])
         conn.sendall(OK)
     elif cmd[0] == QUERY_REACHABLE:
         """
         In this case, cmd should be [command, command_id, name]
         """
-        data = smv_pool.recv(cmd[2])
+        data = None
         conn.sendall(','.join([OK] + data) if data else WAITING)
     elif cmd[0] == CHECK_INV:
         """

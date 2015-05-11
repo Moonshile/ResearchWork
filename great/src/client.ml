@@ -92,7 +92,7 @@ module Smv = struct
   let check_inv name inv =
     let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) in
     match res with
-    | r::[] -> r
+    | r::[] -> Bool.of_string r
     | _ -> raise Server_exception
 
   let quit name =
