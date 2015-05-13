@@ -1,6 +1,6 @@
 #coding=utf-8
 
-import time, os, socket, hashlib
+import time, os, socket, hashlib, sys
 
 from simpserv import start_server
 from smvserv import SMV
@@ -22,6 +22,8 @@ QUERY_STAND_SMT2 = '6'
 
 smt2_pool = {}
 smv_pool = {}
+
+__verbose = False
 
 def add_smv_process(name, content):
     smv_file = SMV_FILE_DIR + hashlib.md5(name).hexdigest() + '.smv'
@@ -48,7 +50,8 @@ def serv(conn, addr):
             recv_len = len(d)
         except socket.timeout, e:
             pass
-    print data
+    if __verbose:
+        print data
     cmd = data.split(',')
     if cmd[0] == COMPUTE_REACHABLE:
         """
@@ -102,6 +105,11 @@ def serv(conn, addr):
         res = smt2.check(cmd[3])
         conn.sendall(','.join([OK, res]))
     conn.close()
+
+if '-v' in sys.argv or '--verbose' in sys.argv:
+    __verbose = True
+if '-h' in sys.argv or '--help' in sys.argv:
+    print """Usage: [-v|-h] to [--verbose|--help]"""
 
 if __name__ == '__main__':
     start_server(HOST, PORT, serv=serv, timeout=TIME_OUT)
