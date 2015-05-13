@@ -40,10 +40,10 @@ def add_smv_process(name, content):
 
 def serv(conn, addr):
     data = ''
-    recv_len = 1024
-    while recv_len == 1024:
+    recv_len = 256
+    while recv_len == 256:
         try:
-            d = conn.recv(1024)
+            d = conn.recv(256)
             data += d
             recv_len = len(d)
         except socket.timeout, e:

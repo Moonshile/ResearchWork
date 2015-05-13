@@ -15,18 +15,23 @@ class SMV(object):
         self.smv_path = smv_path
         self.process = spawn(smv_path + ' -dcx -int -old ' + smv_file)
         self.process.expect(['NuSMV > ', EOF, TIMEOUT])
+        self.diameter = None
 
     def go_and_compute_reachable(self):
-        self.process.send('go\ncompute_reachable\n')
+        if not self.diameter:
+            self.process.send('go\ncompute_reachable\n')
 
     def query_reachable(self):
+        if self.diameter:
+            return self.diameter
         computed = self.process.expect(['The diameter of the FSM is ', EOF, TIMEOUT], timeout=0)
         if computed == 2:
             return None
         elif computed == 0:
             res = self.process.expect(['\.\s+NuSMV > ', EOF, TIMEOUT])
             if res == 0:
-                return self.process.before
+                self.diameter = self.process.before
+                return self.diameter
             return '-1'
 
     def check(self, invariant):
