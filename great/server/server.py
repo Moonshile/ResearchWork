@@ -42,12 +42,17 @@ def add_smv_process(name, content):
 
 def serv(conn, addr):
     data = ''
-    recv_len = 256
-    while recv_len == 256:
+    size = 1024
+    len_to_recv = None
+    while len(data) < len_to_recv or len_to_recv is None:
         try:
-            d = conn.recv(256)
-            data += d
-            recv_len = len(d)
+            d = conn.recv(size)
+            if len_to_recv is None:
+                d = d.split(',')
+                len_to_recv = int(d[0])
+                data += ','.join(d[1:])
+            else:
+                data += d
         except socket.timeout, e:
             pass
     if __verbose:
@@ -55,7 +60,7 @@ def serv(conn, addr):
     cmd = data.split(',')
     if cmd[0] == COMPUTE_REACHABLE:
         """
-        In this case, cmd should be [command, command_id, name, smv file content]
+        In this case, cmd should be [length, command, command_id, name, smv file content]
         """
         # There are many ',' in smv file, so should concat the parts splited
         name = cmd[2]
@@ -65,32 +70,32 @@ def serv(conn, addr):
         conn.sendall(OK)
     elif cmd[0] == QUERY_REACHABLE:
         """
-        In this case, cmd should be [command, command_id, name]
+        In this case, cmd should be [length, command, command_id, name]
         """
         data = smv_pool[cmd[2]].query_reachable()
         conn.sendall(','.join([OK, data]) if data else WAITING)
     elif cmd[0] == CHECK_INV:
         """
-        In this case, cmd should be [command, command_id, name, inv]
+        In this case, cmd should be [length, command, command_id, name, inv]
         """
         res = smv_pool[cmd[2]].check(cmd[3])
         conn.sendall(','.join([OK, res]))
     elif cmd[0] == SMV_QUIT:
         """
-        In this case, cmd should be [command, command_id, name]
+        In this case, cmd should be [length, command, command_id, name]
         """
         smv_pool.exit(cmd[2])
         conn.sendall(OK)
     elif cmd[0] == SET_SMT2_CONTEXT:
         """
-        In this case, cmd should be [command, command_id, name, context]
+        In this case, cmd should be [length, command, command_id, name, context]
         """
         smt2 = SMT2(cmd[3])
         smt2_pool[cmd[2]] = smt2
         conn.sendall(OK)
     elif cmd[0] == QUERY_SMT2:
         """
-        In this case, cmd should be [command, command_id, name, formula]
+        In this case, cmd should be [length, command, command_id, name, formula]
         """
         if cmd[2] in smt2_pool:
             res = smt2_pool[cmd[2]].check(cmd[3])
@@ -99,7 +104,7 @@ def serv(conn, addr):
             conn.sendall(ERROR)
     elif cmd[0] == QUERY_STAND_SMT2:
         """
-        In this case, cmd should be [command, command_id, context, formula]
+        In this case, cmd should be [length, command, command_id, context, formula]
         """
         smt2 = SMT2(cmd[2])
         res = smt2.check(cmd[3])

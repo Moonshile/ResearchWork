@@ -58,6 +58,7 @@ let make_request str =
   Unix.connect sock ~addr:(UnixLabels.ADDR_INET(host, port));
   let _writed = Unix.write sock ~buf:str in
   let len = Unix.read sock ~buf:res in
+  Unix.close sock;
   String.sub res ~pos:0 ~len
 
 let command_id = ref 0
@@ -66,8 +67,9 @@ let request cmd req_str =
   let cmd  = request_type_to_str cmd in
   let cmd_id = !command_id in
   let req = sprintf "%s,%d,%s" cmd cmd_id req_str in
+  let wrapped = sprintf "%d,%s" (String.length req) req in
   incr command_id; (*printf "%d\n" (!command_id);*)
-  let res = String.split (make_request req) ~on:',' in
+  let res = String.split (make_request wrapped) ~on:',' in
   match res with
   | [] -> raise Empty_exception
   | status::res' -> 
