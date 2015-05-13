@@ -108,9 +108,15 @@ open InvFinder;;
 
 let prop_params = [("i", paramfix "node" (intc 1)); ("j", paramfix "node" (intc 2))]
 
-let [(cinv, invs, relations)] = find ~protocol ~prop_params:[prop_params];;
+(* Rule instant policy *)
+let rule_inst_policy ~cinv ~types r =
+  let Rule(_, paramdefs, _, _) = r in
+  let ps = cart_product_with_paramfix paramdefs types in
+  rule_2_concrete r ps
 
-let invs_str = 
+let [(cinv, invs, relations)] = find ~protocol ~prop_params:[prop_params] rule_inst_policy;;
+
+let invs_str =
   invs
   |> List.map ~f:neg
   |> List.map ~f:simplify

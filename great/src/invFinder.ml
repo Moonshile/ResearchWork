@@ -463,14 +463,8 @@ let tabular_expans crule ~cinv ~old_invs ~smv_file =
     deal_with_case_3 crule cinv (neg obligation) old_invs smv_file
   end
 
-(* Rule instant policy *)
-let rule_inst_policy r ~cinv ~types =
-  let Rule(_, paramdefs, _, _) = r in
-  let ps = cart_product_with_paramfix paramdefs types in
-  rule_2_concrete r ps
-
 (* Find new inv and relations with concrete rules and a concrete invariant *)
-let tabular_rules_cinv rules cinv ~new_inv_id ~smv_file ~types =
+let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~smv_file ~types =
   let rec wrapper cinvs new_inv_id old_invs relations =
     match cinvs with
     | [] -> (new_inv_id, old_invs, relations)
@@ -507,7 +501,7 @@ let tabular_rules_cinv rules cinv ~new_inv_id ~smv_file ~types =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_params =
+let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_params rule_inst_policy =
   let smv_file = sprintf "%s.smv" name in
   let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _smv_context = set_smv_context name (In_channel.input_all (In_channel.create smv_file)) in
@@ -516,7 +510,7 @@ let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_param
     | [] -> table
     | cinv::cinvs' ->
       let (new_inv_id', invs_lib, relations) =
-        tabular_rules_cinv rules cinv ~new_inv_id ~smv_file ~types
+        tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~smv_file ~types
       in
       wrapper cinvs' new_inv_id' ((cinv, invs_lib, relations)::table)
   in

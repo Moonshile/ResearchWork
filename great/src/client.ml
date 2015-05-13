@@ -9,7 +9,7 @@ open Utils;;
 
 exception Server_exception
 
-let host = UnixLabels.inet_addr_of_string "192.168.1.204"
+let host = UnixLabels.inet_addr_of_string "127.0.0.1"
 
 let port = 50008
 
