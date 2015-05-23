@@ -224,7 +224,7 @@ let apply_paramref pr ~p =
   | Paramref(s) -> 
     let op_pf = List.Assoc.find p s in (
       match op_pf with
-      | None -> raise (Cannot_find (sprintf "parameter reference for %s" s))
+      | None -> pr (* raise (Cannot_find (sprintf "parameter reference for %s" s)) *)
       | Some pf -> pf
     )
   | Paramfix(_) -> pr
