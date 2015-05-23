@@ -11,6 +11,12 @@ open Paramecium
 (** Global variable *)
 val global : string -> var
 
+(** Record definition *)
+val record_def : (string * vardef list) list -> vardef list
+
+(** Record *)
+val record : var list -> var
+
 (** Forall formula *)
 val forallFormula : types:typedef list -> paramdef list -> formula -> formula
 

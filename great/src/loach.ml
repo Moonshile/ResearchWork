@@ -13,6 +13,20 @@ open Paramecium
 (** Global variable *)
 let global name = arr name []
 
+(** Record definition *)
+(*val record_def : (string * vardef list) list -> vardef list*)
+let record_def named_vardefs =
+  let naming (name, vd) =
+    List.map vd ~f:(fun (Arrdef(n, pds, t)) -> arrdef (sprintf "%s.%s" name n) pds t)
+  in
+  List.concat (List.map named_vardefs ~f:naming)
+
+(** Record *)
+let record vars =
+  let named_vars = List.map vars ~f:(fun (Arr(name, prs)) -> (name, prs)) in
+  let names, prs = List.unzip named_vars in
+  arr (String.concat names ~sep:".") (List.concat prs)
+
 (** Forall formula *)
 let forallFormula ~types paramdefs form =
   let ps = cart_product_with_paramfix paramdefs types in
