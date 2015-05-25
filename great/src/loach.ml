@@ -14,12 +14,8 @@ open Paramecium
 let global name = arr name []
 
 (** Record definition *)
-(*val record_def : (string * vardef list) list -> vardef list*)
-let record_def named_vardefs =
-  let naming (name, vd) =
-    List.map vd ~f:(fun (Arrdef(n, pds, t)) -> arrdef (sprintf "%s.%s" name n) pds t)
-  in
-  List.concat (List.map named_vardefs ~f:naming)
+let record_def name vardefs =
+    List.map vardefs ~f:(fun (Arrdef(n, pds, t)) -> arrdef (sprintf "%s.%s" name n) pds t)
 
 (** Record *)
 let record vars =
@@ -30,12 +26,12 @@ let record vars =
 (** Forall formula *)
 let forallFormula ~types paramdefs form =
   let ps = cart_product_with_paramfix paramdefs types in
-  andList (List.map ps ~f:(apply_form form))
+  andList (List.map ps ~f:(fun p -> apply_form ~p form))
 
 (** Exist formula *)
 let existFormula ~types paramdefs form =
   let ps = cart_product_with_paramfix paramdefs types in
-  orList (List.map ps ~f:(apply_form form))
+  orList (List.map ps ~f:(fun p -> apply_form ~p form))
 
 (** Assignment statements *)
 type statement =
@@ -58,8 +54,6 @@ type rule =
   | Rule of string * paramdef list * formula * statement
 
 let rule name paramdef f s = Rule(name, paramdef, f, s)
-
-let prop name paramdef f = Prop(name, paramdef, f)
 
 (** Represents the whole protocol *)
 type protocol = {
@@ -85,8 +79,8 @@ module Trans = struct
 
   let rec trans_statement ~types statement =
     match statement with
-    | Assign(v, e) -> [(chaos, Paramecium.assign (trans_var v) (trans_exp e))]
-    | Parallel(slist) -> [(chaos, Paramecium.parallel (List.map ~f:trans_statement ~types slist))]
+    | Assign(v, e) -> [(chaos, Paramecium.assign v e)]
+    | Parallel(slist) -> List.concat (List.map slist ~f:(trans_statement ~types))
     | IfStatement(f, s) ->
         let translated = trans_statement ~types s in
         List.map translated ~f:(fun (f', s') -> (andList [f; f'], s'))
@@ -97,10 +91,10 @@ module Trans = struct
         let res2 = List.map translated2 ~f:(fun (f', s') -> (andList [neg f; f'], s')) in
         List.concat [res1; res2]
     | ForStatement(s, paramdefs) ->
-        cart_product_with_paramfix paramdefs types
-        |> List.map ~f:(apply_statement s)
-        |> List.map ~f:(trans_statement ~types)
-        |> List.concat
+        let translated = trans_statement ~types s in
+        let ps = cart_product_with_paramfix paramdefs types in
+        let applying s' = Paramecium.parallel (List.map ps ~f:(fun p -> apply_statement ~p s')) in
+        List.map translated ~f:(fun (f, s'') -> (f, applying s''))
 
   let trans_rule ~types r =
     match r with

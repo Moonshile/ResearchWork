@@ -16,9 +16,11 @@ class SMV(object):
         self.process = spawn(smv_path + ' -dcx -int -old ' + smv_file)
         self.process.expect(['NuSMV > ', EOF, TIMEOUT])
         self.diameter = None
+        self.isComputing = False
 
     def go_and_compute_reachable(self):
-        if not self.diameter:
+        if not self.diameter and not self.isComputing:
+            self.isComputing = True
             self.process.send('go\ncompute_reachable\n')
 
     def query_reachable(self):

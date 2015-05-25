@@ -12,7 +12,7 @@ open Paramecium
 val global : string -> var
 
 (** Record definition *)
-val record_def : (string * vardef list) list -> vardef list
+val record_def : string -> vardef list -> vardef list
 
 (** Record *)
 val record : var list -> var
@@ -35,17 +35,12 @@ val assign : var -> exp -> statement
 val parallel : statement list -> statement
 val ifStatement : formula -> statement -> statement
 val ifelseStatement : formula -> statement -> statement -> statement
-val absStatement : statement -> paramdef list -> statement
+val forStatement : statement -> paramdef list -> statement
 
 type rule = 
   | Rule of string * paramdef list * formula * statement
 
 val rule : string -> paramdef list -> formula -> statement -> rule
-
-type prop =
-  | Prop of string * paramdef list * formula
-
-val prop : string -> paramdef list -> formula -> prop
 
 (** Represents the whole protocol *)
 type protocol = {
