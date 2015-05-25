@@ -39,9 +39,9 @@ let vardefs = [
 let init =
   let a1 = assign (arr "x" []) _True in
   let a2 =
-    let pd = paramdef "k" "node" in
+    let pd = [paramdef "k" "node"] in
     let fs = assign (arr "n" [paramref "k"]) _I in
-    forStatement fs [pd]
+    forStatement fs pd
   in
   parallel [a1; a2]
 

@@ -12,7 +12,7 @@ open Paramecium
 val global : string -> var
 
 (** Record definition *)
-val record_def : string -> vardef list -> vardef list
+val record_def : string -> paramdef list-> vardef list -> vardef list
 
 (** Record *)
 val record : var list -> var

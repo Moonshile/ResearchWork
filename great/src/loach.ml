@@ -14,8 +14,10 @@ open Paramecium
 let global name = arr name []
 
 (** Record definition *)
-let record_def name vardefs =
-    List.map vardefs ~f:(fun (Arrdef(n, pds, t)) -> arrdef (sprintf "%s.%s" name n) pds t)
+let record_def name paramdefs vardefs =
+    List.map vardefs ~f:(fun (Arrdef(n, pds, t)) ->
+      arrdef (sprintf "%s.%s" name n) (List.concat [paramdefs; pds]) t
+    )
 
 (** Record *)
 let record vars =
