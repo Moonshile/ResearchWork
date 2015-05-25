@@ -3,7 +3,9 @@
 open Core.Std
 open Utils
 open Paramecium
+open Loach
 open Formula
+open InvFinder
 
 (* Common parameter definitions and references *)
 let defi = paramdef "i" "node"
@@ -36,10 +38,12 @@ let vardefs = [
 (* Initialization *)
 let init =
   let a1 = assign (arr "x" []) _True in
-  let a21 = assign (arr "n" [paramfix "node" (intc 1)]) _I in
-  let a22 = assign (arr "n" [paramfix "node" (intc 2)]) _I in
-  let a23 = assign (arr "n" [paramfix "node" (intc 3)]) _I in
-  parallel [a1; a21; a22; a23]
+  let a2 =
+    let pd = paramdef "k" "node" in
+    let fs = assign (arr "n" [paramref "k"]) _I in
+    forStatement fs [pd]
+  in
+  parallel [a1; a2]
 
 let rule_try = 
   let name = "try" in
@@ -95,7 +99,7 @@ let coherence =
 
 let properties = [coherence]
 
-let protocol = {
+let protocol = Trans.act {
   name = "mutualEx";
   types;
   vardefs;
@@ -104,13 +108,12 @@ let protocol = {
   properties;
 };;
 
-open InvFinder;;
 
 let prop_params = [("i", paramfix "node" (intc 1)); ("j", paramfix "node" (intc 2))]
 
 (* Rule instant policy *)
 let rule_inst_policy ~cinv ~types r =
-  let Rule(_, paramdefs, _, _) = r in
+  let Paramecium.Rule(_, paramdefs, _, _) = r in
   let ps = cart_product_with_paramfix paramdefs types in
   rule_2_concrete r ps
 
