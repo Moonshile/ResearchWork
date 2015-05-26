@@ -43,6 +43,8 @@ module Smv : sig
   *)
   val form_act : formula -> string
 
+  val protocol_act : protocol -> string
+  
 end
 
 (*----------------------------- Module To Debug String ----------------------------------*)

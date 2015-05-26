@@ -129,6 +129,13 @@ module Smt2 = struct
 
 end
 
+
+
+
+
+
+
+
 (*----------------------------- Module To SMV String ----------------------------------*)
 
 (** Translate to smv string *)
@@ -141,11 +148,35 @@ module Smv = struct
     | Strc(s) -> s
     | Boolc(b) -> String.uppercase (Bool.to_string b)
 
+  let type_act ~types name =
+    let Enum(_, consts) = List.find_exn types ~f:(fun (Enum(n, _)) -> n = name) in
+    let range =
+      List.map consts ~f:const_act
+      |> String.concat ~sep:", "
+    in
+    if range = "TRUE, FALSE" || range = "FALSE, TRUE" then "boolean"
+    else begin sprintf "{%s}" range end
+
   (** Translate a paramref to smv string *)
   let paramref_act pr =
     match pr with
     | Paramfix(_, c) -> sprintf "[%s]" (const_act c)
     | Paramref(_) -> raise Unexhausted_inst
+
+  let vardef_act ~types vd =
+    let Arrdef(name, pds, t) = vd in
+    let type_str = type_act ~types t in
+    if pds = [] then
+      sprintf "%s : %s;" name type_str
+    else begin
+      let ps = cart_product_with_paramfix pds types in
+      let const_strs = List.map ps ~f:(fun group -> 
+        List.map group ~f:(fun (_, pr) -> paramref_act pr)
+        |> String.concat
+      ) in
+      List.map const_strs ~f:(fun cstr -> sprintf "%s%s : %s;" name cstr type_str)
+      |> String.concat ~sep:"\n"
+    end
 
   (* Translate a variable to smv variable *)
   let var_act v =
@@ -185,7 +216,102 @@ module Smv = struct
       |> sprintf "(%s)"
     | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
 
+  let rec statement_act s fstr =
+    match s with
+    | Assign(v, e) ->
+      let var_str = var_act v in
+      let exp_str = exp_act e in
+      sprintf "next(%s) := case\n%s : %s;\nTRUE : %s;\nesac;" var_str fstr exp_str var_str
+    | Parallel(ss) ->
+      if ss = [] then "" else begin
+        List.map ss ~f:(fun s' -> statement_act s' fstr)
+        |> String.concat ~sep:"\n"
+      end
+
+  let rec init_act s =
+    match s with
+    | Assign(v, e) ->
+      let var_str = var_act v in
+      let exp_str = exp_act e in
+      sprintf "init(%s) := %s;" var_str exp_str
+    | Parallel(ss) ->
+      if ss = [] then "" else begin
+        List.map ss ~f:init_act
+        |> String.concat ~sep:"\n"
+      end
+
+  let rule_act r p =
+    let escape n =
+      String.substr_replace_all n ~pattern:"[" ~with_:"__"
+      |> String.substr_replace_all ~pattern:"]" ~with_:""
+    in
+    let vars = String.Set.to_list (VarNamesWithParam.of_rule r ~of_var:(fun v ->
+      String.Set.of_list [var_act v]
+    )) in
+    let vars_str = String.concat vars ~sep:", " in
+    (* rule process instance *)
+    let Rule(n, _, f, s) = r in
+    let name = 
+      if p = [] then n
+      else begin
+        let p' = List.map p ~f:(fun (_, pr) -> pr) in
+        sprintf "%s%s" n (String.concat (List.map p' ~f:paramref_act))
+      end
+      |> escape
+    in
+    let rule_proc_inst = sprintf "%s : process Proc__%s(%s);" name name vars_str in
+    (* rule process *)
+    let form_str = form_act f in
+    let statement_str = escape (statement_act s form_str) in
+    let rule_proc = 
+      sprintf "MODULE Proc__%s(%s)\nASSIGN\n%s" name (escape vars_str) statement_str
+    in
+    (* result *)
+    (rule_proc_inst, rule_proc)
+
+  let prop_act property =
+    let Prop(_, _, f) = property in
+    sprintf "SPEC\n  AG (!%s)" (form_act f)
+
+  let protocol_act {name=_; types; vardefs; init; rules; properties} =
+    let rule_proccesses = List.map rules ~f:(fun r ->
+      let Rule(_, pds, _, _) = r in
+      let ps = cart_product_with_paramfix pds types in
+      let rule_proc_insts, rule_procs =
+        List.map ps ~f:(fun p -> (apply_rule r ~p, p))
+        |> List.map ~f:(fun (r, p) -> rule_act r p)
+        |> List.unzip
+      in (String.concat ~sep:"\n" rule_proc_insts, String.concat ~sep:"\n\n" rule_procs)
+    ) in
+    let property_strs = List.map properties ~f:(fun property ->
+      let Prop(_, pds, _) = property in
+      let ps = cart_product_with_paramfix pds types in
+      List.map ps ~f:(fun p -> apply_prop property ~p)
+      |> List.map ~f:prop_act
+      |> String.concat ~sep:"\n"
+    ) in
+    let rule_proc_insts, rule_procs = List.unzip rule_proccesses in
+    let vardef_str = 
+      sprintf "VAR\n%s" (String.concat ~sep:"\n" (List.map vardefs ~f:(vardef_act ~types)))
+    in
+    let rule_proc_insts_str = String.concat ~sep:"\n\n" rule_proc_insts in
+    let init_str = sprintf "ASSIGN\n%s" (init_act init) in
+    let prop_str = String.concat ~sep:"\n\n" property_strs in
+    let rule_procs_str = String.concat ~sep:"\n\n\n\n" rule_procs in
+    let strs = [vardef_str; rule_proc_insts_str; init_str; prop_str] in
+    let main_module = 
+      sprintf "MODULE main\n%s" (String.concat ~sep:"\n\n--------------------\n\n" strs)
+    in
+    sprintf "%s\n\n--------------------\n\n%s" main_module rule_procs_str
+
 end
+
+
+
+
+
+
+
 
 (*----------------------------- Module To Debug String ----------------------------------*)
 

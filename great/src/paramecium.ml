@@ -282,6 +282,13 @@ let apply_prop property ~p =
   else
     raise Unmatched_parameters
 
+
+
+
+
+
+
+
 (*********************************** Module Variable Names **************************************)
 
 (** Get variable names in the components *)
@@ -312,4 +319,52 @@ module VarNames = struct
     | OrList(fl) -> union_list (List.map fl ~f:of_form)
     | Imply(f1, f2) -> union_list [of_form f1; of_form f2]
 
+
+  let rec of_statement s =
+    match s with
+    | Assign(v, e) -> union_list [of_var v; of_exp e]
+    | Parallel(slist) -> union_list (List.map slist ~f:of_statement)
+
+  let of_rule r = 
+    match r with
+    | Rule(_, _, f, s) -> union_list [of_form f; of_statement s]
+end
+
+
+
+
+(*********************************** Module Variable Names, with Param values *****************)
+
+(** Get variable names in the components *)
+module VarNamesWithParam = struct
+  
+  open String.Set
+
+  (** Names of exp *)
+  let of_exp ~of_var e =
+    match e with
+    | Const(_)
+    | Param(_) -> of_list []
+    | Var(v) -> of_var v
+
+  (** Names of formula *)
+  let rec of_form ~of_var f =
+    match f with
+    | Chaos
+    | Miracle -> of_list []
+    | Eqn(e1, e2) -> union_list [of_exp ~of_var e1; of_exp ~of_var e2]
+    | Neg(form) -> of_form ~of_var form
+    | AndList(fl)
+    | OrList(fl) -> union_list (List.map fl ~f:(of_form ~of_var))
+    | Imply(f1, f2) -> union_list [of_form ~of_var f1; of_form ~of_var f2]
+
+
+  let rec of_statement ~of_var s =
+    match s with
+    | Assign(v, e) -> union_list [of_var v; of_exp ~of_var e]
+    | Parallel(slist) -> union_list (List.map slist ~f:(of_statement ~of_var))
+
+  let of_rule ~of_var r = 
+    match r with
+    | Rule(_, _, f, s) -> union_list [of_form ~of_var f; of_statement ~of_var s]
 end

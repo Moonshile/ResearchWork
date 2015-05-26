@@ -82,7 +82,12 @@ module Trans = struct
   let rec trans_statement ~types statement =
     match statement with
     | Assign(v, e) -> [(chaos, Paramecium.assign v e)]
-    | Parallel(slist) -> List.concat (List.map slist ~f:(trans_statement ~types))
+    | Parallel(slist) -> 
+      cartesian_product (List.map slist ~f:(trans_statement ~types))
+      |> List.map ~f:(fun x ->
+        let gs, ss = List.unzip x in
+        (andList gs, Paramecium.parallel ss)
+      )
     | IfStatement(f, s) ->
         let translated = trans_statement ~types s in
         List.map translated ~f:(fun (f', s') -> (andList [f; f'], s'))
@@ -112,9 +117,8 @@ module Trans = struct
   *)
   let act ~loach:{name; types; vardefs; init; rules; properties} =
     let new_init = 
-      match trans_statement ~types init with
-      | [(_, s)] -> s
-      | _ -> raise Empty_exception
+      let _, ss = List.unzip (trans_statement ~types init) in
+      Paramecium.parallel ss
     in
     let new_rules = List.concat (List.map rules ~f:(trans_rule ~types)) in
     Prt.info "Done\n";

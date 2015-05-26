@@ -201,6 +201,13 @@ val apply_rule : rule -> p:(string * paramref) list -> rule
 (** Apply property with param *)
 val apply_prop : prop -> p:(string * paramref) list -> prop
 
+
+
+
+
+
+
+
 (*********************************** Module Variable Names **************************************)
 
 (** Get variable names in the components *)
@@ -214,5 +221,27 @@ module VarNames : sig
 
   (** Names of formula *)
   val of_form : formula -> String.Set.t
+
+  val of_statement : statement -> String.Set.t
+
+  val of_rule : rule -> String.Set.t
+end
+
+
+
+
+
+
+
+
+(*********************************** Module Variable Names, with Param values *****************)
+
+(** Get variable names in the components *)
+module VarNamesWithParam : sig
+
+  val of_exp : of_var:(var -> String.Set.t) -> exp -> String.Set.t
+  val of_form : of_var:(var -> String.Set.t) -> formula -> String.Set.t
+  val of_statement : of_var:(var -> String.Set.t) -> statement -> String.Set.t
+  val of_rule : of_var:(var -> String.Set.t) -> rule -> String.Set.t
 
 end
