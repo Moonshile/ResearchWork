@@ -65,8 +65,7 @@ val to_str : t -> string
     @param smv_file the smv file
     @return a tuple of new invariant and relation, the new invariant list is empty or contains 1 inv
 *)
-val tabular_expans : concrete_rule -> cinv:concrete_prop -> old_invs:formula list -> 
-  smv_file:string -> formula list * t
+val tabular_expans : concrete_rule -> cinv:concrete_prop -> old_invs:formula list -> formula list * t
 
 (** Find new inv and relations with concrete rules and a concrete invariant
     
@@ -75,7 +74,7 @@ val tabular_expans : concrete_rule -> cinv:concrete_prop -> old_invs:formula lis
 *)
 val tabular_rules_cinv : rule list -> concrete_prop -> 
   (cinv:concrete_prop -> types:typedef list -> rule -> concrete_rule list) ->
-  new_inv_id:int -> smv_file:string -> types:typedef list -> int * formula list * t list
+  new_inv_id:int -> types:typedef list -> int * formula list * t list
 
 (** Find invs and causal relations of a protocol
 

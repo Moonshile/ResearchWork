@@ -286,7 +286,7 @@ module Choose = struct
 
 
   (* Check the level of an optional invariant *)
-  let check_level inv smv_file invs =
+  let check_level inv invs =
     if is_tautology inv then
       tautology inv
     else begin
@@ -302,12 +302,12 @@ module Choose = struct
     end
 
   (* choose one pre in pres such that (imply pre cons) is an new inv *)
-  let choose_one pres cons smv_file invs =
+  let choose_one pres cons invs =
     let rec wrapper pres =
       match pres with
       | [] -> not_inv
       | pre::pres' ->
-        let level = check_level (imply pre cons) smv_file invs in (
+        let level = check_level (imply pre cons) invs in (
           match level with
           | New_inv(_)
           | Tautology(_)
@@ -325,7 +325,7 @@ module Choose = struct
     )
 
   (* choose new inv with policy 1 *)
-  let choose_with_policy_1 guards cons smv_file invs =
+  let choose_with_policy_1 guards cons invs =
     let ConcreteProp(Prop(_, guard_pd, _), _) = form_2_concreate_prop (andList guards) in
     let ConcreteProp(Prop(_, cons_pd, _), _) = form_2_concreate_prop cons in
     let guard_pd_names = String.Set.of_list (List.map guard_pd ~f:(fun (Paramdef(n, _)) -> n)) in
@@ -335,22 +335,22 @@ module Choose = struct
       not_inv
     else begin
       let inv_on_0_dimen = imply (andList (form_on_0_dimen guards)) cons in
-      check_level inv_on_0_dimen smv_file invs
+      check_level inv_on_0_dimen invs
     end
 
   (* choose new inv with policy 2 *)
-  let choose_with_policy_2 guards ant_0_dimen cons smv_file invs =
+  let choose_with_policy_2 guards ant_0_dimen cons invs =
     let enhancedGuards = List.map guards ~f:(fun g -> andList [g; ant_0_dimen]) in
-    choose_one enhancedGuards cons smv_file invs
+    choose_one enhancedGuards cons invs
 
   (* get new inv by removing a component in the pres *)
-  let remove_one guards cons smv_file invs =
+  let remove_one guards cons invs =
     let rec wrapper guards necessary =
       match guards with
-      | [] -> check_level (imply (andList necessary) cons) smv_file invs
+      | [] -> check_level (imply (andList necessary) cons) invs
       | g::guards' -> (
           let op_inv = (imply (andList (guards'@necessary)) cons) in
-          match check_level op_inv smv_file invs with
+          match check_level op_inv invs with
           | New_inv(_)
           | Tautology(_)
           | Implied(_) -> wrapper guards' necessary
@@ -367,11 +367,11 @@ module Choose = struct
     List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.is_empty paramrefs)
   
   (* choose new inv about 0 dimension variables *)
-  let choose_with_0_dimen_var guards ants_0_dimen cons smv_file invs =
-    choose_one (guards@ants_0_dimen) cons smv_file invs
+  let choose_with_0_dimen_var guards ants_0_dimen cons invs =
+    choose_one (guards@ants_0_dimen) cons invs
 
   (* choose new inv *)
-  let choose guards assigns cons smv_file invs =
+  let choose guards assigns cons invs =
     let dimen_0 = assigns_on_0_dimen assigns in
     let ants_0_dimen = 
       if dimen_0 = [] then
@@ -383,12 +383,12 @@ module Choose = struct
       end
     in
     let choosed_0_dimen = 
-      choose_with_0_dimen_var guards ants_0_dimen cons smv_file invs
+      choose_with_0_dimen_var guards ants_0_dimen cons invs
     in
     if not (choosed_0_dimen = Not_inv) then
       choosed_0_dimen
     else begin
-      let choosed_by_policy_1 = choose_with_policy_1 guards cons smv_file invs in
+      let choosed_by_policy_1 = choose_with_policy_1 guards cons invs in
       if not (choosed_by_policy_1 = Not_inv) then
         choosed_by_policy_1
       else begin
@@ -396,12 +396,12 @@ module Choose = struct
           match ants_0_dimen with
           | [] -> Not_inv
           | ant_0_dimen::_ ->
-            choose_with_policy_2 guards ant_0_dimen cons smv_file invs
+            choose_with_policy_2 guards ant_0_dimen cons invs
         in
         if not (choosed_by_policy_2 = Not_inv) then
           choosed_by_policy_2
         else begin
-          remove_one guards cons smv_file invs
+          remove_one guards cons invs
         end
       end
     end
@@ -424,11 +424,11 @@ let deal_with_case_2 crule cinv =
   }
 
 (* Deal with case invHoldForRule3 *)
-let deal_with_case_3 crule cinv cons old_invs smv_file =
+let deal_with_case_3 crule cinv cons old_invs =
   let Rule(_, _, guard, statement) = concrete_rule_2_rule_inst crule in
   let guards = flat_and_to_list guard in
   let assigns = statement_2_assigns statement in
-  let level = Choose.choose guards assigns cons smv_file old_invs in
+  let level = Choose.choose guards assigns cons old_invs in
   let (new_inv, causal_inv) =
     match level with
     | Choose.Tautology(_) -> ([], chaos)
@@ -444,7 +444,7 @@ let deal_with_case_3 crule cinv cons old_invs smv_file =
   })
 
 (* Find new inv and relations with concrete rule and a concrete invariant *)
-let tabular_expans crule ~cinv ~old_invs ~smv_file =
+let tabular_expans crule ~cinv ~old_invs =
   let Rule(_, _, form, statement) = concrete_rule_2_rule_inst crule in
   let inv_inst = simplify (concrete_prop_2_form cinv) in
   (* preCond *)
@@ -460,18 +460,18 @@ let tabular_expans crule ~cinv ~old_invs ~smv_file =
     ([], deal_with_case_1 crule cinv)
   (* case 3 *)
   else begin
-    deal_with_case_3 crule cinv (neg obligation) old_invs smv_file
+    deal_with_case_3 crule cinv (neg obligation) old_invs
   end
 
 (* Find new inv and relations with concrete rules and a concrete invariant *)
-let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~smv_file ~types =
+let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
   let rec wrapper cinvs new_inv_id old_invs relations =
     match cinvs with
     | [] -> (new_inv_id, old_invs, relations)
     | cinv::cinvs' ->
       let crules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types)) in
       let (new_invs, new_relation) =
-        List.map crules ~f:(tabular_expans ~cinv ~old_invs ~smv_file)
+        List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
       in
       let real_new_invs =
@@ -501,16 +501,16 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~smv_file ~types 
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol:{name; types; vardefs; init=_; rules; properties} ~prop_params rule_inst_policy =
-  let smv_file = sprintf "%s.smv" name in
+let find ~protocol ~prop_params rule_inst_policy =
+  let {name; types; vardefs; init=_; rules; properties} = protocol in
   let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
-  let _smv_context = set_smv_context name (In_channel.input_all (In_channel.create smv_file)) in
+  let _smv_context = set_smv_context name (ToStr.Smv.protocol_act protocol) in
   let rec wrapper cinvs new_inv_id table =
     match cinvs with
     | [] -> table
     | cinv::cinvs' ->
       let (new_inv_id', invs_lib, relations) =
-        tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~smv_file ~types
+        tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types
       in
       wrapper cinvs' new_inv_id' ((cinv, invs_lib, relations)::table)
   in

@@ -108,9 +108,6 @@ let protocol = Trans.act {
   properties;
 };;
 
-printf "%s\n" (ToStr.Smv.protocol_act protocol);;
-
-(*
 let prop_params = [("i", paramfix "node" (intc 1)); ("j", paramfix "node" (intc 2))]
 
 (* Rule instant policy *)
@@ -133,4 +130,3 @@ Prt.info (String.concat ~sep:"\n" relations_str);;
 printf "\n";;
 Prt.warning (String.concat ~sep:"\n" invs_str);;
 printf "\n";;
-*)
