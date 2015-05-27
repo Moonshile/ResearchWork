@@ -178,7 +178,7 @@ def analyzeParams(params):
         ),
         params.split(';')
     )
-    return param_name_dict, param_defs
+    return param_name_dict, '[%s]'%('; '.join(param_defs))
 
 
 
@@ -245,16 +245,16 @@ class Formula(object):
         if atom in self.consts:
             return '(const _%s)'%atom
         elif atom in param_names:
-            return '(param (paramref \"%s\""))'%atom
+            return '(param (paramref \"%s\"))'%atom
         elif re.match(r'^\d+$', atom):
             return '(const (intc %s))'%atom
         elif atom.lower() in ['true', 'false']:
             return '(const (boolc %s))'%atom.lower()
-        elif re.match(r'^forall.*?end$', atom) or re.match(r'^exists.*?end$', atom):
-            if re.match(r'^forall.*?end$', atom):
-                params, text = re.findall(r'forall(.*?)do(.*?)end', atom)[0]
+        elif re.match(r'^forall.*end$', atom) or re.match(r'^exists.*?end$', atom):
+            if re.match(r'^forall.*end$', atom):
+                params, text = re.findall(r'forall(.*?)do(.*)end', atom)[0]
             else:
-                params, text = re.findall(r'exists(.*?)do(.*?)end', atom)[0]
+                params, text = re.findall(r'exists(.*?)do(.*)end', atom)[0]
             param_name_dict, param_defs = analyzeParams(params)
             for p in param_names:
                 if p not in param_name_dict: param_name_dict[p] = 0
@@ -302,7 +302,7 @@ class Formula(object):
             else:
                 logging.error('unknown operator %s'%s)
                 pass
-        return values[0][1]
+        return values[0][1] if values[0][0] else self.evalAtom(values[0][1], param_names)
 
 
 
@@ -318,8 +318,7 @@ class Statement(object):
         self.param_names = param_names
         self.consts = consts
         self.statements = self.splitText(text)
-        self.value = self.evaluate(self.statements, self.param_names)
-        print self.value
+        self.value = self.evaluate(self.statements, self.param_names, self.consts)
 
     def splitText(self, text):
         parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(r'(;|do|then)', text)))
@@ -366,7 +365,7 @@ class Statement(object):
         if atom in self.consts:
             return '(const _%s)'%atom
         elif atom in param_names:
-            return '(param (paramref \"%s\""))'%atom
+            return '(param (paramref \"%s\"))'%atom
         elif re.match(r'^\d+$', atom):
             return '(const (intc %s))'%atom
         elif atom.lower() in ['true', 'false']:
@@ -374,23 +373,81 @@ class Statement(object):
         else:
             return '(var %s)'%self.evalVar(atom)
 
-    def evalIf(self, statement, param_names):
-        return 'None'
+    def partitionIf(self, statement):
+        parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(r'(;|do|then)', statement)))
+        sub_clause = []
+        to_add = []
+        exp_ends = 0
+        for p in parts:
+            if p.startswith(('if', 'for', 'exists')):
+                exp_ends += 1
+                to_add.append(p)
+            elif p.startswith(('elsif', 'else')) and exp_ends == 1:
+                sub_clause.append(' '.join(to_add))
+                to_add = [p]
+            elif p.startswith('end'):
+                exp_ends -= 1
+                if exp_ends == 0:
+                    sub_clause.append(' '.join(to_add))
+                    to_add = []
+                else:
+                    to_add.append(p)
+            elif exp_ends > 0:
+                to_add.append(p)
+            else:
+                logging.error('should not exists statement out of if sub clause')
+        return sub_clause
 
-    def evalFor(self, statement, param_names):
-        params, statement_str = re.findall(r'for(.*?)do(.*?)end(?:for)*', statement)[0]
+    def analyzeIf(self, sub_clause, param_names, consts):
+        if sub_clause.startswith('if'):
+            f, s = re.findall(r'if(.*?)then(.*)', sub_clause, re.S)[0]
+            formula = Formula(f.strip(), param_names, consts)
+            inner_ss = self.evaluate(self.splitText(s.strip()), param_names, consts)
+            return formula.value, inner_ss
+        elif sub_clause.startswith('elsif'):
+            f, s = re.findall(r'elsif(.*?)then(.*)', sub_clause, re.S)[0]
+            formula = Formula(f.strip(), param_names, consts)
+            inner_ss = self.evaluate(self.splitText(s.strip()), param_names, consts)
+            return formula.value, inner_ss
+        elif sub_clause.startswith('else'):
+            s = re.findall(r'else(.*)', sub_clause, re.S)[0]
+            inner_ss = self.evaluate(self.splitText(s.strip()), param_names, consts)
+            return (inner_ss, )
+        else:
+            logging.error('not a subclause of if statement: %s'%sub_clause)
+
+    def evalIf(self, statement, param_names, consts):
+        sub_clause = map(
+            lambda s: self.analyzeIf(s, param_names, consts), 
+            self.partitionIf(statement)
+        )
+        def inner(sc):
+            if len(sc) == 1:
+                return '(ifStatement %s %s)'%sc[0]
+            # ifelse语句的后半句不能是elsif
+            elif len(sc) == 2 and len(sc[1]) == 1:
+                return '(ifelseStatement %s %s %s)'%(sc[0][0], sc[0][1], sc[1][0])
+            elif len(sc) >= 2:
+                latter = inner(sc[1:])
+                return '(ifelseStatement %s %s %s)'%(sc[0][0], sc[0][1], latter)
+            else:
+                logging.error('wrong subclause')
+        return inner(sub_clause)
+
+    def evalFor(self, statement, param_names, consts):
+        params, statement_str = re.findall(r'for(.*?)do(.*)end(?:for)*', statement)[0]
         param_name_dict, param_defs = analyzeParams(params)
         for p in param_names:
             if p not in param_name_dict: param_name_dict[p] = 0
-        inner_ss = self.evaluate(self.splitText(statement_str), param_names)
+        inner_ss = self.evaluate(self.splitText(statement_str), param_name_dict, consts)
         return '(forStatement %s %s)'%(inner_ss, param_defs)
 
-    def evaluate(self, statements, param_names):
+    def evaluate(self, statements, param_names, consts):
         def inner(statement):
             if statement.startswith('if'):
-                return self.evalIf(statement, param_names)
+                return self.evalIf(statement, param_names, consts)
             elif statement.startswith('for'):
-                return self.evalFor(statement, param_names)
+                return self.evalFor(statement, param_names, consts)
             else:
                 try:
                     vstr, estr = statement.split(':=')
@@ -418,10 +475,18 @@ class Rule(object):
         super(Rule, self).__init__()
         pattern = re.compile(r'rule\s*\"(.*?)\"\s*(.*?)==>.*?begin(.*?)endrule;', re.S)
         self.name, guard, statements = pattern.findall(text)[0]
-        self.params = '[%s]'%'; '.join(params)
+        self.params = params
         self.param_names = param_names
         self.formula = Formula(guard, self.param_names, consts)
         self.statement = Statement(statements, self.param_names, consts)
+        self.value = '''let %s =
+  let name = \"%s\" in
+  let params = %s in
+  let formula = %s in
+  let statement = %s in
+  rule name params formula statement
+        '''%(self.name, self.name, self.params, self.formula.value, self.statement.value)
+        print self.value
 
 
 
