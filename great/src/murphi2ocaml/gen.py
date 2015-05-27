@@ -167,6 +167,26 @@ def genVars(varData):
 
 
 
+def analyzeParams(params):
+    param_names = map(lambda x: x.split(':')[0].strip(), params.split(';'))
+    param_name_dict = {}
+    for p in param_names: param_name_dict[p] = 0
+    param_defs = map(
+        lambda x: 'paramdef ' + ' '.join(map(
+            lambda y: '\"%s\"'%y.strip(), 
+            x.strip().split(':'))
+        ),
+        params.split(';')
+    )
+    return param_name_dict, param_defs
+
+
+
+
+
+
+
+
 
 
 class Formula(object):
@@ -235,22 +255,15 @@ class Formula(object):
                 params, text = re.findall(r'forall(.*?)do(.*?)end', atom)[0]
             else:
                 params, text = re.findall(r'exists(.*?)do(.*?)end', atom)[0]
-            newpns = map(lambda x: x.split(':')[0].strip(), params.split(';'))
-            param_name_dict = deepcopy(param_names)
-            for p in newpns: param_name_dict[p] = 0
-            params = '[%s]'%'; '.join(map(
-                lambda x: 'paramdef ' + ' '.join(map(
-                    lambda y: '\"%s\"'%y.strip(), 
-                    x.strip().split(':'))
-                ),
-                params.split(';')
-            ))
+            param_name_dict, param_defs = analyzeParams(params)
+            for p in param_names:
+                if p not in param_name_dict: param_name_dict[p] = 0
             text = filter(lambda y: y, map(lambda x: x.strip(), self.form_pattern.split(text)))
             sub_form = self.evaluate(self.process(text), param_name_dict)
             if re.match(r'^forall.*?end$', atom):
-                return '(forallFormula ~types %s %s)'%(params, sub_form)
+                return '(forallFormula ~types %s %s)'%(param_defs, sub_form)
             else:
-                return '(existFormula ~types %s %s)'%(params, sub_form)
+                return '(existFormula ~types %s %s)'%(param_defs, sub_form)
         else:
             return '(var %s)'%self.evalVar(atom)
 
@@ -300,13 +313,98 @@ class Formula(object):
 
 
 class Statement(object):
-    """docstring for Statement"""
     def __init__(self, text, param_names, consts):
         super(Statement, self).__init__()
-        self.text = text
         self.param_names = param_names
         self.consts = consts
-        
+        self.statements = self.splitText(text)
+        self.value = self.evaluate(self.statements, self.param_names)
+        print self.value
+
+    def splitText(self, text):
+        parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(r'(;|do|then)', text)))
+        big_parts = []
+        to_add = []
+        exp_ends = 0
+        for p in parts:
+            if p.startswith(('if', 'for', 'exists')):
+                exp_ends += 1
+                to_add.append(p)
+            elif p.startswith('end'):
+                exp_ends -= 1
+                to_add.append(p)
+                if exp_ends == 0:
+                    big_parts.append(' '.join(to_add))
+                    to_add = []
+            elif exp_ends > 0:
+                to_add.append(p)
+            elif p != ';':
+                big_parts.append(p)
+        return big_parts
+
+    def evalVar(self, var):
+        """
+        'a[b][c].d.e[f]' -> 
+        ['a[b][c]', 'd', 'e[f]'] -> 
+        [['a', 'b', 'c'], ['d'], ['e', 'f']]
+        """
+        name_parts = map(
+            lambda n: map(lambda x: x.strip(']'), n.split('[')), 
+            var.split('.')
+        )
+        variables = map(
+            lambda parts: 'global \"%s\"'%parts[0] if len(parts) == 1 else\
+                'arr \"%s\" [%s]' %(
+                    parts[0], 
+                    '; '.join(map(lambda p: 'paramref \"%s\"'%p, parts[1:]))
+                ),
+            name_parts
+        )
+        return '(%s)'%variables[0] if len(variables) == 1 else '(record [%s])'%('; '.join(variables))
+
+    def evalAtom(self, atom, param_names):
+        if atom in self.consts:
+            return '(const _%s)'%atom
+        elif atom in param_names:
+            return '(param (paramref \"%s\""))'%atom
+        elif re.match(r'^\d+$', atom):
+            return '(const (intc %s))'%atom
+        elif atom.lower() in ['true', 'false']:
+            return '(const (boolc %s))'%atom.lower()
+        else:
+            return '(var %s)'%self.evalVar(atom)
+
+    def evalIf(self, statement, param_names):
+        return 'None'
+
+    def evalFor(self, statement, param_names):
+        params, statement_str = re.findall(r'for(.*?)do(.*?)end(?:for)*', statement)[0]
+        param_name_dict, param_defs = analyzeParams(params)
+        for p in param_names:
+            if p not in param_name_dict: param_name_dict[p] = 0
+        inner_ss = self.evaluate(self.splitText(statement_str), param_names)
+        return '(forStatement %s %s)'%(inner_ss, param_defs)
+
+    def evaluate(self, statements, param_names):
+        def inner(statement):
+            if statement.startswith('if'):
+                return self.evalIf(statement, param_names)
+            elif statement.startswith('for'):
+                return self.evalFor(statement, param_names)
+            else:
+                try:
+                    vstr, estr = statement.split(':=')
+                    v = self.evalVar(vstr.strip())
+                    e = self.evalAtom(estr.strip(), param_names)
+                    return '(assign %s %s)'%(v, e)
+                except:
+                    logging.error('unable to handle statement: %s'%statement)
+        if len(statements) > 1:
+            return '(parallel [%s])'%('; '.join(map(lambda s: inner(s), statements)))
+        elif len(statements) == 1:
+            return inner(statements[0])
+        else:
+            logging.error('no statement to be evaluated')
 
 
 
@@ -319,10 +417,11 @@ class Rule(object):
     def __init__(self, text, params, param_names, consts):
         super(Rule, self).__init__()
         pattern = re.compile(r'rule\s*\"(.*?)\"\s*(.*?)==>.*?begin(.*?)endrule;', re.S)
-        self.name, guard, self.statements = pattern.findall(text)[0]
+        self.name, guard, statements = pattern.findall(text)[0]
         self.params = '[%s]'%'; '.join(params)
         self.param_names = param_names
         self.formula = Formula(guard, self.param_names, consts)
+        self.statement = Statement(statements, self.param_names, consts)
 
 
 
@@ -337,18 +436,9 @@ class RuleSet(object):
         super(RuleSet, self).__init__()
         pattern = re.compile(r'ruleset(.*?)do(.*?)endruleset;', re.S)
         params, rules_str = pattern.findall(text)[0]
-        param_names = map(lambda x: x.split(':')[0].strip(), params.split(';'))
-        param_name_dict = {}
-        for p in param_names: param_name_dict[p] = 0
-        params = map(
-            lambda x: 'paramdef ' + ' '.join(map(
-                lambda y: '\"%s\"'%y.strip(), 
-                x.strip().split(':'))
-            ),
-            params.split(';')
-        )
+        param_name_dict, param_defs = analyzeParams(params)
         rule_texts = re.findall(r'(rule.*?endrule;)', rules_str, re.S)
-        rules = map(lambda r: Rule(r, params, param_name_dict, consts), rule_texts)
+        rules = map(lambda r: Rule(r, param_defs, param_name_dict, consts), rule_texts)
 
 
 
@@ -356,7 +446,7 @@ const_values = reduce(lambda res, x: res + x[1], typeData, [])
 consts = {}
 for c in const_values: consts[c] = 0
 
-rule_f = open('./rules2.m', 'r')
+rule_f = open('./rules.m', 'r')
 ruletext = rule_f.read()
 rule_f.close()
 pattern = re.compile(r'(ruleset.*?endruleset;)', re.S)
