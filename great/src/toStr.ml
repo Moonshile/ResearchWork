@@ -297,7 +297,7 @@ module Smv = struct
     let rule_proc_insts_str = String.concat ~sep:"\n\n" rule_proc_insts in
     let init_str = sprintf "ASSIGN\n%s" (init_act init) in
     let prop_str = String.concat ~sep:"\n\n" property_strs in
-    let rule_procs_str = String.concat ~sep:"\n\n\n\n" rule_procs in
+    let rule_procs_str = String.concat ~sep:"\n\n---------\n\n" rule_procs in
     let strs = [vardef_str; rule_proc_insts_str; init_str; prop_str] in
     let main_module = 
       sprintf "MODULE main\n%s" (String.concat ~sep:"\n\n--------------------\n\n" strs)
