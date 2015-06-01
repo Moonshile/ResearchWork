@@ -1,4 +1,137 @@
 
+const
+
+  NODE_NUM : 3;
+  DATA_NUM : 2;
+
+type
+
+  NODE : scalarset(NODE_NUM);
+  DATA : scalarset(DATA_NUM);
+
+  CACHE_STATE : enum {CACHE_I, CACHE_S, CACHE_E};
+
+  NODE_CMD : enum {NODE_None, NODE_Get, NODE_GetX};
+
+  NODE_STATE : record
+    ProcCmd : NODE_CMD;
+    InvMarked : boolean;
+    CacheState : CACHE_STATE;
+    CacheData : DATA;
+  end;
+
+  DIR_STATE : record
+    Pending : boolean;
+    Local : boolean;
+    Dirty : boolean;
+    HeadVld : boolean;
+    HeadPtr : NODE;
+    ShrVld : boolean;
+    ShrSet : array [NODE] of boolean;
+    InvSet : array [NODE] of boolean;
+  end;
+
+  UNI_CMD : enum {UNI_None, UNI_Get, UNI_GetX, UNI_Put, UNI_PutX, UNI_Nak};
+
+  UNI_MSG : record
+    Cmd : UNI_CMD;
+    Proc : NODE;
+    Data : DATA;
+  end;
+
+  INV_CMD : enum {INV_None, INV_Inv, INV_InvAck};
+
+  INV_MSG : record
+    Cmd : INV_CMD;
+  end;
+
+  RP_CMD : enum {RP_None, RP_Replace};
+
+  RP_MSG : record
+    Cmd : RP_CMD;
+  end;
+
+  WB_CMD : enum {WB_None, WB_Wb};
+
+  WB_MSG : record
+    Cmd : WB_CMD;
+    Proc : NODE;
+    Data : DATA;
+  end;
+
+  SHWB_CMD : enum {SHWB_None, SHWB_ShWb, SHWB_FAck};
+
+  SHWB_MSG : record
+    Cmd : SHWB_CMD;
+    Proc : NODE;
+    Data : DATA;
+  end;
+
+  NAKC_CMD : enum {NAKC_None, NAKC_Nakc};
+
+  NAKC_MSG : record
+    Cmd : NAKC_CMD;
+  end;
+
+  STATE : record
+    Proc : array [NODE] of NODE_STATE;
+    Dir : DIR_STATE;
+    MemData : DATA;
+    UniMsg : array [NODE] of UNI_MSG;
+    InvMsg : array [NODE] of INV_MSG;
+    RpMsg : array [NODE] of RP_MSG;
+    WbMsg : WB_MSG;
+    ShWbMsg : SHWB_MSG;
+    NakcMsg : NAKC_MSG;
+    CurrData : DATA;
+    PrevData : DATA;
+    LastWrVld : boolean;
+    LastWrPtr : NODE;
+    Requester : NODE;
+    Collecting : boolean;
+    FwdCmd : UNI_CMD;
+    FwdSrc : NODE;
+    LastInvAck : NODE;
+    LastOtherInvAck : NODE;
+  end;
+
+var
+
+  Home : NODE;
+  Sta : STATE;
+
+
+ruleset h : NODE; d : DATA do
+startstate "Init"
+  Home := h;
+  Sta.MemData := d;
+  Sta.Dir.Pending := false;
+  Sta.Dir.Local := false;
+  Sta.Dir.Dirty := false;
+  Sta.Dir.HeadVld := false;
+  Sta.Dir.ShrVld := false;
+  Sta.WbMsg.Cmd := WB_None;
+  Sta.ShWbMsg.Cmd := SHWB_None;
+  Sta.NakcMsg.Cmd := NAKC_None;
+  for p : NODE do
+    Sta.Proc[p].ProcCmd := NODE_None;
+    Sta.Proc[p].InvMarked := false;
+    Sta.Proc[p].CacheState := CACHE_I;
+    Sta.Dir.ShrSet[p] := false;
+    Sta.Dir.InvSet[p] := false;
+    Sta.UniMsg[p].Cmd := UNI_None;
+    Sta.InvMsg[p].Cmd := INV_None;
+    Sta.RpMsg[p].Cmd := RP_None;
+  end;
+  Sta.CurrData := d;
+  Sta.PrevData := d;
+  Sta.LastWrVld := false;
+  Sta.Collecting := false;
+  Sta.FwdCmd := UNI_None;
+endstartstate;
+endruleset;
+
+
 ruleset src : NODE; data : DATA do
 rule "Store"
   Sta.Proc[src].CacheState = CACHE_E
@@ -420,7 +553,7 @@ begin
       Sta.LastOtherInvAck := Sta.Dir.HeadPtr;
     else
       for p : NODE do
-        if (p != src & Sta.Dir.ShrSet[p]) then Sta.LastOtherInvAck := p end;
+        if (p != src & Sta.Dir.ShrSet[p]) then Sta.LastOtherInvAck := p; end;
       end;
     end;
   end;
@@ -619,3 +752,84 @@ begin
   end;
 endrule;
 endruleset;
+
+
+invariant "CacheStateProp"
+  forall p : NODE do forall q : NODE do
+    p != q ->
+    !(Sta.Proc[p].CacheState = CACHE_E & Sta.Proc[q].CacheState = CACHE_E)
+  end end;
+
+invariant "CacheDataProp"
+  forall p : NODE do
+    ( Sta.Proc[p].CacheState = CACHE_E ->
+      Sta.Proc[p].CacheData = Sta.CurrData ) &
+    ( Sta.Proc[p].CacheState = CACHE_S ->
+      ( Sta.Collecting -> Sta.Proc[p].CacheData = Sta.PrevData ) &
+      (!Sta.Collecting -> Sta.Proc[p].CacheData = Sta.CurrData ) )
+  end;
+
+invariant "MemDataProp"
+  !Sta.Dir.Dirty -> Sta.MemData = Sta.CurrData;
+
+
+
+invariant "lemma1"
+  forall h: NODE do forall i: NODE do
+    h = Home & Sta.Proc[i].CacheState = CACHE_E ->
+    Sta.Dir.Dirty & Sta.WbMsg.Cmd != WB_Wb & Sta.ShWbMsg.Cmd != SHWB_ShWb 
+    & Sta.UniMsg[h].Cmd != UNI_Put & 
+    forall j: NODE do Sta.UniMsg[j].Cmd != UNI_PutX end &
+    forall j: NODE do j != i -> Sta.Proc[j].CacheState != CACHE_E end
+  end end; 
+
+invariant "lemma2"
+  forall h: NODE do forall i: NODE do forall j: NODE do
+    h = Home & i != j & j != h & Sta.UniMsg[i].Cmd = UNI_Get 
+    & Sta.UniMsg[i].Proc = j
+    -> Sta.Dir.Pending & !Sta.Dir.Local & Sta.Requester = i 
+    & Sta.FwdCmd = UNI_Get
+  end end end;
+
+invariant "lemma3"
+  forall h: NODE do forall i: NODE do forall j: NODE do
+    h = Home & i != j & j != h & Sta.UniMsg[i].Cmd = UNI_GetX 
+    & Sta.UniMsg[i].Proc = j
+    -> Sta.Dir.Pending & !Sta.Dir.Local & Sta.Requester = i 
+    & Sta.FwdCmd = UNI_GetX
+  end end end;
+
+invariant "lemma4"
+  forall h: NODE do forall i: NODE do
+    h = Home & i != h & Sta.InvMsg[i].Cmd = INV_InvAck ->
+    Sta.Dir.Pending & Sta.Collecting & Sta.NakcMsg.Cmd = NAKC_None 
+    & Sta.ShWbMsg.Cmd = SHWB_None
+    & forall j: NODE do
+      (Sta.UniMsg[j].Cmd = UNI_Get | Sta.UniMsg[j].Cmd = UNI_GetX 
+      -> Sta.UniMsg[j].Proc = h)
+      & (Sta.UniMsg[j].Cmd = UNI_PutX -> Sta.UniMsg[j].Proc = h 
+        & Sta.Requester = j)
+  end end end;
+
+invariant "lemma5"
+  forall i: NODE do 
+    Sta.Proc[i].CacheState = CACHE_E -> Sta.Proc[i].CacheData = Sta.CurrData end;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -141,16 +141,16 @@ ruleset src : NODE; data : DATA do
 rule "Store"
   Sta.Proc[src].CacheState = CACHE_E
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[src].CacheData := data;
-  NxtSta.CurrData := data;
-  NxtSta.LastWrVld := true;
-  NxtSta.LastWrPtr := src;
+  Sta.Proc[src].CacheData := data;
+  Sta.CurrData := data;
+  Sta.LastWrVld := true;
+  Sta.LastWrPtr := src;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -160,16 +160,16 @@ rule "PI_Remote_Get"
   Sta.Proc[src].ProcCmd = NODE_None &
   Sta.Proc[src].CacheState = CACHE_I
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[src].ProcCmd := NODE_Get;
-  NxtSta.UniMsg[src].Cmd := UNI_Get;
-  NxtSta.UniMsg[src].Proc := Home;
-  undefine NxtSta.UniMsg[src].Data;
+  Sta.Proc[src].ProcCmd := NODE_Get;
+  Sta.UniMsg[src].Cmd := UNI_Get;
+  Sta.UniMsg[src].Proc := Home;
+  undefine Sta.UniMsg[src].Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -178,22 +178,22 @@ rule "PI_Local_Get_Get"
   Sta.Proc[Home].CacheState = CACHE_I &
   !Sta.Dir.Pending & Sta.Dir.Dirty
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[Home].ProcCmd := NODE_Get;
-  NxtSta.Dir.Pending := true;
-  NxtSta.UniMsg[Home].Cmd := UNI_Get;
-  NxtSta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
-  undefine NxtSta.UniMsg[Home].Data;
+  Sta.Proc[Home].ProcCmd := NODE_Get;
+  Sta.Dir.Pending := true;
+  Sta.UniMsg[Home].Cmd := UNI_Get;
+  Sta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
+  undefine Sta.UniMsg[Home].Data;
   if (Sta.Dir.HeadPtr != Home) then
-    NxtSta.FwdCmd := UNI_Get;
+    Sta.FwdCmd := UNI_Get;
   end;
-  NxtSta.Requester := Home;
-  NxtSta.Collecting := false;
+  Sta.Requester := Home;
+  Sta.Collecting := false;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 rule "PI_Local_Get_Put"
@@ -201,22 +201,22 @@ rule "PI_Local_Get_Put"
   Sta.Proc[Home].CacheState = CACHE_I &
   !Sta.Dir.Pending & !Sta.Dir.Dirty
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Dir.Local := true;
-  NxtSta.Proc[Home].ProcCmd := NODE_None;
+  Sta.Dir.Local := true;
+  Sta.Proc[Home].ProcCmd := NODE_None;
   if (Sta.Proc[Home].InvMarked) then
-    NxtSta.Proc[Home].InvMarked := false;
-    NxtSta.Proc[Home].CacheState := CACHE_I;
-    undefine NxtSta.Proc[Home].CacheData;
+    Sta.Proc[Home].InvMarked := false;
+    Sta.Proc[Home].CacheState := CACHE_I;
+    undefine Sta.Proc[Home].CacheData;
   else
-    NxtSta.Proc[Home].CacheState := CACHE_S;
-    NxtSta.Proc[Home].CacheData := Sta.MemData;
+    Sta.Proc[Home].CacheState := CACHE_S;
+    Sta.Proc[Home].CacheData := Sta.MemData;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset src : NODE do
@@ -225,16 +225,16 @@ rule "PI_Remote_GetX"
   Sta.Proc[src].ProcCmd = NODE_None &
   Sta.Proc[src].CacheState = CACHE_I
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[src].ProcCmd := NODE_GetX;
-  NxtSta.UniMsg[src].Cmd := UNI_GetX;
-  NxtSta.UniMsg[src].Proc := Home;
-  undefine NxtSta.UniMsg[src].Data;
+  Sta.Proc[src].ProcCmd := NODE_GetX;
+  Sta.UniMsg[src].Cmd := UNI_GetX;
+  Sta.UniMsg[src].Proc := Home;
+  undefine Sta.UniMsg[src].Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -244,22 +244,22 @@ rule "PI_Local_GetX_GetX"
     Sta.Proc[Home].CacheState = CACHE_S ) &
   !Sta.Dir.Pending & Sta.Dir.Dirty
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[Home].ProcCmd := NODE_GetX;
-  NxtSta.Dir.Pending := true;
-  NxtSta.UniMsg[Home].Cmd := UNI_GetX;
-  NxtSta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
-  undefine NxtSta.UniMsg[Home].Data;
+  Sta.Proc[Home].ProcCmd := NODE_GetX;
+  Sta.Dir.Pending := true;
+  Sta.UniMsg[Home].Cmd := UNI_GetX;
+  Sta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
+  undefine Sta.UniMsg[Home].Data;
   if (Sta.Dir.HeadPtr != Home) then
-    NxtSta.FwdCmd := UNI_GetX;
+    Sta.FwdCmd := UNI_GetX;
   end;
-  NxtSta.Requester := Home;
-  NxtSta.Collecting := false;
+  Sta.Requester := Home;
+  Sta.Collecting := false;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 rule "PI_Local_GetX_PutX"
@@ -268,39 +268,39 @@ rule "PI_Local_GetX_PutX"
     Sta.Proc[Home].CacheState = CACHE_S ) &
   !Sta.Dir.Pending & !Sta.Dir.Dirty
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Dir.Local := true;
-  NxtSta.Dir.Dirty := true;
+  Sta.Dir.Local := true;
+  Sta.Dir.Dirty := true;
   if (Sta.Dir.HeadVld) then
-    NxtSta.Dir.Pending := true;
-    NxtSta.Dir.HeadVld := false;
-    undefine NxtSta.Dir.HeadPtr;
-    NxtSta.Dir.ShrVld := false;
+    Sta.Dir.Pending := true;
+    Sta.Dir.HeadVld := false;
+    undefine Sta.Dir.HeadPtr;
+    Sta.Dir.ShrVld := false;
     for p : NODE do
-      NxtSta.Dir.ShrSet[p] := false;
+      Sta.Dir.ShrSet[p] := false;
       if ( p != Home &
            ( Sta.Dir.ShrVld & Sta.Dir.ShrSet[p] |
              Sta.Dir.HeadVld & Sta.Dir.HeadPtr = p ) ) then
-        NxtSta.Dir.InvSet[p] := true;
-        NxtSta.InvMsg[p].Cmd := INV_Inv;
+        Sta.Dir.InvSet[p] := true;
+        Sta.InvMsg[p].Cmd := INV_Inv;
       else
-        NxtSta.Dir.InvSet[p] := false;
-        NxtSta.InvMsg[p].Cmd := INV_None;
+        Sta.Dir.InvSet[p] := false;
+        Sta.InvMsg[p].Cmd := INV_None;
       end;
     end;
-    NxtSta.Collecting := true;
-    NxtSta.PrevData := Sta.CurrData;
-    NxtSta.LastOtherInvAck := Sta.Dir.HeadPtr;
+    Sta.Collecting := true;
+    Sta.PrevData := Sta.CurrData;
+    Sta.LastOtherInvAck := Sta.Dir.HeadPtr;
   end;
-  NxtSta.Proc[Home].ProcCmd := NODE_None;
-  NxtSta.Proc[Home].InvMarked := false;
-  NxtSta.Proc[Home].CacheState := CACHE_E;
-  NxtSta.Proc[Home].CacheData := Sta.MemData;
+  Sta.Proc[Home].ProcCmd := NODE_None;
+  Sta.Proc[Home].InvMarked := false;
+  Sta.Proc[Home].CacheState := CACHE_E;
+  Sta.Proc[Home].CacheData := Sta.MemData;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset dst : NODE do
@@ -309,17 +309,17 @@ rule "PI_Remote_PutX"
   Sta.Proc[dst].ProcCmd = NODE_None &
   Sta.Proc[dst].CacheState = CACHE_E
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[dst].CacheState := CACHE_I;
-  undefine NxtSta.Proc[dst].CacheData;
-  NxtSta.WbMsg.Cmd := WB_Wb;
-  NxtSta.WbMsg.Proc := dst;
-  NxtSta.WbMsg.Data := Sta.Proc[dst].CacheData;
+  Sta.Proc[dst].CacheState := CACHE_I;
+  undefine Sta.Proc[dst].CacheData;
+  Sta.WbMsg.Cmd := WB_Wb;
+  Sta.WbMsg.Proc := dst;
+  Sta.WbMsg.Data := Sta.Proc[dst].CacheData;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -327,24 +327,24 @@ rule "PI_Local_PutX"
   Sta.Proc[Home].ProcCmd = NODE_None &
   Sta.Proc[Home].CacheState = CACHE_E
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
   if (Sta.Dir.Pending) then
-    NxtSta.Proc[Home].CacheState := CACHE_I;
-    undefine NxtSta.Proc[Home].CacheData;
-    NxtSta.Dir.Dirty := false;
-    NxtSta.MemData := Sta.Proc[Home].CacheData;
+    Sta.Proc[Home].CacheState := CACHE_I;
+    undefine Sta.Proc[Home].CacheData;
+    Sta.Dir.Dirty := false;
+    Sta.MemData := Sta.Proc[Home].CacheData;
   else
-    NxtSta.Proc[Home].CacheState := CACHE_I;
-    undefine NxtSta.Proc[Home].CacheData;
-    NxtSta.Dir.Local := false;
-    NxtSta.Dir.Dirty := false;
-    NxtSta.MemData := Sta.Proc[Home].CacheData;
+    Sta.Proc[Home].CacheState := CACHE_I;
+    undefine Sta.Proc[Home].CacheData;
+    Sta.Dir.Local := false;
+    Sta.Dir.Dirty := false;
+    Sta.MemData := Sta.Proc[Home].CacheData;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset src : NODE do
@@ -353,15 +353,15 @@ rule "PI_Remote_Replace"
   Sta.Proc[src].ProcCmd = NODE_None &
   Sta.Proc[src].CacheState = CACHE_S
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[src].CacheState := CACHE_I;
-  undefine NxtSta.Proc[src].CacheData;
-  NxtSta.RpMsg[src].Cmd := RP_Replace;
+  Sta.Proc[src].CacheState := CACHE_I;
+  undefine Sta.Proc[src].CacheData;
+  Sta.RpMsg[src].Cmd := RP_Replace;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -369,46 +369,46 @@ rule "PI_Local_Replace"
   Sta.Proc[Home].ProcCmd = NODE_None &
   Sta.Proc[Home].CacheState = CACHE_S
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Dir.Local := false;
-  NxtSta.Proc[Home].CacheState := CACHE_I;
-  undefine NxtSta.Proc[Home].CacheData;
+  Sta.Dir.Local := false;
+  Sta.Proc[Home].CacheState := CACHE_I;
+  undefine Sta.Proc[Home].CacheData;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset dst : NODE do
 rule "NI_Nak"
   Sta.UniMsg[dst].Cmd = UNI_Nak
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[dst].Cmd := UNI_None;
-  undefine NxtSta.UniMsg[dst].Proc;
-  undefine NxtSta.UniMsg[dst].Data;
-  NxtSta.Proc[dst].ProcCmd := NODE_None;
-  NxtSta.Proc[dst].InvMarked := false;
+  Sta.UniMsg[dst].Cmd := UNI_None;
+  undefine Sta.UniMsg[dst].Proc;
+  undefine Sta.UniMsg[dst].Data;
+  Sta.Proc[dst].ProcCmd := NODE_None;
+  Sta.Proc[dst].InvMarked := false;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
 rule "NI_Nak_Clear"
   Sta.NakcMsg.Cmd = NAKC_Nakc
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.NakcMsg.Cmd := NAKC_None;
-  NxtSta.Dir.Pending := false;
+  Sta.NakcMsg.Cmd := NAKC_None;
+  Sta.Dir.Pending := false;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset src : NODE do
@@ -421,15 +421,15 @@ rule "NI_Local_Get_Nak"
     Sta.Dir.Dirty & Sta.Dir.Local & Sta.Proc[Home].CacheState != CACHE_E |
     Sta.Dir.Dirty & !Sta.Dir.Local & Sta.Dir.HeadPtr = src )
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[src].Cmd := UNI_Nak;
-  NxtSta.UniMsg[src].Proc := Home;
-  undefine NxtSta.UniMsg[src].Data;
+  Sta.UniMsg[src].Cmd := UNI_Nak;
+  Sta.UniMsg[src].Proc := Home;
+  undefine Sta.UniMsg[src].Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -441,21 +441,21 @@ rule "NI_Local_Get_Get"
   Sta.RpMsg[src].Cmd != RP_Replace &
   !Sta.Dir.Pending & Sta.Dir.Dirty & !Sta.Dir.Local & Sta.Dir.HeadPtr != src
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Dir.Pending := true;
-  NxtSta.UniMsg[src].Cmd := UNI_Get;
-  NxtSta.UniMsg[src].Proc := Sta.Dir.HeadPtr;
-  undefine NxtSta.UniMsg[src].Data;
+  Sta.Dir.Pending := true;
+  Sta.UniMsg[src].Cmd := UNI_Get;
+  Sta.UniMsg[src].Proc := Sta.Dir.HeadPtr;
+  undefine Sta.UniMsg[src].Data;
   if (Sta.Dir.HeadPtr != Home) then
-    NxtSta.FwdCmd := UNI_Get;
+    Sta.FwdCmd := UNI_Get;
   end;
-  NxtSta.Requester := src;
-  NxtSta.Collecting := false;
+  Sta.Requester := src;
+  Sta.Collecting := false;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -469,36 +469,36 @@ rule "NI_Local_Get_Put"
   (Sta.Dir.Dirty -> Sta.Dir.Local & Sta.Proc[Home].CacheState = CACHE_E)
 --  !Sta.Proc[src].InvMarked
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
   if (Sta.Dir.Dirty) then
-    NxtSta.Dir.Dirty := false;
-    NxtSta.Dir.HeadVld := true;
-    NxtSta.Dir.HeadPtr := src;
-    NxtSta.MemData := Sta.Proc[Home].CacheData;
-    NxtSta.Proc[Home].CacheState := CACHE_S;
-    NxtSta.UniMsg[src].Cmd := UNI_Put;
-    NxtSta.UniMsg[src].Proc := Home;
-    NxtSta.UniMsg[src].Data := Sta.Proc[Home].CacheData;
+    Sta.Dir.Dirty := false;
+    Sta.Dir.HeadVld := true;
+    Sta.Dir.HeadPtr := src;
+    Sta.MemData := Sta.Proc[Home].CacheData;
+    Sta.Proc[Home].CacheState := CACHE_S;
+    Sta.UniMsg[src].Cmd := UNI_Put;
+    Sta.UniMsg[src].Proc := Home;
+    Sta.UniMsg[src].Data := Sta.Proc[Home].CacheData;
   else
     if (Sta.Dir.HeadVld) then
-      NxtSta.Dir.ShrVld := true;
-      NxtSta.Dir.ShrSet[src] := true;
+      Sta.Dir.ShrVld := true;
+      Sta.Dir.ShrSet[src] := true;
       for p : NODE do
-        NxtSta.Dir.InvSet[p] := (p = src) | Sta.Dir.ShrSet[p];
+        Sta.Dir.InvSet[p] := (p = src) | Sta.Dir.ShrSet[p];
       end;
     else
-      NxtSta.Dir.HeadVld := true;
-      NxtSta.Dir.HeadPtr := src;
+      Sta.Dir.HeadVld := true;
+      Sta.Dir.HeadPtr := src;
     end;
-    NxtSta.UniMsg[src].Cmd := UNI_Put;
-    NxtSta.UniMsg[src].Proc := Home;
-    NxtSta.UniMsg[src].Data := Sta.MemData;
+    Sta.UniMsg[src].Cmd := UNI_Put;
+    Sta.UniMsg[src].Proc := Home;
+    Sta.UniMsg[src].Data := Sta.MemData;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -509,18 +509,18 @@ rule "NI_Remote_Get_Nak"
   Sta.UniMsg[src].Proc = dst &
   Sta.Proc[dst].CacheState != CACHE_E
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[src].Cmd := UNI_Nak;
-  NxtSta.UniMsg[src].Proc := dst;
-  undefine NxtSta.UniMsg[src].Data;
-  NxtSta.NakcMsg.Cmd := NAKC_Nakc;
-  NxtSta.FwdCmd := UNI_None;
-  NxtSta.FwdSrc := src;
+  Sta.UniMsg[src].Cmd := UNI_Nak;
+  Sta.UniMsg[src].Proc := dst;
+  undefine Sta.UniMsg[src].Data;
+  Sta.NakcMsg.Cmd := NAKC_Nakc;
+  Sta.FwdCmd := UNI_None;
+  Sta.FwdSrc := src;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -532,23 +532,23 @@ rule "NI_Remote_Get_Put"
   Sta.Proc[dst].CacheState = CACHE_E
 --  !Sta.Proc[src].InvMarked
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[dst].CacheState := CACHE_S;
-  NxtSta.UniMsg[src].Cmd := UNI_Put;
-  NxtSta.UniMsg[src].Proc := dst;
-  NxtSta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
+  Sta.Proc[dst].CacheState := CACHE_S;
+  Sta.UniMsg[src].Cmd := UNI_Put;
+  Sta.UniMsg[src].Proc := dst;
+  Sta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
   if (src != Home) then
-    NxtSta.ShWbMsg.Cmd := SHWB_ShWb;
-    NxtSta.ShWbMsg.Proc := src;
-    NxtSta.ShWbMsg.Data := Sta.Proc[dst].CacheData;
+    Sta.ShWbMsg.Cmd := SHWB_ShWb;
+    Sta.ShWbMsg.Proc := src;
+    Sta.ShWbMsg.Data := Sta.Proc[dst].CacheData;
   end;
-  NxtSta.FwdCmd := UNI_None;
-  NxtSta.FwdSrc := src;
+  Sta.FwdCmd := UNI_None;
+  Sta.FwdSrc := src;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -561,15 +561,15 @@ rule "NI_Local_GetX_Nak"
     Sta.Dir.Dirty & Sta.Dir.Local & Sta.Proc[Home].CacheState != CACHE_E |
     Sta.Dir.Dirty & !Sta.Dir.Local & Sta.Dir.HeadPtr = src )
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[src].Cmd := UNI_Nak;
-  NxtSta.UniMsg[src].Proc := Home;
-  undefine NxtSta.UniMsg[src].Data;
+  Sta.UniMsg[src].Cmd := UNI_Nak;
+  Sta.UniMsg[src].Proc := Home;
+  undefine Sta.UniMsg[src].Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -580,21 +580,21 @@ rule "NI_Local_GetX_GetX"
   Sta.UniMsg[src].Proc = Home &
   !Sta.Dir.Pending & Sta.Dir.Dirty & !Sta.Dir.Local & Sta.Dir.HeadPtr != src
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Dir.Pending := true;
-  NxtSta.UniMsg[src].Cmd := UNI_GetX;
-  NxtSta.UniMsg[src].Proc := Sta.Dir.HeadPtr;
-  undefine NxtSta.UniMsg[src].Data;
+  Sta.Dir.Pending := true;
+  Sta.UniMsg[src].Cmd := UNI_GetX;
+  Sta.UniMsg[src].Proc := Sta.Dir.HeadPtr;
+  undefine Sta.UniMsg[src].Data;
   if (Sta.Dir.HeadPtr != Home) then
-    NxtSta.FwdCmd := UNI_GetX;
+    Sta.FwdCmd := UNI_GetX;
   end;
-  NxtSta.Requester := src;
-  NxtSta.Collecting := false;
+  Sta.Requester := src;
+  Sta.Collecting := false;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -606,91 +606,91 @@ rule "NI_Local_GetX_PutX"
   !Sta.Dir.Pending &
   (Sta.Dir.Dirty -> Sta.Dir.Local & Sta.Proc[Home].CacheState = CACHE_E)
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
   if (Sta.Dir.Dirty) then
-    NxtSta.Dir.Local := false;
-    NxtSta.Dir.Dirty := true;
-    NxtSta.Dir.HeadVld := true;
-    NxtSta.Dir.HeadPtr := src;
-    NxtSta.Dir.ShrVld := false;
+    Sta.Dir.Local := false;
+    Sta.Dir.Dirty := true;
+    Sta.Dir.HeadVld := true;
+    Sta.Dir.HeadPtr := src;
+    Sta.Dir.ShrVld := false;
     for p : NODE do
-      NxtSta.Dir.ShrSet[p] := false;
-      NxtSta.Dir.InvSet[p] := false;
+      Sta.Dir.ShrSet[p] := false;
+      Sta.Dir.InvSet[p] := false;
     end;
-    NxtSta.UniMsg[src].Cmd := UNI_PutX;
-    NxtSta.UniMsg[src].Proc := Home;
-    NxtSta.UniMsg[src].Data := Sta.Proc[Home].CacheData;
-    NxtSta.Proc[Home].CacheState := CACHE_I;
-    undefine NxtSta.Proc[Home].CacheData;
+    Sta.UniMsg[src].Cmd := UNI_PutX;
+    Sta.UniMsg[src].Proc := Home;
+    Sta.UniMsg[src].Data := Sta.Proc[Home].CacheData;
+    Sta.Proc[Home].CacheState := CACHE_I;
+    undefine Sta.Proc[Home].CacheData;
   elsif (Sta.Dir.HeadVld ->
          Sta.Dir.HeadPtr = src  &
          forall p : NODE do p != src -> !Sta.Dir.ShrSet[p] end) then
-    NxtSta.Dir.Local := false;
-    NxtSta.Dir.Dirty := true;
-    NxtSta.Dir.HeadVld := true;
-    NxtSta.Dir.HeadPtr := src;
-    NxtSta.Dir.ShrVld := false;
+    Sta.Dir.Local := false;
+    Sta.Dir.Dirty := true;
+    Sta.Dir.HeadVld := true;
+    Sta.Dir.HeadPtr := src;
+    Sta.Dir.ShrVld := false;
     for p : NODE do
-      NxtSta.Dir.ShrSet[p] := false;
-      NxtSta.Dir.InvSet[p] := false;
+      Sta.Dir.ShrSet[p] := false;
+      Sta.Dir.InvSet[p] := false;
     end;
-    NxtSta.UniMsg[src].Cmd := UNI_PutX;
-    NxtSta.UniMsg[src].Proc := Home;
-    NxtSta.UniMsg[src].Data := Sta.MemData;
-    NxtSta.Proc[Home].CacheState := CACHE_I;
-    undefine NxtSta.Proc[Home].CacheData;
+    Sta.UniMsg[src].Cmd := UNI_PutX;
+    Sta.UniMsg[src].Proc := Home;
+    Sta.UniMsg[src].Data := Sta.MemData;
+    Sta.Proc[Home].CacheState := CACHE_I;
+    undefine Sta.Proc[Home].CacheData;
     if (Sta.Dir.Local) then
-      NxtSta.Proc[Home].CacheState := CACHE_I;
-      undefine NxtSta.Proc[Home].CacheData;
+      Sta.Proc[Home].CacheState := CACHE_I;
+      undefine Sta.Proc[Home].CacheData;
       if (Sta.Proc[Home].ProcCmd = NODE_Get) then
-        NxtSta.Proc[Home].InvMarked := true;
+        Sta.Proc[Home].InvMarked := true;
       end;
     end;
   else
-    NxtSta.Dir.Pending := true;
-    NxtSta.Dir.Local := false;
-    NxtSta.Dir.Dirty := true;
-    NxtSta.Dir.HeadVld := true;
-    NxtSta.Dir.HeadPtr := src;
-    NxtSta.Dir.ShrVld := false;
+    Sta.Dir.Pending := true;
+    Sta.Dir.Local := false;
+    Sta.Dir.Dirty := true;
+    Sta.Dir.HeadVld := true;
+    Sta.Dir.HeadPtr := src;
+    Sta.Dir.ShrVld := false;
     for p : NODE do
-      NxtSta.Dir.ShrSet[p] := false;
+      Sta.Dir.ShrSet[p] := false;
       if ( p != Home & p != src &
            ( Sta.Dir.ShrVld & Sta.Dir.ShrSet[p] |
              Sta.Dir.HeadVld & Sta.Dir.HeadPtr = p ) ) then
-        NxtSta.Dir.InvSet[p] := true;
-        NxtSta.InvMsg[p].Cmd := INV_Inv;
+        Sta.Dir.InvSet[p] := true;
+        Sta.InvMsg[p].Cmd := INV_Inv;
       else
-        NxtSta.Dir.InvSet[p] := false;
-        NxtSta.InvMsg[p].Cmd := INV_None;
+        Sta.Dir.InvSet[p] := false;
+        Sta.InvMsg[p].Cmd := INV_None;
       end;
     end;
-    NxtSta.UniMsg[src].Cmd := UNI_PutX;
-    NxtSta.UniMsg[src].Proc := Home;
-    NxtSta.UniMsg[src].Data := Sta.MemData;
+    Sta.UniMsg[src].Cmd := UNI_PutX;
+    Sta.UniMsg[src].Proc := Home;
+    Sta.UniMsg[src].Data := Sta.MemData;
     if (Sta.Dir.Local) then
-      NxtSta.Proc[Home].CacheState := CACHE_I;
-      undefine NxtSta.Proc[Home].CacheData;
+      Sta.Proc[Home].CacheState := CACHE_I;
+      undefine Sta.Proc[Home].CacheData;
       if (Sta.Proc[Home].ProcCmd = NODE_Get) then
-        NxtSta.Proc[Home].InvMarked := true;
+        Sta.Proc[Home].InvMarked := true;
       end;
     end;
-    NxtSta.Requester := src;
-    NxtSta.Collecting := true;
-    NxtSta.PrevData := Sta.CurrData;
+    Sta.Requester := src;
+    Sta.Collecting := true;
+    Sta.PrevData := Sta.CurrData;
     if (Sta.Dir.HeadPtr != src) then
-      NxtSta.LastOtherInvAck := Sta.Dir.HeadPtr;
+      Sta.LastOtherInvAck := Sta.Dir.HeadPtr;
     else
       for p : NODE do
-        if (p != src & Sta.Dir.ShrSet[p]) then NxtSta.LastOtherInvAck := p end;
+        if (p != src & Sta.Dir.ShrSet[p]) then Sta.LastOtherInvAck := p; end;
       end;
     end;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -701,18 +701,18 @@ rule "NI_Remote_GetX_Nak"
   Sta.UniMsg[src].Proc = dst &
   Sta.Proc[dst].CacheState != CACHE_E
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[src].Cmd := UNI_Nak;
-  NxtSta.UniMsg[src].Proc := dst;
-  undefine NxtSta.UniMsg[src].Data;
-  NxtSta.NakcMsg.Cmd := NAKC_Nakc;
-  NxtSta.FwdCmd := UNI_None;
-  NxtSta.FwdSrc := src;
+  Sta.UniMsg[src].Cmd := UNI_Nak;
+  Sta.UniMsg[src].Proc := dst;
+  undefine Sta.UniMsg[src].Data;
+  Sta.NakcMsg.Cmd := NAKC_Nakc;
+  Sta.FwdCmd := UNI_None;
+  Sta.FwdSrc := src;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -724,52 +724,52 @@ rule "NI_Remote_GetX_PutX"
   Sta.Proc[dst].CacheState = CACHE_E
 --  !Sta.Proc[src].InvMarked
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.Proc[dst].CacheState := CACHE_I;
-  undefine NxtSta.Proc[dst].CacheData;
-  NxtSta.UniMsg[src].Cmd := UNI_PutX;
-  NxtSta.UniMsg[src].Proc := dst;
-  NxtSta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
+  Sta.Proc[dst].CacheState := CACHE_I;
+  undefine Sta.Proc[dst].CacheData;
+  Sta.UniMsg[src].Cmd := UNI_PutX;
+  Sta.UniMsg[src].Proc := dst;
+  Sta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
   if (src != Home) then
-    NxtSta.ShWbMsg.Cmd := SHWB_FAck;
-    NxtSta.ShWbMsg.Proc := src;
-    undefine NxtSta.ShWbMsg.Data;
+    Sta.ShWbMsg.Cmd := SHWB_FAck;
+    Sta.ShWbMsg.Proc := src;
+    undefine Sta.ShWbMsg.Data;
   end;
-  NxtSta.FwdCmd := UNI_None;
-  NxtSta.FwdSrc := src;
+  Sta.FwdCmd := UNI_None;
+  Sta.FwdSrc := src;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
 rule "NI_Local_Put"
   Sta.UniMsg[Home].Cmd = UNI_Put
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[Home].Cmd := UNI_None;
-  undefine NxtSta.UniMsg[Home].Proc;
-  undefine NxtSta.UniMsg[Home].Data;
-  NxtSta.Dir.Pending := false;
-  NxtSta.Dir.Dirty := false;
-  NxtSta.Dir.Local := true;
-  NxtSta.MemData := Sta.UniMsg[Home].Data;
-  NxtSta.Proc[Home].ProcCmd := NODE_None;
+  Sta.UniMsg[Home].Cmd := UNI_None;
+  undefine Sta.UniMsg[Home].Proc;
+  undefine Sta.UniMsg[Home].Data;
+  Sta.Dir.Pending := false;
+  Sta.Dir.Dirty := false;
+  Sta.Dir.Local := true;
+  Sta.MemData := Sta.UniMsg[Home].Data;
+  Sta.Proc[Home].ProcCmd := NODE_None;
   if (Sta.Proc[Home].InvMarked) then
-    NxtSta.Proc[Home].InvMarked := false;
-    NxtSta.Proc[Home].CacheState := CACHE_I;
-    undefine NxtSta.Proc[Home].CacheData;
+    Sta.Proc[Home].InvMarked := false;
+    Sta.Proc[Home].CacheState := CACHE_I;
+    undefine Sta.Proc[Home].CacheData;
   else
-    NxtSta.Proc[Home].CacheState := CACHE_S;
-    NxtSta.Proc[Home].CacheData := Sta.UniMsg[Home].Data;
+    Sta.Proc[Home].CacheState := CACHE_S;
+    Sta.Proc[Home].CacheData := Sta.UniMsg[Home].Data;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset dst : NODE do
@@ -777,47 +777,47 @@ rule "NI_Remote_Put"
   dst != Home &
   Sta.UniMsg[dst].Cmd = UNI_Put
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[dst].Cmd := UNI_None;
-  undefine NxtSta.UniMsg[dst].Proc;
-  undefine NxtSta.UniMsg[dst].Data;
-  NxtSta.Proc[dst].ProcCmd := NODE_None;
+  Sta.UniMsg[dst].Cmd := UNI_None;
+  undefine Sta.UniMsg[dst].Proc;
+  undefine Sta.UniMsg[dst].Data;
+  Sta.Proc[dst].ProcCmd := NODE_None;
   if (Sta.Proc[dst].InvMarked) then
-    NxtSta.Proc[dst].InvMarked := false;
-    NxtSta.Proc[dst].CacheState := CACHE_I;
-    undefine NxtSta.Proc[dst].CacheData;
+    Sta.Proc[dst].InvMarked := false;
+    Sta.Proc[dst].CacheState := CACHE_I;
+    undefine Sta.Proc[dst].CacheData;
   else
-    NxtSta.Proc[dst].CacheState := CACHE_S;
-    NxtSta.Proc[dst].CacheData := Sta.UniMsg[dst].Data;
+    Sta.Proc[dst].CacheState := CACHE_S;
+    Sta.Proc[dst].CacheData := Sta.UniMsg[dst].Data;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
 rule "NI_Local_PutXAcksDone"
   Sta.UniMsg[Home].Cmd = UNI_PutX
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[Home].Cmd := UNI_None;
-  undefine NxtSta.UniMsg[Home].Proc;
-  undefine NxtSta.UniMsg[Home].Data;
-  NxtSta.Dir.Pending := false;
-  NxtSta.Dir.Local := true;
-  NxtSta.Dir.HeadVld := false;
-  undefine NxtSta.Dir.HeadPtr;
-  NxtSta.Proc[Home].ProcCmd := NODE_None;
-  NxtSta.Proc[Home].InvMarked := false;
-  NxtSta.Proc[Home].CacheState := CACHE_E;
-  NxtSta.Proc[Home].CacheData := Sta.UniMsg[Home].Data;
+  Sta.UniMsg[Home].Cmd := UNI_None;
+  undefine Sta.UniMsg[Home].Proc;
+  undefine Sta.UniMsg[Home].Data;
+  Sta.Dir.Pending := false;
+  Sta.Dir.Local := true;
+  Sta.Dir.HeadVld := false;
+  undefine Sta.Dir.HeadPtr;
+  Sta.Proc[Home].ProcCmd := NODE_None;
+  Sta.Proc[Home].InvMarked := false;
+  Sta.Proc[Home].CacheState := CACHE_E;
+  Sta.Proc[Home].CacheData := Sta.UniMsg[Home].Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset dst : NODE do
@@ -826,19 +826,19 @@ rule "NI_Remote_PutX"
   Sta.UniMsg[dst].Cmd = UNI_PutX &
   Sta.Proc[dst].ProcCmd = NODE_GetX
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.UniMsg[dst].Cmd := UNI_None;
-  undefine NxtSta.UniMsg[dst].Proc;
-  undefine NxtSta.UniMsg[dst].Data;
-  NxtSta.Proc[dst].ProcCmd := NODE_None;
-  NxtSta.Proc[dst].InvMarked := false;
-  NxtSta.Proc[dst].CacheState := CACHE_E;
-  NxtSta.Proc[dst].CacheData := Sta.UniMsg[dst].Data;
+  Sta.UniMsg[dst].Cmd := UNI_None;
+  undefine Sta.UniMsg[dst].Proc;
+  undefine Sta.UniMsg[dst].Data;
+  Sta.Proc[dst].ProcCmd := NODE_None;
+  Sta.Proc[dst].InvMarked := false;
+  Sta.Proc[dst].CacheState := CACHE_E;
+  Sta.Proc[dst].CacheData := Sta.UniMsg[dst].Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -847,18 +847,18 @@ rule "NI_Inv"
   dst != Home &
   Sta.InvMsg[dst].Cmd = INV_Inv
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.InvMsg[dst].Cmd := INV_InvAck;
-  NxtSta.Proc[dst].CacheState := CACHE_I;
-  undefine NxtSta.Proc[dst].CacheData;
+  Sta.InvMsg[dst].Cmd := INV_InvAck;
+  Sta.Proc[dst].CacheState := CACHE_I;
+  undefine Sta.Proc[dst].CacheData;
   if (Sta.Proc[dst].ProcCmd = NODE_Get) then
-    NxtSta.Proc[dst].InvMarked := true;
+    Sta.Proc[dst].InvMarked := true;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
@@ -868,106 +868,106 @@ rule "NI_InvAck"
   Sta.InvMsg[src].Cmd = INV_InvAck &
   Sta.Dir.Pending & Sta.Dir.InvSet[src]  
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.InvMsg[src].Cmd := INV_None;
-  NxtSta.Dir.InvSet[src] := false;
+  Sta.InvMsg[src].Cmd := INV_None;
+  Sta.Dir.InvSet[src] := false;
   if (exists p : NODE do p != src & Sta.Dir.InvSet[p] end) then
-    NxtSta.LastInvAck := src;
+    Sta.LastInvAck := src;
     for p : NODE do
       if (p != src & Sta.Dir.InvSet[p]) then
-        NxtSta.LastOtherInvAck := p;
+        Sta.LastOtherInvAck := p;
       end;
     end;
   else
-    NxtSta.Dir.Pending := false;
+    Sta.Dir.Pending := false;
     if (Sta.Dir.Local & !Sta.Dir.Dirty) then
-      NxtSta.Dir.Local := false;
+      Sta.Dir.Local := false;
     end;
-    NxtSta.Collecting := false;
-    NxtSta.LastInvAck := src;
+    Sta.Collecting := false;
+    Sta.LastInvAck := src;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 
 rule "NI_Wb"
   Sta.WbMsg.Cmd = WB_Wb
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.WbMsg.Cmd := WB_None;
-  undefine NxtSta.WbMsg.Proc;
-  undefine NxtSta.WbMsg.Data;
-  NxtSta.Dir.Dirty := false;
-  NxtSta.Dir.HeadVld := false;
-  undefine NxtSta.Dir.HeadPtr;
-  NxtSta.MemData := Sta.WbMsg.Data;
+  Sta.WbMsg.Cmd := WB_None;
+  undefine Sta.WbMsg.Proc;
+  undefine Sta.WbMsg.Data;
+  Sta.Dir.Dirty := false;
+  Sta.Dir.HeadVld := false;
+  undefine Sta.Dir.HeadPtr;
+  Sta.MemData := Sta.WbMsg.Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 rule "NI_FAck"
   Sta.ShWbMsg.Cmd = SHWB_FAck
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.ShWbMsg.Cmd := SHWB_None;
-  undefine NxtSta.ShWbMsg.Proc;
-  undefine NxtSta.ShWbMsg.Data;
-  NxtSta.Dir.Pending := false;
+  Sta.ShWbMsg.Cmd := SHWB_None;
+  undefine Sta.ShWbMsg.Proc;
+  undefine Sta.ShWbMsg.Data;
+  Sta.Dir.Pending := false;
   if (Sta.Dir.Dirty) then
-    NxtSta.Dir.HeadPtr := Sta.ShWbMsg.Proc;
+    Sta.Dir.HeadPtr := Sta.ShWbMsg.Proc;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 rule "NI_ShWb"
   Sta.ShWbMsg.Cmd = SHWB_ShWb
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.ShWbMsg.Cmd := SHWB_None;
-  undefine NxtSta.ShWbMsg.Proc;
-  undefine NxtSta.ShWbMsg.Data;
-  NxtSta.Dir.Pending := false;
-  NxtSta.Dir.Dirty := false;
-  NxtSta.Dir.ShrVld := true;
---  NxtSta.Dir.ShrSet[Sta.ShWbMsg.Proc] := true;
+  Sta.ShWbMsg.Cmd := SHWB_None;
+  undefine Sta.ShWbMsg.Proc;
+  undefine Sta.ShWbMsg.Data;
+  Sta.Dir.Pending := false;
+  Sta.Dir.Dirty := false;
+  Sta.Dir.ShrVld := true;
+--  Sta.Dir.ShrSet[Sta.ShWbMsg.Proc] := true;
   for p : NODE do
-    NxtSta.Dir.ShrSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
-    NxtSta.Dir.InvSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
+    Sta.Dir.ShrSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
+    Sta.Dir.InvSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
   end;
-  NxtSta.MemData := Sta.ShWbMsg.Data;
+  Sta.MemData := Sta.ShWbMsg.Data;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 
 ruleset src : NODE do
 rule "NI_Replace"
   Sta.RpMsg[src].Cmd = RP_Replace
 ==>
-var NxtSta : STATE;
+var Sta : STATE;
 begin
-  NxtSta := Sta;
+  Sta := Sta;
 --
-  NxtSta.RpMsg[src].Cmd := RP_None;
+  Sta.RpMsg[src].Cmd := RP_None;
   if (Sta.Dir.ShrVld) then
-    NxtSta.Dir.ShrSet[src] := false;
-    NxtSta.Dir.InvSet[src] := false;
+    Sta.Dir.ShrSet[src] := false;
+    Sta.Dir.InvSet[src] := false;
   end;
 --
-  Sta := NxtSta;
+  Sta := Sta;
 endrule;
 endruleset;
 

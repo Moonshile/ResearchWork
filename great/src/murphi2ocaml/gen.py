@@ -6,28 +6,96 @@ import logging
 from copy import deepcopy
 
 
-typeData = [
-    ('CACHE_STATE', ['CACHE_I', 'CACHE_S', 'CACHE_E']),
-    ('NODE_CMD', ['NODE_None', 'NODE_Get', 'NODE_GetX']),
-    ('UNI_CMD', ['UNI_None', 'UNI_Get', 'UNI_GetX', 'UNI_Put', 'UNI_PutX', 'UNI_Nak']),
-    ('INV_CMD', ['INV_None', 'INV_Inv', 'INV_InvAck']),
-    ('RP_CMD', ['RP_None', 'RP_Replace']),
-    ('WB_CMD', ['WB_None', 'WB_Wb']),
-    ('SHWB_CMD', ['SHWB_None', 'SHWB_ShWb', 'SHWB_FAck']),
-    ('NAKC_CMD', ['NAKC_None', 'NAKC_Nakc']),
-]
+class TypeDef(object):
+    def __init__(self, text):
+        self.consts = {}
+        self.const_defs = []
+        self.typedefs = []
+        self.typenames = {}
+        self.evaluate(text)
+    
+    def evalEnum(self, text):
+        enums = re.findall(r'(\w*?)\s*:\s*enum\s*\{(.*?)\}\s*;', text, re.S)
+        for name, vstr in enums:
+            values = filter(lambda x: x, map(lambda y: y.strip(), vstr.split(',')))
+            for v in values: self.consts[v] = 0
+            self.const_defs += map(lambda v: 'let _%s = strc \"%s\"'%(v, v), values)
+            self.typedefs.append('enum \"%s\" [%s];'%(
+                name, 
+                '; '.join(map(lambda x: '_%s'%x, values))
+            ))
+            self.typenames[name] = map(lambda x: '_%s'%x, values)
 
-def genTypes(typeData):
-    typedefs = []
-    var = []
-    for name, values in typeData:
-        t = map(lambda x: 'let _%s = strc \"%s\"'%(x, x), values)
-        typedefs.append('\n'.join(t))
-        v = '  enum \"%s\" [%s];'%(name, '; '.join(map(lambda x : '_%s'%x, values)))
-        var.append(v)
-    return '\n\n'.join(typedefs), '\n'.join(var)
+    def evalScalarset(self, text):
+        scalarsets = re.findall(r'(\w*?)\s*:\s*scalarset\s*\((\w*?)\)\s*;', text, re.S)
+        for name, v in scalarsets:
+            actualv = int(re.findall(r'%s\s*:\s*(\d+)\s*;'%v, text, re.S)[0])
+            self.typedefs.append('enum \"%s\" (int_consts [%s]);'%(
+                name,
+                '; '.join(map(lambda x: str(x), range(1, actualv + 1)))
+            ))
+            self.typenames[name] = map(lambda x: '(intc %d)'%x, range(1, actualv + 1))
 
-#print '\n\n'.join(genTypes(typeData))
+    def evalBool(self):
+        self.const_defs += ['let _True = boolc true', 'let _False = boolc false']
+        self.typedefs.append('enum "boolean" [_True; _False];')
+        self.typenames['boolean'] = ['_False', '_True'];
+
+    def evaluate(self, text):
+        self.evalEnum(text)
+        self.evalScalarset(text)
+        self.evalBool()
+        self.value = '%s\n\n%s'%(
+            '\n'.join(self.const_defs),
+            'let types = [\n%s\n]'%('\n'.join(map(lambda x: '  %s'%x, self.typedefs)))
+        )
+
+
+
+
+
+
+
+
+
+
+class Record(object):
+    def __init__(self, text, typenames):
+        super(Record, self).__init__()
+        self.index = -1
+        self.typenames = typenames
+        self.evaluate(text)
+
+    def judgeRecord(self, n, p, v):
+        if v in self.typenames:
+            return '  [arrdef \"%s\" %s \"%s\"]'%(n, p, v)
+        else:
+            return '  record_def \"%s\" %s _%s'%(n, p, v)
+
+    def handleArr(self, n, v):
+        if v[:5] == 'array':
+            pattern = re.compile(r'array \[(.+)\] of (.+)')
+            param, t = pattern.findall(v)[0]
+            self.index += 1
+            return self.judgeRecord(n, '[paramdef \"i%d\" \"%s\"]'%(self.index, param), t)
+        else:
+            return self.judgeRecord(n, '[]', v)
+    
+    def evaluate(self, text):
+        records = []
+        record_strs = re.findall(r'(\w*?)\s*:\s*record\s*(.+?)\s*end\s*;', text, re.S)
+        for name, fields in record_strs:
+            fields = map(
+                lambda x: tuple(map(lambda y: y.strip(), x.split(':'))), 
+                filter(lambda x: x.strip(), fields.split(';'))
+            )
+            values = map(
+                lambda (name, t): self.handleArr(name, t),
+                fields
+            )
+            values = 'let _%s = List.concat [\n%s\n]'%(name, ';\n'.join(values))
+            records.append(values)
+        self.value = '\n\n'.join(records)
 
 
 
@@ -40,119 +108,42 @@ def genTypes(typeData):
 
 
 
+class Vardef(object):
+    def __init__(self, text, typenames):
+        super(Vardef, self).__init__()
+        self.index = -1
+        self.typenames = typenames
+        self.evaluate(text)
 
+    def judgeRecord(self, n, p, v):
+        if v in self.typenames:
+            return '  [arrdef \"%s\" %s \"%s\"]'%(n, p, v)
+        else:
+            return '  record_def \"%s\" %s _%s'%(n, p, v)
 
-types = map(lambda x: x[0], typeData) + ['boolean', 'NODE', 'DATA']
-
-varData = """
-  NODE_STATE : record
-    ProcCmd : NODE_CMD;
-    InvMarked : boolean;
-    CacheState : CACHE_STATE;
-    CacheData : DATA;
-  end;
-
-  DIR_STATE : record
-    Pending : boolean;
-    Local : boolean;
-    Dirty : boolean;
-    HeadVld : boolean;
-    HeadPtr : NODE;
-    ShrVld : boolean;
-    ShrSet : array [NODE] of boolean;
-    InvSet : array [NODE] of boolean;
-  end;
-
-  UNI_MSG : record
-    Cmd : UNI_CMD;
-    Proc : NODE;
-    Data : DATA;
-  end;
-
-  INV_MSG : record
-    Cmd : INV_CMD;
-  end;
-
-  RP_MSG : record
-    Cmd : RP_CMD;
-  end;
-
-  WB_MSG : record
-    Cmd : WB_CMD;
-    Proc : NODE;
-    Data : DATA;
-  end;
-
-  SHWB_MSG : record
-    Cmd : SHWB_CMD;
-    Proc : NODE;
-    Data : DATA;
-  end;
-
-  NAKC_MSG : record
-    Cmd : NAKC_CMD;
-  end;
-
-  STATE : record
-    Proc : array [NODE] of NODE_STATE;
-    Dir : DIR_STATE;
-    MemData : DATA;
-    UniMsg : array [NODE] of UNI_MSG;
-    InvMsg : array [NODE] of INV_MSG;
-    RpMsg : array [NODE] of RP_MSG;
-    WbMsg : WB_MSG;
-    ShWbMsg : SHWB_MSG;
-    NakcMsg : NAKC_MSG;
-    CurrData : DATA;
-    PrevData : DATA;
-    LastWrVld : boolean;
-    LastWrPtr : NODE;
-    Requester : NODE;
-    Collecting : boolean;
-    FwdCmd : UNI_CMD;
-    FwdSrc : NODE;
-    LastInvAck : NODE;
-    LastOtherInvAck : NODE;
-  end;
-"""
-
-index = -1
-
-def judgeRecord(n, p, v):
-    if v in types:
-        return '  [arrdef \"%s\" %s \"%s\"]'%(n, p, v)
-    else:
-        return '  record_def \"%s\" %s _%s'%(n, p, v)
-
-def handleArr(n, v):
-    if v[:5] == 'array':
-        global index
-        pattern = re.compile(r'array \[(.+)\] of (.+)')
-        param, t = pattern.findall(v)[0]
-        index += 1
-        return judgeRecord(n, '[paramdef \"i%d\" \"%s\"]'%(index, param), t)
-    else:
-        return judgeRecord(n, '[]', v)
-
-def genVars(varData):
-    record_strs = filter(lambda x: x != '', map(lambda x: x.strip(), varData.split('end;')))
-    record_pattern = re.compile(r'(.+)\s*:\s*record\s*(.+)', re.S)
-    records = []
-    for r in record_strs:
-        name, values = record_pattern.findall(r)[0]
-        values = map(
+    def handleArr(self, n, v):
+        if v[:5] == 'array':
+            pattern = re.compile(r'array \[(.+)\] of (.+)')
+            param, t = pattern.findall(v)[0]
+            self.index += 1
+            return self.judgeRecord(n, '[paramdef \"i%d\" \"%s\"]'%(self.index, param), t)
+        else:
+            return self.judgeRecord(n, '[]', v)
+    
+    def evaluate(self, text):
+        vs = []
+        var_str = re.findall(r'var\s+((?:\w*\s*:\s*\w*\s*;\s*)*)', text, re.S)[0]
+        fields = map(
             lambda x: tuple(map(lambda y: y.strip(), x.split(':'))), 
-            filter(lambda x: x.strip() != '', values.split(';'))
+            filter(lambda x: x.strip(), var_str.split(';'))
         )
         values = map(
-            lambda (name, t): handleArr(name, t),
-            values
+            lambda (name, t): self.handleArr(name, t),
+            fields
         )
-        values = 'let _%s = List.concat [\n%s\n]'%(name, ';\n'.join(values))
-        records.append(values)
-    return records
+        self.value = 'let vardefs = List.concat [\n%s\n]'%(';\n'.join(values))
 
-#print '\n\n'.join(genVars(varData))
+
 
 
 
@@ -168,19 +159,20 @@ def genVars(varData):
 
 
 def analyzeParams(params):
-    param_names = map(lambda x: x.split(':')[0].strip(), params.split(';'))
+    parts = params.split(';')
     param_name_dict = {}
-    for p in param_names: param_name_dict[p] = 0
+    for p in parts: param_name_dict[p.split(':')[0].strip()] = p.split(':')[1].strip()
     param_defs = map(
         lambda x: 'paramdef ' + ' '.join(map(
             lambda y: '\"%s\"'%y.strip(), 
             x.strip().split(':'))
         ),
-        params.split(';')
+        parts
     )
     return param_name_dict, '[%s]'%('; '.join(param_defs))
 
-
+def escape(name):
+    return 'n_%s'%(re.sub(r'- ', '_', name))
 
 
 
@@ -197,11 +189,33 @@ class Formula(object):
         super(Formula, self).__init__()
         self.param_names = param_names
         self.consts = consts
-        blanks = re.compile(r'\s')
-        self.form_pattern = re.compile(r'(forall.*?end|exists.*?end|\(|\)|=|!=|!|&|\||->)')
-        self.text = filter(lambda y: y, map(lambda x: x.strip(), self.form_pattern.split(text)))
+        self.text = self.splitText(text)
         self.suffix = self.process(self.text)
         self.value = self.evaluate(self.suffix, self.param_names)
+
+    def splitText(self, text):
+        dividers = r'(do|end|\(|\)|=|!=|!|&|\||->)'
+        parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(dividers, text)))
+        big_parts = []
+        to_add = []
+        exp_ends = 0
+        for p in parts:
+            if p.startswith(('forall', 'exists')):
+                exp_ends += 1
+                to_add.append(p)
+            elif p.startswith('end'):
+                exp_ends -= 1
+                to_add.append(p)
+                if exp_ends == 0:
+                    big_parts.append(' '.join(to_add))
+                    to_add = []
+            elif exp_ends > 0:
+                to_add.append(p)
+            else:
+                big_parts.append(p)
+        if len(big_parts) == 0:
+            logging.error('could not split text: %d'%text)
+        return big_parts
 
     def process(self, text):
         ops = []
@@ -258,7 +272,7 @@ class Formula(object):
             param_name_dict, param_defs = analyzeParams(params)
             for p in param_names:
                 if p not in param_name_dict: param_name_dict[p] = 0
-            text = filter(lambda y: y, map(lambda x: x.strip(), self.form_pattern.split(text)))
+            text = self.splitText(text)
             sub_form = self.evaluate(self.process(text), param_name_dict)
             if re.match(r'^forall.*?end$', atom):
                 return '(forallFormula ~types %s %s)'%(param_defs, sub_form)
@@ -302,7 +316,18 @@ class Formula(object):
             else:
                 logging.error('unknown operator %s'%s)
                 pass
-        return values[0][1] if values[0][0] else self.evalAtom(values[0][1], param_names)
+        if values[0][0]: return values[0][1]
+        elif values[0][1].strip()[:6] in ['forall', 'exists']:
+            return self.evalAtom(values[0][1], param_names)
+        else: return '(eqn %s (const _True))'%self.evalAtom(values[0][1], param_names)
+
+
+
+
+
+
+
+
 
 
 
@@ -321,12 +346,12 @@ class Statement(object):
         self.value = self.evaluate(self.statements, self.param_names, self.consts)
 
     def splitText(self, text):
-        parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(r'(;|do|then)', text)))
+        parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(r'(;|do|then|else)', text)))
         big_parts = []
         to_add = []
         exp_ends = 0
         for p in parts:
-            if p.startswith(('if', 'for', 'exists')):
+            if p.startswith(('if', 'for')):
                 exp_ends += 1
                 to_add.append(p)
             elif p.startswith('end'):
@@ -339,6 +364,9 @@ class Statement(object):
                 to_add.append(p)
             elif p != ';':
                 big_parts.append(p)
+        if len(big_parts) == 0:
+            for p in parts: print p
+            logging.error('could not split text: %d'%exp_ends)
         return big_parts
 
     def evalVar(self, var):
@@ -374,7 +402,7 @@ class Statement(object):
             return '(var %s)'%self.evalVar(atom)
 
     def partitionIf(self, statement):
-        parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(r'(;|do|then)', statement)))
+        parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(r'(;|do|then|else)', statement)))
         sub_clause = []
         to_add = []
         exp_ends = 0
@@ -422,20 +450,24 @@ class Statement(object):
             self.partitionIf(statement)
         )
         def inner(sc):
-            if len(sc) == 1:
-                return '(ifStatement %s %s)'%sc[0]
-            # ifelse语句的后半句不能是elsif
-            elif len(sc) == 2 and len(sc[1]) == 1:
-                return '(ifelseStatement %s %s %s)'%(sc[0][0], sc[0][1], sc[1][0])
-            elif len(sc) >= 2:
-                latter = inner(sc[1:])
-                return '(ifelseStatement %s %s %s)'%(sc[0][0], sc[0][1], latter)
-            else:
-                logging.error('wrong subclause')
+            try:
+                if len(sc) == 1:
+                    return '(ifStatement %s %s)'%sc[0]
+                # ifelse语句的后半句不能是elsif
+                elif len(sc) == 2 and len(sc[1]) == 1:
+                    return '(ifelseStatement %s %s %s)'%(sc[0][0], sc[0][1], sc[1][0])
+                elif len(sc) >= 2:
+                    latter = inner(sc[1:])
+                    return '(ifelseStatement %s %s %s)'%(sc[0][0], sc[0][1], latter)
+                else:
+                    logging.error('wrong subclause')
+            except:
+                msg = '\n'.join(map(lambda x: str(x), sub_clause))
+                logging.error('wrong sub clause: \n%s\n\n%s\n\n'%(self.partitionIf(statement), msg))
         return inner(sub_clause)
 
     def evalFor(self, statement, param_names, consts):
-        params, statement_str = re.findall(r'for(.*?)do(.*)end(?:for)*', statement)[0]
+        params, statement_str = re.findall(r'for(.*?)do(.*)end(?:for)*', statement, re.S)[0]
         param_name_dict, param_defs = analyzeParams(params)
         for p in param_names:
             if p not in param_name_dict: param_name_dict[p] = 0
@@ -470,11 +502,26 @@ class Statement(object):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Rule(object):
     def __init__(self, text, params, param_names, consts):
         super(Rule, self).__init__()
         pattern = re.compile(r'rule\s*\"(.*?)\"\s*(.*?)==>.*?begin(.*?)endrule;', re.S)
         self.name, guard, statements = pattern.findall(text)[0]
+        self.name = escape(self.name)
         self.params = params
         self.param_names = param_names
         self.formula = Formula(guard, self.param_names, consts)
@@ -484,9 +531,22 @@ class Rule(object):
   let params = %s in
   let formula = %s in
   let statement = %s in
-  rule name params formula statement
-        '''%(self.name, self.name, self.params, self.formula.value, self.statement.value)
-        print self.value
+  rule name params formula statement'''%(self.name, self.name, self.params, self.formula.value, self.statement.value)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -499,21 +559,123 @@ class Rule(object):
 class RuleSet(object):
     def __init__(self, text, consts):
         super(RuleSet, self).__init__()
+        rules = []
         pattern = re.compile(r'ruleset(.*?)do(.*?)endruleset;', re.S)
-        params, rules_str = pattern.findall(text)[0]
-        param_name_dict, param_defs = analyzeParams(params)
-        rule_texts = re.findall(r'(rule.*?endrule;)', rules_str, re.S)
-        rules = map(lambda r: Rule(r, param_defs, param_name_dict, consts), rule_texts)
+        rulesets = pattern.findall(text)
+        for params, rules_str in rulesets:
+            param_name_dict, param_defs = analyzeParams(params)
+            rule_texts = re.findall(r'(rule.*?endrule;)', rules_str, re.S)
+            rules += map(lambda r: Rule(r, param_defs, param_name_dict, consts), rule_texts)
+        self.value = '%s\n\nlet rules = [%s]'%(
+            '\n\n'.join(map(lambda r: r.value, rules)), 
+            '; '.join(map(lambda r: r.name, rules))
+        )
 
 
 
-const_values = reduce(lambda res, x: res + x[1], typeData, [])
-consts = {}
-for c in const_values: consts[c] = 0
 
-rule_f = open('./rules.m', 'r')
-ruletext = rule_f.read()
-rule_f.close()
-pattern = re.compile(r'(ruleset.*?endruleset;)', re.S)
-ruleset_texts = pattern.findall(ruletext)
-rulesets = map(lambda x: RuleSet(x, consts), ruleset_texts)
+
+
+
+
+
+
+
+class StartState(object):
+    def __init__(self, text, consts, typenames):
+        super(StartState, self).__init__()
+        init_p2 = r'startstate\s*(?:\".*?\"){0,1}(?:.*?begin){0,1}(.*?)endstartstate\s*;'
+        init_p1 = r'ruleset(.*?)do\s*%s\s*endruleset\s*;'%init_p2
+        if re.findall(init_p1, text, re.S):
+            params, statements = re.findall(init_p1, text, re.S)[0]
+        else:
+            params, statements = [], re.findall(init_p2, text, re.S)[1]
+        param_types, _ = analyzeParams(params)
+        for k, v in param_types.items():
+            param_types[k] = typenames[v][0]
+        statement = Statement(statements, param_types, consts)
+        statement_value = statement.value
+        for k, v in param_types.items():
+            statement_value = statement_value.replace('param (paramref \"%s\")'%k, 'const %s'%v)
+            statement_value = statement_value.replace('paramref \"%s\"'%k, v)
+        self.value = 'let init = %s'%statement_value
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Invariant(object):
+    def __init__(self, text, consts):
+        super(Invariant, self).__init__()
+        inv_strs = re.findall(r'invariant\s*\"(.*?)\"\s*(.*?)\s*;', text, re.S)
+        invs = []
+        names = []
+        for name, form in inv_strs:
+            name = escape(name)
+            formula = Formula(form, [], consts)
+            names.append(name)
+            invs.append('''let %s =
+  let name = \"%s\" in
+  let params = [] in
+  let formula = %s in
+  prop name params formula'''%(name, name, formula.value))
+        self.value = '%s\n\nlet properties = [%s]'%('\n\n'.join(invs), '; '.join(names))
+
+
+
+
+
+
+
+
+
+
+class Protocol(object):
+    def __init__(self, name, filename):
+        self.name = escape(name)
+        f = open(filename, 'r')
+        self.content = f.read()
+        f.close()
+        self.evaluate()
+
+    def evaluate(self):
+        types = TypeDef(self.content)
+        records = Record(self.content, types.typenames)
+        vardefs = Vardef(self.content, types.typenames)
+        init = StartState(self.content, types.consts, types.typenames)
+        rulesets = RuleSet(self.content, types.consts)
+        invs = Invariant(self.content, types.consts)
+        self.value = '''
+(* This program is translated from its corresponding murphi version *)
+
+open Core.Std
+open Utils
+open Paramecium
+open Loach
+open Formula
+open InvFinder\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n
+let protocol = Trans.act {
+  name = \"%s\";
+  types;
+  vardefs;
+  init;
+  rules;
+  properties;
+};;'''%(types.value, records.value, vardefs.value, init.value, rulesets.value, invs.value, self.name)
+
+
+
+
+
+
+
+protocol = Protocol('flash', 'flash2.m')
+print protocol.value
