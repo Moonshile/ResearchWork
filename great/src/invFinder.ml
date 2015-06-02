@@ -507,7 +507,7 @@ let rule_inst_policy ~cinv ~types r =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol ~prop_params =
+let find ?(prop_params=[[]]) ~protocol () =
   let {name; types; vardefs; init=_; rules; properties} = protocol in
   let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _smv_context = set_smv_context name (ToStr.Smv.protocol_act protocol) in
@@ -521,4 +521,15 @@ let find ~protocol ~prop_params =
       wrapper cinvs' new_inv_id' ((cinv, invs_lib, relations)::table)
   in
   let cinvs = List.map2_exn properties prop_params ~f:(concrete_prop) in
-  wrapper cinvs 0 []
+  let [(cinv, invs, relations)] = wrapper cinvs 0 [] in
+  let invs_str =
+    invs
+    |> List.map ~f:neg
+    |> List.map ~f:simplify
+    |> List.map ~f:ToStr.Smv.form_act
+  in
+  let relations_str = List.map relations ~f:to_str in
+  Prt.info (String.concat ~sep:"\n" relations_str);
+  printf "\n";
+  Prt.warning (String.concat ~sep:"\n" invs_str);
+  printf "\n";

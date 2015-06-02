@@ -8,9 +8,11 @@ from copy import deepcopy
 
 class TypeDef(object):
     def __init__(self, text):
+        # hash map of all constants
         self.consts = {}
         self.const_defs = []
         self.typedefs = []
+        # value range of each type
         self.typenames = {}
         self.evaluate(text)
     
@@ -57,12 +59,11 @@ class TypeDef(object):
 
 
 
-
+index = -1
 
 class Record(object):
     def __init__(self, text, typenames):
         super(Record, self).__init__()
-        self.index = -1
         self.typenames = typenames
         self.evaluate(text)
 
@@ -74,10 +75,11 @@ class Record(object):
 
     def handleArr(self, n, v):
         if v[:5] == 'array':
+            global index
             pattern = re.compile(r'array \[(.+)\] of (.+)')
             param, t = pattern.findall(v)[0]
-            self.index += 1
-            return self.judgeRecord(n, '[paramdef \"i%d\" \"%s\"]'%(self.index, param), t)
+            index += 1
+            return self.judgeRecord(n, '[paramdef \"i%d\" \"%s\"]'%(index, param), t)
         else:
             return self.judgeRecord(n, '[]', v)
     
@@ -111,7 +113,6 @@ class Record(object):
 class Vardef(object):
     def __init__(self, text, typenames):
         super(Vardef, self).__init__()
-        self.index = -1
         self.typenames = typenames
         self.evaluate(text)
 
@@ -123,16 +124,17 @@ class Vardef(object):
 
     def handleArr(self, n, v):
         if v[:5] == 'array':
-            pattern = re.compile(r'array \[(.+)\] of (.+)')
+            global index
+            pattern = re.compile(r'array\s*\[(.+)\]\s*of\s*(.+)')
             param, t = pattern.findall(v)[0]
-            self.index += 1
-            return self.judgeRecord(n, '[paramdef \"i%d\" \"%s\"]'%(self.index, param), t)
+            index += 1
+            return self.judgeRecord(n, '[paramdef \"i%d\" \"%s\"]'%(index, param), t)
         else:
             return self.judgeRecord(n, '[]', v)
     
     def evaluate(self, text):
         vs = []
-        var_str = re.findall(r'var\s+((?:\w*\s*:\s*\w*\s*;\s*)*)', text, re.S)[0]
+        var_str = re.findall(r'var\s+((?:\w*\s*:\s*.*?\s*;\s*)*)', text, re.S)[0]
         fields = map(
             lambda x: tuple(map(lambda y: y.strip(), x.split(':'))), 
             filter(lambda x: x.strip(), var_str.split(';'))
@@ -159,6 +161,12 @@ class Vardef(object):
 
 
 def analyzeParams(params):
+    """
+    @param params: as `i:Node; j:Node`
+    @return a tuple as `{'i': 'Node', 'j': 'Node'}, '[paramdef "i" "Node"; paramdef "j" "Node"]'`
+    """
+    if not params:
+        return {}, '[]'
     parts = params.split(';')
     param_name_dict = {}
     for p in parts: param_name_dict[p.split(':')[0].strip()] = p.split(':')[1].strip()
@@ -214,7 +222,7 @@ class Formula(object):
             else:
                 big_parts.append(p)
         if len(big_parts) == 0:
-            logging.error('could not split text: %d'%text)
+            logging.error('could not split text: %s'%text)
         return big_parts
 
     def process(self, text):
@@ -366,7 +374,7 @@ class Statement(object):
                 big_parts.append(p)
         if len(big_parts) == 0:
             for p in parts: print p
-            logging.error('could not split text: %d'%exp_ends)
+            logging.error('could not split text: %s'%text)
         return big_parts
 
     def evalVar(self, var):
@@ -589,7 +597,7 @@ class StartState(object):
         if re.findall(init_p1, text, re.S):
             params, statements = re.findall(init_p1, text, re.S)[0]
         else:
-            params, statements = [], re.findall(init_p2, text, re.S)[1]
+            params, statements = '', re.findall(init_p2, text, re.S)[0]
         param_types, _ = analyzeParams(params)
         for k, v in param_types.items():
             param_types[k] = typenames[v][0]
@@ -613,20 +621,29 @@ class StartState(object):
 
 
 class Invariant(object):
-    def __init__(self, text, consts):
+    def __init__(self, text, consts, typenames):
         super(Invariant, self).__init__()
-        inv_strs = re.findall(r'invariant\s*\"(.*?)\"\s*(.*?)\s*;', text, re.S)
+        pattern = r'ruleset\s*([\w :;]*)do\s*invariant\s*\"(.*?)\"\s*(.*?)\s*;\s*endruleset\s*;'
+        inv_strs = re.findall(pattern, text, re.S)
         invs = []
         names = []
-        for name, form in inv_strs:
+        for params, name, form in inv_strs:
+            param_types, _ = analyzeParams(params)
+            next_type_value = {}
+            for t in typenames: next_type_value[t] = 0
             name = escape(name)
-            formula = Formula(form, [], consts)
+            formula = Formula(form, param_types, consts)
+            value = formula.value
+            for n, t in param_types.items():
+                next_value = typenames[t][next_type_value[t]]
+                value = value.replace('paramref "%s"'%n, 'paramfix "%s" %s'%(t, next_value))
+                next_type_value[t] += 1
             names.append(name)
             invs.append('''let %s =
   let name = \"%s\" in
   let params = [] in
   let formula = %s in
-  prop name params formula'''%(name, name, formula.value))
+  prop name params formula'''%(name, name, value))
         self.value = '%s\n\nlet properties = [%s]'%('\n\n'.join(invs), '; '.join(names))
 
 
@@ -652,7 +669,7 @@ class Protocol(object):
         vardefs = Vardef(self.content, types.typenames)
         init = StartState(self.content, types.consts, types.typenames)
         rulesets = RuleSet(self.content, types.consts)
-        invs = Invariant(self.content, types.consts)
+        invs = Invariant(self.content, types.consts, types.typenames)
         self.value = '''
 (* This program is translated from its corresponding murphi version *)
 
@@ -669,7 +686,7 @@ let protocol = Trans.act {
   init;
   rules;
   properties;
-};;'''%(types.value, records.value, vardefs.value, init.value, rulesets.value, invs.value, self.name)
+};;\n\nfind ~protocol ();;'''%(types.value, records.value, vardefs.value, init.value, rulesets.value, invs.value, self.name)
 
 
 
@@ -715,6 +732,6 @@ try:
     else:
         sys.stderr.write(help_msg)
         sys.exit()
-except:
+except getopt.GetoptError:
     sys.stderr.write(help_msg)
     sys.exit()

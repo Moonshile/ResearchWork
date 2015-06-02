@@ -14,6 +14,8 @@ exception Cannot_find of string
 
 (*----------------------------- Functions ----------------------------------*)
 
+val up_to : int -> int list
+
 (** Generate the permutation of a list *)
 val permutation : 'a list -> 'a list list
 

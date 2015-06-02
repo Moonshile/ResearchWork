@@ -67,6 +67,15 @@ type protocol = {
   properties: prop list;
 }
 
+let rec apply_statement statement ~p =
+  match statement with
+  | Assign(v, e) -> assign (apply_array v ~p) (apply_exp e ~p)
+  | Parallel(sl) -> parallel (List.map sl ~f:(apply_statement ~p))
+  | IfStatement(f, s) -> ifStatement (apply_form f ~p) (apply_statement s ~p)
+  | IfelseStatement(f, s1, s2) ->
+    ifelseStatement (apply_form f ~p) (apply_statement s1 ~p) (apply_statement s2 ~p)
+  | ForStatement(s, pd) -> forStatement (apply_statement s ~p) pd
+
 (*----------------------------- Translate module ---------------------------------*)
 
 (** Translate language of this level to the next lower level *)
@@ -98,17 +107,18 @@ module Trans = struct
         let res2 = List.map translated2 ~f:(fun (f', s') -> (andList [neg f; f'], s')) in
         List.concat [res1; res2]
     | ForStatement(s, paramdefs) ->
-        let translated = trans_statement ~types s in
         let ps = cart_product_with_paramfix paramdefs types in
-        let applying s' = Paramecium.parallel (List.map ps ~f:(fun p -> apply_statement ~p s')) in
-        List.map translated ~f:(fun (f, s'') -> (f, applying s''))
+        let instantiated = parallel (List.map ps ~f:(fun p -> apply_statement ~p s)) in
+        trans_statement ~types instantiated
 
   let trans_rule ~types r =
     match r with
     | Rule(n, p, f, s) ->
       let guarded_s = trans_statement ~types s in
+      let indice = up_to (List.length guarded_s) in
       (* TODO generate a new rule name??? *)
-      List.map guarded_s ~f:(fun (g, s) -> Paramecium.rule n p (andList [f; g]) s)
+      List.map2_exn guarded_s indice ~f:(fun (g, s) i -> 
+        Paramecium.rule (sprintf "%s_%d" n i) p (andList [f; g]) s)
 
   (** Translate language of Loach to Paramecium
 
