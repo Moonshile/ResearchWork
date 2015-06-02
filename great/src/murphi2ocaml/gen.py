@@ -677,5 +677,44 @@ let protocol = Trans.act {
 
 
 
-protocol = Protocol('flash', 'flash2.m')
-print protocol.value
+
+
+
+
+
+
+
+import getopt
+import sys
+import os
+
+
+help_msg = 'Usage: python gen.py [-n|-m|-h] for [--name|--murphi|--help]\n'
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'n:m:h', ['name=', 'murphi=', 'help'])
+    name = None
+    murphi = None
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            sys.stdout.write(help_msg)
+            sys.exit()
+        elif opt in ('-n', '--name'):
+            name = arg
+        elif opt in ('-m', '--murphi'):
+            murphi = arg
+        else:
+            sys.stderr.write(help_msg)
+            sys.exit()
+    if murphi is not None and os.path.isfile(murphi):
+        basename = os.path.basename(murphi)
+        if name is None:
+            name = basename if len(basename.split('.')) == 1 else '.'.join(basename.split('.')[:-1])
+        protocol = Protocol(name, murphi)
+        print protocol.value
+    else:
+        sys.stderr.write(help_msg)
+        sys.exit()
+except:
+    sys.stderr.write(help_msg)
+    sys.exit()
