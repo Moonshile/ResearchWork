@@ -519,7 +519,7 @@ class Statement(object):
 class Rule(object):
     def __init__(self, text, params, param_names, consts):
         super(Rule, self).__init__()
-        pattern = re.compile(r'rule\s*\"(.*?)\"\s*(.*?)==>.*?begin(.*?)endrule;', re.S)
+        pattern = re.compile(r'rule\s*\"(.*?)\"\s*(.*?)==>.*?begin(.*?)endrule\s*;', re.S)
         self.name, guard, statements = pattern.findall(text)[0]
         self.name = escape(self.name)
         self.params = params
@@ -560,7 +560,7 @@ class RuleSet(object):
     def __init__(self, text, consts):
         super(RuleSet, self).__init__()
         rules = []
-        pattern = re.compile(r'ruleset(.*?)do(.*?)endruleset;', re.S)
+        pattern = re.compile(r'ruleset(.*?)do(.*?)endruleset\s*;', re.S)
         rulesets = pattern.findall(text)
         for params, rules_str in rulesets:
             param_name_dict, param_defs = analyzeParams(params)
