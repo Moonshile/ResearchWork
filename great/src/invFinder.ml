@@ -495,13 +495,19 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
   wrapper [cinv] new_inv_id init_lib []
 
 
+(* Rule instant policy *)
+let rule_inst_policy ~cinv ~types r =
+  let Paramecium.Rule(_, paramdefs, _, _) = r in
+  let ps = cart_product_with_paramfix paramdefs types in
+  rule_2_concrete r ps
+
 (** Find invs and causal relations of a protocol
 
     @param protocol the protocol
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol ~prop_params rule_inst_policy =
+let find ~protocol ~prop_params =
   let {name; types; vardefs; init=_; rules; properties} = protocol in
   let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _smv_context = set_smv_context name (ToStr.Smv.protocol_act protocol) in

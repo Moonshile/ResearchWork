@@ -145,7 +145,7 @@ module Smv = struct
   let const_act c =
     match c with
     | Intc(i) -> Int.to_string i
-    | Strc(s) -> s
+    | Strc(s) -> String.lowercase s
     | Boolc(b) -> String.uppercase (Bool.to_string b)
 
   let type_act ~types name =
