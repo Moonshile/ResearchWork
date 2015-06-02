@@ -108,25 +108,5 @@ let protocol = Trans.act {
   properties;
 };;
 
-let prop_params = [("i", paramfix "node" (intc 1)); ("j", paramfix "node" (intc 2))]
-
-(* Rule instant policy *)
-let rule_inst_policy ~cinv ~types r =
-  let Paramecium.Rule(_, paramdefs, _, _) = r in
-  let ps = cart_product_with_paramfix paramdefs types in
-  rule_2_concrete r ps
-
-let [(cinv, invs, relations)] = find ~protocol ~prop_params:[prop_params] rule_inst_policy;;
-
-let invs_str =
-  invs
-  |> List.map ~f:neg
-  |> List.map ~f:simplify
-  |> List.map ~f:ToStr.Smv.form_act;;
-
-let relations_str = List.map relations ~f:to_str;;
-
-Prt.info (String.concat ~sep:"\n" relations_str);;
-printf "\n";;
-Prt.warning (String.concat ~sep:"\n" invs_str);;
-printf "\n";;
+let prop_params = [("i", paramfix "node" (intc 1)); ("j", paramfix "node" (intc 2))] in
+find ~protocol ~prop_params:[prop_params] ();;
