@@ -65,8 +65,14 @@ opam install async yojson core_extended core_bench cohttp async_graphics cryptok
 
 ```
 git clone git@github.com:Z3Prover/z3.git
-python scriptpython scripts/mk_make.py
+python scripts/mk_make.py
 cd build
 make
 sudo make install
+```
+
+## pexpect
+
+```
+pip install pexpect
 ```
