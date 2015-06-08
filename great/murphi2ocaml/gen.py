@@ -593,7 +593,7 @@ class StartState(object):
     def __init__(self, text, consts, typenames):
         super(StartState, self).__init__()
         init_p2 = r'startstate\s*(?:\".*?\"){0,1}(?:.*?begin){0,1}(.*?)endstartstate\s*;'
-        init_p1 = r'ruleset(.*?)do\s*%s\s*endruleset\s*;'%init_p2
+        init_p1 = r'ruleset\s*([\w :;]*)do\s*%s\s*endruleset\s*;'%init_p2
         if re.findall(init_p1, text, re.S):
             params, statements = re.findall(init_p1, text, re.S)[0]
         else:
