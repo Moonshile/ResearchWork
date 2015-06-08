@@ -55,8 +55,7 @@ def serv(conn, addr):
                 data += d
         except socket.timeout, e:
             pass
-    if __verbose:
-        print data
+    if __verbose: print data
     cmd = data.split(',')
     if cmd[0] == COMPUTE_REACHABLE:
         """
@@ -64,9 +63,11 @@ def serv(conn, addr):
         """
         # There are many ',' in smv file, so should concat the parts splited
         name = cmd[2]
-        content = ','.join(cmd[3:])
-        add_smv_process(name, content)
-        data = smv_pool[cmd[2]].go_and_compute_reachable()
+        if name not in smv_pool:
+            if __verbose: print "Start to compute reachable set"
+            content = ','.join(cmd[3:])
+            add_smv_process(name, content)
+            data = smv_pool[cmd[2]].go_and_compute_reachable()
         conn.sendall(OK)
     elif cmd[0] == QUERY_REACHABLE:
         """
