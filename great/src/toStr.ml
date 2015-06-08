@@ -325,6 +325,7 @@ module Smv = struct
     let escape n =
       String.substr_replace_all n ~pattern:"[" ~with_:"__"
       |> String.substr_replace_all ~pattern:"]" ~with_:""
+      |> String.substr_replace_all ~pattern:"." ~with_:"__"
     in
     let vars = String.Set.to_list (VarNamesWithParam.of_rule r ~of_var:(fun v ->
       String.Set.of_list [var_act v]

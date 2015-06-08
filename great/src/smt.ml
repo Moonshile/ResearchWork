@@ -14,6 +14,8 @@ exception Name_not_known
 
 let protocol_name = ref ""
 
+let table = Hashtbl.create ~hashable:String.hashable ()
+
 let set_smt_context name context =
   protocol_name := name;
   Client.Smt2.set_context name context
@@ -25,6 +27,12 @@ let set_smt_context name context =
     @return true if is satisfiable else false
 *)
 let is_satisfiable ?(quiet=true) f =
-  if (!protocol_name) = "" then raise Name_not_known
-  else begin Client.Smt2.check (!protocol_name) f end
+  match Hashtbl.find table f with
+  | Some (r) -> r
+  | None -> 
+    if (!protocol_name) = "" then raise Name_not_known
+    else begin
+      let r = Client.Smt2.check (!protocol_name) f in
+      Hashtbl.replace table ~key:f ~data:r; r
+    end
 

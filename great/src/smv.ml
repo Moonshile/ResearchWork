@@ -14,6 +14,8 @@ exception Name_not_known
 
 let protocol_name = ref ""
 
+let table = Hashtbl.create ~hashable:String.hashable ()
+
 let set_smv_context name smv_file_content =
   protocol_name := name;
   let _res = Client.Smv.compute_reachable name smv_file_content in
@@ -32,5 +34,11 @@ let set_smv_context name smv_file_content =
     @return true if is true invariant else false
 *)
 let is_inv_by_smv ?(quiet=true) inv =
-  if (!protocol_name) = "" then raise Name_not_known
-  else begin Client.Smv.check_inv (!protocol_name) inv end
+  match Hashtbl.find table inv with
+  | Some (r) -> r
+  | None -> 
+    if (!protocol_name) = "" then raise Name_not_known
+    else begin
+      let r = Client.Smv.check_inv (!protocol_name) inv in
+      Hashtbl.replace table ~key:inv ~data:r; r
+    end
