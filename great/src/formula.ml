@@ -23,17 +23,37 @@ let is_tautology ?(quiet=true) form =
 let is_satisfiable ?(quiet=true) form =
   Smt.is_satisfiable ~quiet (ToStr.Smt2.form_of form)
 
-(** Cast a formula to a list of formulae with and relation between them *)
-let rec flat_and_to_list form =
+let rec eliminate_imply_neg form =
   match form with
-  | AndList(fl) -> List.concat (List.map fl ~f:flat_and_to_list)
-  | Neg(OrList(fl)) -> flat_and_to_list (andList (List.map fl ~f:neg))
   | Chaos
   | Miracle
-  | Eqn(_)
-  | Neg(_)
-  | OrList(_)
-  | Imply(_) -> [form]
+  | Eqn(_) -> form
+  | Neg(Chaos) -> miracle
+  | Neg(Miracle) -> chaos
+  | Neg(Eqn(_)) -> form
+  | Neg(Neg(f)) -> eliminate_imply_neg f
+  | Neg(AndList(fl)) -> eliminate_imply_neg (orList (List.map fl ~f:neg))
+  | Neg(OrList(fl)) -> eliminate_imply_neg (andList (List.map fl ~f:neg))
+  | Neg(Imply(f1, f2)) -> eliminate_imply_neg (andList [f1; neg f2])
+  | AndList(fl) -> andList (List.map fl ~f:eliminate_imply_neg)
+  | OrList(fl) -> orList (List.map fl ~f:eliminate_imply_neg)
+  | Imply(f1, f2) -> eliminate_imply_neg (orList [neg f1; f2])
+
+(** Cast a formula to a list of formulae with and relation between them *)
+let flat_and_to_list form =
+  let no_imply_neg = eliminate_imply_neg form in
+  let rec wrapper form =
+    match form with
+    | Chaos
+    | Miracle
+    | Eqn(_)
+    | Neg(Eqn(_)) -> [form]
+    | AndList(fl) -> List.concat (List.map fl ~f:wrapper)
+    | OrList(fl) -> [form]
+    | Neg(_)
+    | Imply(_) -> raise Empty_exception
+  in
+  wrapper no_imply_neg
 
 (** For andList, flat its all components,
     for others, flat to a single list
@@ -42,16 +62,20 @@ let flat_to_andList form =
   andList (flat_and_to_list form)
 
 (** Cast a formula to a list of formulae with or relation between them *)
-let rec flat_or_to_list form =
-  match form with
-  | OrList(fl) -> List.concat (List.map fl ~f:flat_or_to_list)
-  | Neg(AndList(fl)) -> flat_or_to_list (orList (List.map fl ~f:neg))
-  | Chaos
-  | Miracle
-  | Eqn(_)
-  | Neg(_)
-  | AndList(_)
-  | Imply(_) -> [form]
+let flat_or_to_list form =
+  let no_imply_neg = eliminate_imply_neg form in
+  let rec wrapper form =
+    match form with
+    | Chaos
+    | Miracle
+    | Eqn(_)
+    | Neg(Eqn(_))
+    | AndList(_) -> [form]
+    | OrList(fl) -> List.concat (List.map fl ~f:wrapper)
+    | Neg(_)
+    | Imply(_) -> raise Empty_exception
+  in
+  wrapper no_imply_neg
 
 (** For orList, flat its all components,
     for others, flat to a single list
@@ -68,45 +92,41 @@ let form_are_symmetric f1 f2 =
   f1' = f2'
 
 (** Simplify a formula *)
-let rec simplify form = 
-  match form with
-  | Chaos -> chaos
-  | Miracle -> miracle
-  | Eqn(_) ->
-    if is_tautology form then chaos
-    else if not (is_satisfiable form) then miracle
-    else begin form end
-  | Neg(Neg(f)) -> simplify f
-  | Neg(AndList(_)) -> simplify (flat_to_orList form)
-  | Neg(OrList(_)) -> simplify (flat_to_andList form)
-  | Neg(f) ->(
-      let simplified = simplify f in
-      match simplified with
-      | Chaos -> miracle
-      | Miracle -> chaos
-      | _ -> neg simplified
-    )
-  | AndList(fl) ->
-    let simplified = List.map fl ~f:(simplify) in
-    if List.exists simplified ~f:(fun x -> x = Miracle) then miracle
-    else begin
-      let not_chaos = List.dedup (List.filter simplified ~f:(fun x -> not (x = Chaos))) in
-      match not_chaos with
-      | [] -> chaos
-      | [one] -> one
-      | _ -> andList not_chaos
-    end
-  | OrList(fl) ->
-    let simplified = List.map fl ~f:(simplify) in
-    if List.exists simplified ~f:(fun x -> x = Chaos) then chaos
-    else begin
-      let not_miracle = List.dedup (List.filter simplified ~f:(fun x -> not (x = Miracle))) in
-      match not_miracle with
-      | [] -> miracle
-      | [one] -> one
-      | _ -> orList not_miracle
-    end
-  | Imply(f1, f2) -> simplify (orList [neg f1; f2])
+let simplify form =
+  let no_imply_neg = eliminate_imply_neg form in
+  let rec wrapper form =
+    match form with
+    | Chaos -> chaos
+    | Miracle -> miracle
+    | Eqn(_)
+    | Neg(Eqn(_)) ->
+      if is_tautology form then chaos
+      else if not (is_satisfiable form) then miracle
+      else begin form end
+    | AndList(fl) ->
+      let simplified = List.map fl ~f:wrapper in
+      if List.exists simplified ~f:(fun x -> x = Miracle) then miracle
+      else begin
+        let not_chaos = List.dedup (List.filter simplified ~f:(fun x -> not (x = Chaos))) in
+        match not_chaos with
+        | [] -> chaos
+        | [one] -> one
+        | _ -> andList not_chaos
+      end
+    | OrList(fl) ->
+      let simplified = List.map fl ~f:(wrapper) in
+      if List.exists simplified ~f:(fun x -> x = Chaos) then chaos
+      else begin
+        let not_miracle = List.dedup (List.filter simplified ~f:(fun x -> not (x = Miracle))) in
+        match not_miracle with
+        | [] -> miracle
+        | [one] -> one
+        | _ -> orList not_miracle
+      end
+    | Neg(_)
+    | Imply(_) -> Prt.error (ToStr.Smv.form_act form); raise Empty_exception
+  in
+  wrapper no_imply_neg
 
 (** Raises when there are many parameter references more than range of its type *)
 exception Too_many_parameters_of_same_type

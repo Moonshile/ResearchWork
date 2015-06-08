@@ -261,7 +261,7 @@ module Choose = struct
         None
       (* If length of parameters in old is 0, then check directly *)
       else if List.length old_pd = 0 then
-        if is_tautology (imply old inv) then Some old
+        if is_tautology (imply (simplify old) (simplify inv)) then Some old
         else begin None end
       (* If old has more paramters, then false *)
       else if param_compatible inv_p old_p = [] then None
@@ -271,7 +271,7 @@ module Choose = struct
         let params = param_compatible inv_p old_p in
         let forms = List.map params ~f:(fun p-> apply_form old_gened ~p) in
         let tautologies = List.filter forms ~f:(fun form ->
-          is_tautology (imply form inv)
+          is_tautology (imply (simplify form) (simplify inv))
         ) in
         match tautologies with
         | [] -> None
@@ -287,6 +287,7 @@ module Choose = struct
 
   (* Check the level of an optional invariant *)
   let check_level inv invs =
+    let inv = simplify inv in
     if is_tautology inv then
       tautology inv
     else begin
@@ -456,7 +457,7 @@ let tabular_expans crule ~cinv ~old_invs =
   if form_are_symmetric obligation inv_inst then
     ([], deal_with_case_2 crule cinv)
   (* case 1 *)
-  else if is_tautology (imply form (neg obligation)) then
+  else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
     ([], deal_with_case_1 crule cinv)
   (* case 3 *)
   else begin
