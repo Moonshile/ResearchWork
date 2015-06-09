@@ -40,6 +40,6 @@ let is_inv_by_smv ?(quiet=true) inv =
     if (!protocol_name) = "" then raise Name_not_known
     else begin
       let r = Client.Smv.check_inv (!protocol_name) inv in
-      let prter = if r then Prt.info inv else begin Prt.error inv end in
+      let prter = if r then Prt.info (inv^"\n") else begin Prt.error (inv^"\n") end in
       (Hashtbl.replace table ~key:inv ~data:r; prter); r
     end

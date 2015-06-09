@@ -437,7 +437,13 @@ let deal_with_case_3 crule cinv cons old_invs =
     | Choose.New_inv(inv) -> 
       let simplified = simplify inv in
       ([simplified], simplified)
-    | Choose.Not_inv -> raise Empty_exception
+    | Choose.Not_inv ->
+      let ConcreteRule(Rule(name, _, _, _), ps) = crule in
+      let cp_2_str (n, pr) = sprintf "%s:%s" n (ToStr.Smv.paramref_act pr) in
+      let params_str = String.concat (List.map ps ~f:cp_2_str) ~sep:", " in
+      let inv_str = ToStr.Smv.form_act (concrete_prop_2_form cinv) in
+      Prt.error (sprintf "\n\n%s, %s\n%s\n" name params_str inv_str);
+      raise Empty_exception
   in
   (new_inv, { rule = crule;
     inv = cinv;
