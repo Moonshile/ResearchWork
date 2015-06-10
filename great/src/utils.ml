@@ -126,7 +126,7 @@ let partition_with_label list ~f =
           wrapper list' (List.Assoc.add assoc' value (ele::v))
       )
   in
-  wrapper list []
+  wrapper (List.rev list) []
 
 (** Partition a list to a set of lists, with function f
     e.g., for list [1;2;3;4;5;6] and function (fun x -> x mod 3),
@@ -135,6 +135,23 @@ let partition_with_label list ~f =
 let partition list ~f =
   let assoc = partition_with_label list ~f in
   List.map assoc ~f:(fun (_, v) -> v)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (** Denotes there are errors while execute a program *)
 exception Exec_error
@@ -190,6 +207,22 @@ let exec_with_input ~prog ~args input =
     raise Empty_exception
   else
     (read_to_end sub.stdout, read_to_end sub.stderr)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (** Some usefule colorful print functions *)
 module Prt = struct
@@ -254,7 +287,7 @@ module Prt = struct
       @param color color of string
   *)
   let colorful ~text ~color =
-    printf "\027[38;5;%dm%s\027[0m" (color_to_int color) text
+    print_endline (sprintf "\027[38;5;%dm%s\027[0m" (color_to_int color) text)
 
   (** Print info string *)
   let info text =

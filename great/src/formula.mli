@@ -19,6 +19,12 @@ val is_tautology : ?quiet:bool -> formula -> bool
 (** Cast a formula to a list of formulae with and relation between them *)
 val flat_and_to_list : formula -> formula list
 
+(** Judge if tow formulae are symmetric *)
+val form_are_symmetric : formula -> formula -> bool
+
+(** Judge if f2 could be implied by f1 *)
+val could_imply : formula -> formula -> bool
+
 (** For andList, flat its all components,
     for others, flat to a single list
 *)
@@ -31,9 +37,6 @@ val flat_or_to_list : formula -> formula list
     for others, flat to a single list
 *)
 val flat_to_orList : formula -> formula
-
-(** Judge if tow formulae are symmetric *)
-val form_are_symmetric : formula -> formula -> bool
 
 (** Simplify a formula *)
 val simplify : formula -> formula

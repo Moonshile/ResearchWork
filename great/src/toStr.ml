@@ -25,7 +25,7 @@ module Debug = struct
   (** Translate a paramref to Debug string *)
   let paramref_act pr =
     match pr with
-    | Paramfix(tname, c) -> sprintf "[%s:%s]" (const_act c) tname
+    | Paramfix(vname, tname, c) -> sprintf "[%s:%s:%s]" (const_act c) tname vname
     | Paramref(name) -> sprintf "[%s:__ref__]" name
 
   (* Translate a variable to Debug variable *)
@@ -150,7 +150,7 @@ module Smt2 = struct
     else begin
       let actual_ps = List.map params ~f:(fun p ->
         match p with
-        | Paramfix(_, c) -> const_act c
+        | Paramfix(_, _, c) -> const_act c
         | Paramref(_) -> raise Unexhausted_inst
       ) in
       sprintf "(%s %s)" name (String.concat ~sep:" " actual_ps)
@@ -161,7 +161,7 @@ module Smt2 = struct
     match exp with
     | Const(c) -> const_act c
     | Var(v) -> var_act v
-    | Param(Paramfix(_, c)) -> const_act c
+    | Param(Paramfix(_, _, c)) -> const_act c
     | Param(Paramref _) -> raise Unexhausted_inst
 
   (* Translate formula to smt2 string *)
@@ -237,7 +237,7 @@ module Smv = struct
   (** Translate a paramref to smv string *)
   let paramref_act pr =
     match pr with
-    | Paramfix(_, c) -> sprintf "[%s]" (const_act c)
+    | Paramfix(_, _, c) -> sprintf "[%s]" (const_act c)
     | Paramref(_) -> raise Unexhausted_inst
 
   let vardef_act ~types vd =
@@ -248,7 +248,7 @@ module Smv = struct
     else begin
       let ps = cart_product_with_paramfix pds types in
       let const_strs = List.map ps ~f:(fun group -> 
-        List.map group ~f:(fun (_, pr) -> paramref_act pr)
+        List.map group ~f:(fun pr -> paramref_act pr)
         |> String.concat
       ) in
       List.map const_strs ~f:(fun cstr -> sprintf "%s%s : %s;" name cstr type_str)
@@ -272,7 +272,7 @@ module Smv = struct
     | Var(v) -> var_act v
     | Param(pr) -> (
       match pr with
-      | Paramfix(_, c) -> sprintf "%s" (const_act c)
+      | Paramfix(_, _, c) -> sprintf "%s" (const_act c)
       | Paramref(_) -> raise Unexhausted_inst
     )
 
@@ -336,8 +336,7 @@ module Smv = struct
     let name = 
       if p = [] then n
       else begin
-        let p' = List.map p ~f:(fun (_, pr) -> pr) in
-        sprintf "%s%s" n (String.concat (List.map p' ~f:paramref_act))
+        sprintf "%s%s" n (String.concat (List.map p ~f:paramref_act))
       end
       |> escape
     in
@@ -361,6 +360,8 @@ module Smv = struct
       let ps = cart_product_with_paramfix pds types in
       let rule_proc_insts, rule_procs =
         List.map ps ~f:(fun p -> (apply_rule r ~p, p))
+        |> List.filter ~f:(fun (Rule(_, _, f, _), p) -> 
+          Smt.is_satisfiable ~quiet:true (Smt2.form_of f))
         |> List.map ~f:(fun (r, p) -> rule_act r p)
         |> List.unzip
       in (String.concat ~sep:"\n" rule_proc_insts, String.concat ~sep:"\n\n" rule_procs)

@@ -37,15 +37,15 @@ type paramdef =
 let paramdef name typename = Paramdef(name, typename)
 
 (** Parameter references
-    + Paramref, name
-    + Paramfix, typename, value
+    + Paramref, var name
+    + Paramfix, var name, typename, value
 *)
 type paramref =
   | Paramref of string
-  | Paramfix of string * const
+  | Paramfix of string * string * const
 
 let paramref name = Paramref name
-let paramfix tname value = Paramfix (tname, value)
+let paramfix vname tname value = Paramfix (vname, tname, value)
 
 (** Variable definitions, each with its name and name of its type
     + Array var: name, param definitions, type name
@@ -183,29 +183,45 @@ let cart_product_with_name paramdefs types =
 (* Generate Cartesian production of all possible values of a `paramdef` set
     Each value in each set is index name with its associated paramfix
     Result is like [
-      [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))]; 
-      [("x", Paramfix("bool", Boolc false)); ("n", Paramfix("int", Intc 1))]
+      [Paramfix("x", "bool", Boolc true); Paramfix("n", "int", Intc 1)]; 
+      [Paramfix("x", "bool", Boolc false); Paramfix("n", "int", Intc 1)]
     ]
 *)
 let cart_product_with_paramfix paramdefs types =
   paramdefs
   |> List.map ~f:(fun (Paramdef(n, tname)) -> (n, (tname, name2type ~tname ~types)))
-  |> List.map ~f:(fun (n, (tname, trange)) -> List.map trange ~f:(fun x -> (n, paramfix tname x)))
+  |> List.map ~f:(fun (n, (tname, trange)) -> List.map trange ~f:(fun x -> paramfix n tname x))
   |> cartesian_product
 
-(** Get the names of concrete parameters
-    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))],
-    generate ["x"; "n"]
+(** Get the name of parameter
+    e.g., For parameter Paramfix("x", "bool", Boolc true)), generate "x"
+    For parameter Paramref("n"), generate "n"
 *)
-let get_names_of_params p = List.map p ~f:(fun (name, _) -> name)
+let name_of_param pr =
+  match pr with
+  | Paramref(n)
+  | Paramfix(n, _, _) -> n
 
-(** Set the names of concrete parameters
-    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))]
-    and name list ["y"; "m"],
-    generate [("y", Paramfix("bool", Boolc true)); ("m", Paramfix("int", Intc 1))]
-*)
-let set_names_of_params p ~names =
-  List.map2_exn p names ~f:(fun (_, p) name -> (name, p))
+let set_param_name pr name =
+  match pr with
+  | Paramref(_) -> paramref name
+  | Paramfix(_, tn, c) -> paramfix name tn c
+
+let typename_of_paramfix pf =
+  match pf with
+  | Paramref(_) -> raise Unexhausted_inst
+  | Paramfix(_, tn, _) -> tn
+
+let find_paramfix pfs name =
+  List.find pfs ~f:(fun pr -> name = (name_of_param pr))
+
+let find_paramdef pds name =
+  List.find pds ~f:(fun (Paramdef(n, _)) -> name = n)
+
+
+
+
+
 
 (* attach const i to string name *)
 let attach name i =
@@ -221,9 +237,8 @@ let attach_list name i_list =
 (** Apply a paramref with param, i.e., cast it to consts *)
 let apply_paramref pr ~p =
   match pr with
-  | Paramref(s) -> 
-    let op_pf = List.Assoc.find p s in (
-      match op_pf with
+  | Paramref(s) -> (
+      match find_paramfix p s with
       | None -> pr (* raise (Cannot_find (sprintf "parameter reference for %s" s)) *)
       | Some pf -> pf
     )
@@ -243,13 +258,13 @@ let apply_exp exp ~p =
 (** Apply formula with param *)
 let rec apply_form f ~p =
   match f with
+  | Chaos
+  | Miracle -> f
   | Eqn(e1, e2) -> eqn (apply_exp e1 ~p) (apply_exp e2 ~p)
   | Neg(form) -> neg (apply_form form ~p)
   | AndList(fl) -> andList (List.map fl ~f:(apply_form ~p))
   | OrList(fl) -> orList (List.map fl ~f:(apply_form ~p))
   | Imply(f1, f2) -> imply (apply_form f1 ~p) (apply_form f2 ~p)
-  | Chaos
-  | Miracle -> f
 
 (** Apply statement with param *)
 let rec apply_statement statement ~p =
@@ -260,7 +275,7 @@ let rec apply_statement statement ~p =
 (* Check if a given parameter matches with the paramdef *)
 let name_match params defs =
   if List.length params = List.length defs then
-    let same_name (n1,_) (Paramdef(n2, _)) = n1 = n2 in
+    let same_name pr (Paramdef(n2, _)) = (name_of_param pr) = n2 in
     List.map2_exn params defs ~f:same_name
     |> List.fold ~init:true ~f:(fun res x -> res && x)
   else
@@ -281,6 +296,8 @@ let apply_prop property ~p =
     prop name [] (apply_form f ~p)
   else
     raise Unmatched_parameters
+
+
 
 
 

@@ -636,7 +636,7 @@ class Invariant(object):
             value = formula.value
             for n, t in param_types.items():
                 next_value = typenames[t][next_type_value[t]]
-                value = value.replace('paramref "%s"'%n, 'paramfix "%s" %s'%(t, next_value))
+                value = value.replace('paramref "%s"'%n, 'paramfix "%s" "%s" %s'%(n, t, next_value))
                 next_type_value[t] += 1
             names.append(name)
             invs.append('''let %s =

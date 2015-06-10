@@ -23,7 +23,7 @@ exception Circular_parallel_assign
     + ConcreteRule: rule, concrete param list
 *)
 type concrete_rule =
-  | ConcreteRule of rule * (string * paramref) list
+  | ConcreteRule of rule * paramref list
 
 let concrete_rule r ps = ConcreteRule(r, ps)
 
@@ -32,7 +32,7 @@ let concrete_rule r ps = ConcreteRule(r, ps)
     + ConcreteProp: property, concrete param list
 *)
 type concrete_prop =
-  | ConcreteProp of prop * (string * paramref) list
+  | ConcreteProp of prop * paramref list
 
 let concrete_prop property ps = ConcreteProp(property, ps)
 
@@ -58,6 +58,8 @@ type t = {
   relation: relation;
 }
 
+let type_defs = ref []
+
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ps =
   List.map ps ~f:(fun params -> concrete_rule r params)
@@ -82,11 +84,9 @@ let form_2_concreate_prop ?(id=0) form =
   let new_inv_name_base = "inv__" in
   (* Generate names for new invariants found *)
   let next_inv_name id = sprintf "%s%d" new_inv_name_base id in
-  let (form', Generalize.Paraminfo(paramdefs, params)) =
-    Generalize.form_act form (Generalize.paraminfo [] [])
-  in
-  let property = prop (next_inv_name id) paramdefs form' in
-  concrete_prop property params
+  let (pds, pfs, form') = Generalize.form_act (normalize form ~types:!type_defs) in
+  let property = prop (next_inv_name id) pds form' in
+  concrete_prop property pfs
 
 (* Convert statements to a list of assignments *)
 let rec statement_2_assigns statement =
@@ -106,7 +106,7 @@ let relation_2_str relation =
 (** Convert t to a string *)
 let to_str {rule; inv; relation} =
   let ConcreteRule(Rule(rname, _, _, _), rps) = rule in
-  let rps = List.map rps ~f:(fun (_, pr) -> ToStr.Smv.paramref_act pr) in
+  let rps = List.map rps ~f:ToStr.Smv.paramref_act in
   let rule_str = sprintf "%s%s" rname (String.concat rps) in
   let inv_str = ToStr.Smv.form_act (simplify (concrete_prop_2_form inv)) in
   let rel_str = relation_2_str relation in
@@ -119,10 +119,10 @@ let to_str {rule; inv; relation} =
 let expEval exp ~assigns =
   match exp with
   | Const(_) -> exp
-  | Param(Paramfix(_, c)) -> Const c
+  | Param(Paramfix(_, _, c)) -> Const c
   | Param(Paramref _) -> raise Unexhausted_inst
   | Var(v) ->
-    let value = List.Assoc.find assigns v in (
+    let value = List.Assoc.find assigns v ~equal:(fun x y -> ToStr.Smv.var_act x = ToStr.Smv.var_act y) in (
       match value with
       | None -> var v
       | Some(e) -> e
@@ -161,15 +161,9 @@ module Choose = struct
   let new_inv form = New_inv form
   let not_inv = Not_inv
 
-  (* get type name of a concrete param *)
-  let param_type_name param =
-    match param with
-    | (_, Paramfix(tname, _)) -> tname
-    | (_, Paramref(_)) -> raise Unexhausted_inst
-
   (* partition the concrete params by their type, then sort by typename *)
   let sorted_partition params =
-    partition_with_label params ~f:param_type_name
+    partition_with_label params ~f:typename_of_paramfix
     |> List.sort ~cmp:(fun (x, _) (y, _) -> String.compare x y)
 
   (*  Given two partitioned concrete params, suppose they have same types
@@ -185,15 +179,15 @@ module Choose = struct
       Generate the compatible parameters
   *)
   let compatible_params 
-  (partition1:(string * (string * paramref) list) list) 
-  (partition2:(string * (string * paramref) list) list) =
+  (partition1:(string * paramref list) list) 
+  (partition2:(string * paramref list) list) =
     (* parameter names of eache type in partition2 *)
-    let params_names_part2 = List.map partition2 ~f:(fun (_, x) -> get_names_of_params x) in
+    let params_names_part2 = List.map partition2 ~f:(fun (_, x) -> List.map x ~f:name_of_param) in
     (* parameter count of each type in partition2 *)
     let params_c_part2 = List.map partition2 ~f:(fun (_, x) -> List.length x) in
     (* get values of parameters of shortened partition1 *)
     let params_val_shorten_part1 = List.map partition1 ~f:(fun (_, x) -> x) in
-    let rename_all names list = List.map list ~f:(set_names_of_params ~names) in
+    let rename_all names ls = List.map ls ~f:(fun vs -> List.map2_exn vs names ~f:set_param_name) in
     (*  choose |params2[k]| params in the values of shortened partition1
         result is like [[[a;b];[b;c];[a;c]]; [[1;2];[1;3];[2;3]]]
     *)
@@ -225,8 +219,8 @@ module Choose = struct
       if are compatible, else return []
   *)
   let param_compatible 
-  (inv_param1:(string * paramref) list) 
-  (inv_param2:(string * paramref) list) =
+  (inv_param1:paramref list) 
+  (inv_param2:paramref list) =
     (* Firstly, partition the parameters by their type *)
     let partition1 = sorted_partition inv_param1 in
     let partition2 = sorted_partition inv_param2 in
@@ -266,7 +260,7 @@ module Choose = struct
       (* If old has more paramters, then false *)
       else if param_compatible inv_p old_p = [] then None
       (* Otherwise, check old with parameters of inv *)
-      else if form_are_symmetric inv old then Some old
+      (*else if form_are_symmetric inv old then Some old*)
       else begin
         let params = param_compatible inv_p old_p in
         let forms = List.map params ~f:(fun p-> apply_form old_gened ~p) in
@@ -426,7 +420,7 @@ let deal_with_case_2 crule cinv =
 
 (* Deal with case invHoldForRule3 *)
 let deal_with_case_3 crule cinv cons old_invs =
-  let Rule(_, _, guard, statement) = concrete_rule_2_rule_inst crule in
+  let Rule(_name, _, guard, statement) = concrete_rule_2_rule_inst crule in
   let guards = flat_and_to_list guard in
   let assigns = statement_2_assigns statement in
   let level = Choose.choose guards assigns cons old_invs in
@@ -436,10 +430,16 @@ let deal_with_case_3 crule cinv cons old_invs =
     | Choose.Implied(_, old) -> ([], old)
     | Choose.New_inv(inv) -> 
       let simplified = simplify inv in
+      let new_inv_str = ToStr.Smv.form_act simplified in
+      let causal_inv_str = ToStr.Smv.form_act (concrete_prop_2_form cinv) in
+      print_endline (sprintf "rule %s, new %s, old %s" _name new_inv_str causal_inv_str);
       ([simplified], simplified)
     | Choose.Not_inv ->
       let ConcreteRule(Rule(name, _, _, _), ps) = crule in
-      let cp_2_str (n, pr) = sprintf "%s:%s" n (ToStr.Smv.paramref_act pr) in
+      let cp_2_str pr =
+        match pr with
+        | Paramref(_) -> raise Empty_exception
+        | Paramfix(n, _, _) -> sprintf "%s:%s" n (ToStr.Smv.paramref_act pr) in
       let params_str = String.concat (List.map ps ~f:cp_2_str) ~sep:", " in
       let inv_str = ToStr.Smv.form_act (concrete_prop_2_form cinv) in
       Prt.error (sprintf "\n\n%s, %s\n%s\n" name params_str inv_str);
@@ -450,17 +450,25 @@ let deal_with_case_3 crule cinv cons old_invs =
     relation = invHoldForRule3 (form_2_concreate_prop causal_inv);
   })
 
+
+let symmetry_form f1 f2 =
+  match Choose.inv_implied_by_old f1 [f2] with
+  | Some(_) -> true
+  | _ -> false
+
+
 (* Find new inv and relations with concrete rule and a concrete invariant *)
 let tabular_expans crule ~cinv ~old_invs =
-  let Rule(_, _, form, statement) = concrete_rule_2_rule_inst crule in
+  let Rule(_name, _, form, statement) = concrete_rule_2_rule_inst crule in
   let inv_inst = simplify (concrete_prop_2_form cinv) in
   (* preCond *)
   let obligation =
     preCond inv_inst statement
     |> simplify
   in
+  (*Prt.warning (_name^": "^ToStr.Smv.form_act obligation^", "^ToStr.Smv.form_act inv_inst^"\n");*)
   (* case 2 *)
-  if form_are_symmetric obligation inv_inst then
+  if symmetry_form obligation inv_inst then
     ([], deal_with_case_2 crule cinv)
   (* case 1 *)
   else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
@@ -469,6 +477,8 @@ let tabular_expans crule ~cinv ~old_invs =
   else begin
     deal_with_case_3 crule cinv (neg obligation) old_invs
   end
+
+let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
 (* Find new inv and relations with concrete rules and a concrete invariant *)
 let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
@@ -483,10 +493,16 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
       in
       let real_new_invs =
         List.concat new_invs
-        |> List.dedup ~compare:(fun x y -> if form_are_symmetric x y then 0 else 1)
+        |> List.dedup ~compare:(fun x y -> if symmetry_form x y then 0 else 1)
         |> List.map ~f:(normalize ~types)
+        |> List.filter ~f:(fun x ->
+          let key = ToStr.Smv.form_act x in
+          match Hashtbl.find inv_table key with 
+          | None -> Hashtbl.replace inv_table ~key ~data:true; true
+          | _ -> false)
       in
-      let old_invs' = List.dedup (real_new_invs@old_invs) in
+      Prt.info (String.concat ~sep:"\n" (List.map real_new_invs ~f:ToStr.Smv.form_act));
+      let old_invs' = real_new_invs@old_invs in
       let rec invs_to_cinvs invs cinvs new_inv_id =
         match invs with
         | [] -> (cinvs, new_inv_id)
@@ -507,6 +523,10 @@ let rule_inst_policy ~cinv ~types r =
   let Paramecium.Rule(_, paramdefs, _, _) = r in
   let ps = cart_product_with_paramfix paramdefs types in
   rule_2_concrete r ps
+  |> List.filter ~f:(fun (ConcreteRule(r, p)) ->
+    let Rule(_, _, f, _) = apply_rule r ~p in
+    not (is_tautology (neg f))
+  )
 
 (** Find invs and causal relations of a protocol
 
@@ -516,6 +536,7 @@ let rule_inst_policy ~cinv ~types r =
 *)
 let find ?(prop_params=[[]]) ~protocol () =
   let {name; types; vardefs; init=_; rules; properties} = protocol in
+  type_defs := types;
   let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _smv_context = set_smv_context name (ToStr.Smv.protocol_act protocol) in
   let rec wrapper cinvs new_inv_id table =

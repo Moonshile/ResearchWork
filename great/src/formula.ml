@@ -23,6 +23,15 @@ let is_tautology ?(quiet=true) form =
 let is_satisfiable ?(quiet=true) form =
   Smt.is_satisfiable ~quiet (ToStr.Smt2.form_of form)
 
+(** Judge if f2 could be implied by f1 *)
+let could_imply f1 f2 =
+  is_tautology (imply f1 f2)
+
+(** Judge if tow formulae are symmetric *)
+(* TODO what if variables of the formulae have chaos sequence? *)
+let form_are_symmetric f1 f2 =
+  ToStr.Smv.form_act f1 = ToStr.Smv.form_act f2
+
 let rec eliminate_imply_neg form =
   match form with
   | Chaos
@@ -83,14 +92,6 @@ let flat_or_to_list form =
 let flat_to_orList form =
   orList (flat_or_to_list form)
 
-(** Judge if tow formulae are symmetric *)
-(* TODO what if variables of the formulae have chaos sequence? *)
-let form_are_symmetric f1 f2 =
-  let param_info  = Generalize.paraminfo [] [] in
-  let (f1', _) = Generalize.form_act f1 param_info in
-  let (f2', _) = Generalize.form_act f2 param_info in
-  f1' = f2'
-
 (** Simplify a formula *)
 let simplify form =
   let no_imply_neg = eliminate_imply_neg form in
@@ -133,25 +134,42 @@ exception Too_many_parameters_of_same_type
 
 (** Normalize a parameterized formula *)
 let normalize form ~types =
-  let param_info  = Generalize.paraminfo [] [] in
-  let (f, Generalize.Paraminfo(pds, _)) = Generalize.form_act form param_info in
-  let pd_tnames = List.dedup (List.map pds ~f:(fun (Paramdef(_, tname)) -> tname)) in
-  let pd_tranges = List.map pd_tnames ~f:(fun tname -> (tname, name2type ~tname ~types)) in
-  let pd_tmap = Map.of_alist_exn ~comparator:String.comparator pd_tranges in
-  let rec norm_params res pds pd_tmap =
-    match pds with
-    | [] -> res
-    | (Paramdef(n, tname))::pds' ->
-      let trange = Map.find pd_tmap tname in
-      match trange with
-      | None ->
-        let form_str = ToStr.Smv.form_act form in
-        raise (Cannot_find (sprintf "type %s while normalizing %s" tname form_str))
-      | Some [] -> raise Too_many_parameters_of_same_type
-      | Some(c::trange') ->
-        let res' = (n, paramfix tname c)::res in
-        let pd_tmap' = Map.add pd_tmap ~key:tname ~data:trange' in
-        norm_params res' pds' pd_tmap'
+  let (_, pfs, form') = Generalize.form_act form in
+  let pf_groups = partition pfs ~f:typename_of_paramfix in
+  (*Prt.warning (String.concat ~sep:";" (
+    List.map pf_groups ~f:(fun x -> String.concat (List.map x ~f:ToStr.Debug.paramref_act))
+  )^", "^String.concat ~sep:";" (
+    List.map [pfs] ~f:(fun x -> String.concat (List.map x ~f:ToStr.Debug.paramref_act))
+  )^"\n");*)
+  (* e.g. cast [3;1;2;1] to [a;b;c;b] then to [1;2;3;2] *)
+  let normalize_type pfs =
+    let rec gen_map pfs range m =
+      match pfs with
+      | [] -> m
+      | pf::pfs' ->
+        let key = ToStr.Smv.paramref_act pf in (
+          match Map.find m key with
+          | None -> (
+              let vname = name_of_param pf in
+              let tname = typename_of_paramfix pf in
+              match range with
+              | [] -> (
+                  match name2type ~tname ~types with
+                  | [] -> raise Empty_exception
+                  | v::range' -> gen_map pfs' range' (Map.add m ~key ~data:(paramfix vname tname v))
+                )
+              | v::range' -> gen_map pfs' range' (Map.add m ~key ~data:(paramfix vname tname v))
+            )
+          | Some(_) -> gen_map pfs' range m
+        )
+    in
+    let m = gen_map pfs [] (String.Map.empty) in
+    List.map pfs ~f:(fun pf -> Map.find_exn m (ToStr.Smv.paramref_act pf))
   in
-  apply_form f ~p:(norm_params [] pds pd_tmap)
+  let p = List.concat (List.map pf_groups ~f:normalize_type) in
+  (*Prt.warning ("Normalize: "^ToStr.Smv.form_act form^", "
+    ^ToStr.Debug.form_act (apply_form form' ~p)^", "^
+    (String.concat (List.map p ~f:ToStr.Debug.paramref_act))^"\n"
+  );*)
+  apply_form form' ~p
 

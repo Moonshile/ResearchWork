@@ -35,15 +35,15 @@ type paramdef =
 val paramdef : string -> string -> paramdef
 
 (** Parameter references
-    + Paramref, name
-    + Paramfix, typename, value
+    + Paramref, var name
+    + Paramfix, var name, typename, value
 *)
 type paramref =
   | Paramref of string
-  | Paramfix of string * const
+  | Paramfix of string * string * const
 
 val paramref : string -> paramref
-val paramfix : string -> const -> paramref
+val paramfix : string -> string -> const -> paramref
 
 (** Variable definitions, each with its name and name of its type
     + Array var: name, param definitions, type name
@@ -152,55 +152,57 @@ val str_consts : string list -> const list
 (** Convert a boolean list to const list *)
 val bool_consts : bool list -> const list
 
-(** Find the letues range of a type by its name *)
+(** Find the values range of a type by its name *)
 val name2type : tname:string -> types:typedef list -> const list
 
 (* Generate Cartesian production of all possible values of a `paramdef` set
     Each value in each set is index name with its associated paramfix
     Result is like [
-      [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))]; 
-      [("x", Paramfix("bool", Boolc false)); ("n", Paramfix("int", Intc 1))]
+      [Paramfix("x", "bool", Boolc true); Paramfix("n", "int", Intc 1)]; 
+      [Paramfix("x", "bool", Boolc false); Paramfix("n", "int", Intc 1)]
     ]
 *)
-val cart_product_with_paramfix : paramdef list -> typedef list -> (string * paramref) list list
+val cart_product_with_paramfix : paramdef list -> typedef list -> paramref list list
 
-(** Get the names of concrete parameters
-    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))],
-    generate ["x"; "n"]
+(** Get the name of parameter
+    e.g., For parameter Paramfix("x", "bool", Boolc true)), generate "x"
+    For parameter Paramref("n"), generate "n"
 *)
-val get_names_of_params : ('a * 'b) list -> 'a list
+val name_of_param : paramref -> string
 
-(** Set the names of concrete parameters
-    e.g., For parameter [("x", Paramfix("bool", Boolc true)); ("n", Paramfix("int", Intc 1))]
-    and name list ["y"; "m"],
-    generate [("y", Paramfix("bool", Boolc true)); ("m", Paramfix("int", Intc 1))]
-*)
-val set_names_of_params : ('a * 'b) list -> names:'c list -> ('c * 'b) list
+val set_param_name : paramref -> string -> paramref
+
+val typename_of_paramfix : paramref -> string
+
+val find_paramfix : paramref list -> string -> paramref option
+
+val find_paramdef : paramdef list -> string -> paramdef option
+
+
 
 (** attach consts i to string name *)
 val attach_list : string -> const list -> string
 
 (** Apply a paramref with param, i.e., cast it to consts *)
-val apply_paramref : paramref -> p:(string * paramref) list -> paramref
+val apply_paramref : paramref -> p:paramref list -> paramref
 
 (** Apply array with param *)
-val apply_array : var -> p:(string * paramref) list -> var
+val apply_array : var -> p:paramref list -> var
 
 (** Apply exp with param *)
-val apply_exp : exp -> p:(string * paramref) list -> exp
+val apply_exp : exp -> p:paramref list -> exp
 
 (** Apply formula with param *)
-val apply_form : formula -> p:(string * paramref) list -> formula
+val apply_form : formula -> p:paramref list -> formula
 
 (** Apply statement with param *)
-val apply_statement : statement -> p:(string * paramref) list -> statement
+val apply_statement : statement -> p:paramref list -> statement
 
 (** Apply rule with param *)
-val apply_rule : rule -> p:(string * paramref) list -> rule
+val apply_rule : rule -> p:paramref list -> rule
 
 (** Apply property with param *)
-val apply_prop : prop -> p:(string * paramref) list -> prop
-
+val apply_prop : prop -> p:paramref list -> prop
 
 
 

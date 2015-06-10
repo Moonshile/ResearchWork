@@ -49,11 +49,7 @@ let n_t3 =
   let name = "n_t3" in
   let params = [paramdef "i" "client"] in
   let formula = (eqn (var (arr "state" [paramref "i"])) (const _S)) in
-  let statement = (forStatement (
-    ifelseStatement (eqn (param (paramref "j")) (param (paramref "i"))) 
-    (assign (arr "state" [paramref "j"]) (const _E)) 
-    (assign (arr "state" [paramref "j"]) (const _I))) 
-  [paramdef "j" "client"]) in
+  let statement = (forStatement (ifelseStatement (eqn (param (paramref "j")) (param (paramref "i"))) (assign (arr "state" [paramref "j"]) (const _E)) (assign (arr "state" [paramref "j"]) (const _I))) [paramdef "j" "client"]) in
   rule name params formula statement
 
 let n_t4 =
@@ -75,7 +71,7 @@ let rules = [n_t1; n_t2; n_t3; n_t4; n_t5]
 let n_coherence =
   let name = "n_coherence" in
   let params = [] in
-  let formula = (andList [(eqn (var (arr "state" [paramfix "client" (intc 1)])) (const _M)); (eqn (var (arr "state" [paramfix "client" (intc 2)])) (const _M))]) in
+  let formula = (andList [(eqn (var (arr "state" [paramfix "i" "client" (intc 1)])) (const _M)); (eqn (var (arr "state" [paramfix "j" "client" (intc 2)])) (const _M))]) in
   prop name params formula
 
 let properties = [n_coherence]

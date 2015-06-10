@@ -9,74 +9,101 @@ open Paramecium
 
 open Core.Std
 
-type t =
-  | Paraminfo of paramdef list * (string * paramref) list
+let table = Hashtbl.create ~hashable:String.hashable ()
 
-let paraminfo paramdefs params = Paraminfo(paramdefs, params)
+let base_index = ref 0
 
-let paramdef_name_base = "p__"
-
-(** Generate paramdef names *)
-let next_name new_paramdefs = sprintf "%s%d" paramdef_name_base (List.length new_paramdefs)
+let next_name () = 
+  let res = sprintf "__invFinder_p_%d" (!base_index) in
+  incr base_index; res
 
 (** Convert paramref *)
-let paramref_act pr param_info =
-  let Paraminfo(paramdefs, params) = param_info in
+let paramref_act pr pds pfs =
   match pr with
-  | Paramref(_) -> raise Unexhausted_inst
-  | Paramfix(tname, _) ->
-    let name = next_name paramdefs in
-    let new_def = paramdef name tname in
-    let new_param = (name, pr) in
-    (paramref name, paraminfo (new_def::paramdefs) (new_param::params))
+  | Paramref(_) -> Prt.error (ToStr.Debug.paramref_act pr^"\n"); raise Unexhausted_inst
+  | Paramfix(vname, tname, c) -> (
+    let key = tname^ToStr.Debug.const_act c in
+    match Hashtbl.find table key with
+    | None ->
+      let new_name = 
+        if String.length vname > 14 && String.sub vname ~pos:0 ~len:14 = "__invFinder_p_" then
+          vname
+        else begin next_name () end in
+      let new_pd = paramdef new_name tname in
+      Hashtbl.replace table ~key ~data:new_pd;
+      (new_pd::pds, paramfix new_name tname c::pfs, paramref new_name)
+    | Some(Paramdef(vn, _)) -> (pds, pfs, paramref vn)
+  )
 
 (** Convert a list of components *)
-let components_act components param_info f =
-  let rec wrapper components gened_comp param_info =
+let components_act components pds pfs ~f =
+  let rec wrapper components gened_comp pds pfs =
     match components with
-    | [] -> (gened_comp, param_info)
+    | [] -> (pds, pfs, gened_comp)
     | c::components' ->
-      let (c', param_info') = f c param_info in
-      wrapper components' (c'::gened_comp) param_info'
+      let (pds', pfs', c') = f c pds pfs in
+      wrapper components' (c'::gened_comp) pds' pfs'
   in
-  wrapper components [] param_info
+  wrapper components [] pds pfs
 
 (** Convert var *)
-let var_act v param_info =
-  let Arr(name, prs) = v in
-  let (prs', param_info') = components_act prs param_info paramref_act in
-  (arr name prs', param_info')
+let var_act (Arr(name, prs)) pds pfs =
+  let (pds', pfs', prs') = components_act prs pds pfs ~f:paramref_act in
+  (pds', pfs', arr name prs')
 
 (** Convert exp *)
-let exp_act e param_info =
+let exp_act e pds pfs =
   match e with
-  | Const(_) -> (e, param_info)
+  | Const(_) -> (pds, pfs, e)
   | Var(v) ->
-    let (v', param_info') = var_act v param_info in
-    (var v', param_info')
+    let (pds', pfs', v') = var_act v pds pfs in
+    (pds', pfs', var v')
   | Param(pr) ->
-    let (pr', param_info') = paramref_act pr param_info in
-    (param pr', param_info')
+    let (pds', pfs', pr') = paramref_act pr pds pfs in
+    (pds', pfs', param pr')
 
 (** Convert formula *)
-let rec form_act f param_info =
-  match f with
-  | Chaos
-  | Miracle -> (f, param_info)
-  | Eqn(e1, e2) ->
-    let (e1', param_info1) = exp_act e1 param_info in
-    let (e2', param_info2) = exp_act e2 param_info1 in
-    (eqn e1' e2', param_info2)
-  | Neg(f) ->
-    let (f', param_info') = form_act f param_info in
-    (neg f', param_info')
-  | AndList(fl) ->
-    let (fl', param_info') = components_act fl param_info form_act in
-    (andList fl', param_info')
-  | OrList(fl) ->
-    let (fl', param_info') = components_act fl param_info form_act in
-    (orList fl', param_info')
-  | Imply(f1, f2) ->
-    let (f1', param_info1) = form_act f1 param_info in
-    let (f2', param_info2) = form_act f2 param_info1 in
-    (imply f1' f2', param_info2)
+let form_act f =
+  (*Prt.info (ToStr.Debug.form_act f^", ");*)
+  let rec wrapper f pds pfs =
+    match f with
+    | Chaos
+    | Miracle -> (pds, pfs, f)
+    | Eqn(e1, e2) ->
+      let (pds1, pfs1, e1') = exp_act e1 pds pfs in
+      let (pds2, pfs2, e2') = exp_act e2 pds1 pfs1 in
+      (pds2, pfs2, eqn e1' e2')
+    | Neg(f) ->
+      let (pds', pfs', f') = wrapper f pds pfs in
+      (pds', pfs', neg f')
+    | AndList(fl) ->
+      let (pds', pfs', fl') = components_act fl pds pfs ~f:wrapper in
+      (pds', pfs', andList fl')
+    | OrList(fl) ->
+      let (pds', pfs', fl') = components_act fl pds pfs ~f:wrapper in
+      (pds', pfs', orList fl')
+    | Imply(f1, f2) ->
+      let (pds1, pfs1, f1') = wrapper f1 pds pfs in
+      let (pds2, pfs2, f2') = wrapper f2 pds1 pfs1 in
+      (pds2, pfs2, imply f1' f2')
+  in
+  let (pds, pfs, f') = Hashtbl.clear table; wrapper f [] [] in
+  let sorted_pds =
+    List.sort ~cmp:(fun (Paramdef(n1, _)) (Paramdef(n2, _)) -> String.compare n1 n2) pds
+    |> List.sort ~cmp:(fun (Paramdef(_, tn1)) (Paramdef(_, tn2)) -> String.compare tn1 tn2)
+  in
+  let sorted_pfs =
+    List.sort ~cmp:(fun pf1 pf2 -> String.compare (name_of_param pf1) (name_of_param pf2)) pfs
+    |> List.sort ~cmp:(fun pf1 pf2 ->
+      let typenameof pf =
+        match pf with
+        | Paramref(_) -> raise Unexhausted_inst
+        | Paramfix(_, tn, _) -> tn
+      in
+      String.compare (typenameof pf1) (typenameof pf2)
+    )
+  in
+  (*Prt.info (ToStr.Debug.form_act f'^", "^
+    (String.concat (List.map sorted_pfs ~f:ToStr.Debug.paramref_act))^"\n");*)
+  (sorted_pds, sorted_pfs, f')
+

@@ -8,19 +8,5 @@ open Paramecium
 
 open Core.Std
 
-type t =
-  | Paraminfo of paramdef list * (string * paramref) list
-
-val paraminfo : paramdef list -> (string * paramref) list -> t
-
-(** Convert paramref *)
-val paramref_act : paramref -> t -> paramref * t
-
-(** Convert var *)
-val var_act : var -> t -> var * t
-
-(** Convert exp *)
-val exp_act : exp -> t -> exp * t
-
 (** Convert formula *)
-val form_act : formula -> t -> formula * t
+val form_act : formula -> paramdef list * paramref list * formula

@@ -108,5 +108,5 @@ let protocol = Trans.act {
   properties;
 };;
 
-let prop_params = [("i", paramfix "node" (intc 1)); ("j", paramfix "node" (intc 2))] in
+let prop_params = [paramfix "i" "node" (intc 1); paramfix "j" "node" (intc 2)] in
 find ~protocol ~prop_params:[prop_params] ();;
