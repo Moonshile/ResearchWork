@@ -99,7 +99,9 @@ module Trans = struct
       )
     | IfStatement(f, s) ->
         let translated = trans_statement ~types s in
-        List.map translated ~f:(fun (f', s') -> (andList [f; f'], s'))
+        let res1 = List.map translated ~f:(fun (f', s') -> (andList [f; f'], s')) in
+        let res2 = List.map translated ~f:(fun _ -> (neg f, Paramecium.parallel [])) in
+        List.concat [res1; res2]
     | IfelseStatement(f, s1, s2) ->
         let translated1 = trans_statement ~types s1 in
         let res1 = List.map translated1 ~f:(fun (f', s') -> (andList [f; f'], s')) in
