@@ -405,6 +405,22 @@ module Choose = struct
 end
 
 
+let rec minify_inv inv =
+  let ls = match inv with | OrList(fl) -> fl | _ -> [inv] in
+  let rec wrapper necessary parts =
+    match parts with
+    | [] -> necessary
+    | p::parts' ->
+      if Smv.is_inv_by_smv (ToStr.Smv.form_act (orList (necessary@parts'))) then
+        wrapper necessary parts'
+      else begin
+        wrapper (p::necessary) parts'
+      end
+  in
+  orList (wrapper [] ls)
+  
+
+
 (* Deal with case invHoldForRule1 *)
 let deal_with_case_1 crule cinv =
   { rule = crule;
@@ -432,7 +448,7 @@ let deal_with_case_3 crule cinv cons old_invs =
     | Choose.New_inv(inv) -> 
       let simplified = simplify inv in
       let new_inv_str = ToStr.Smv.form_act simplified in
-      let causal_inv_str = ToStr.Smv.form_act (concrete_prop_2_form cinv) in
+      let causal_inv_str = ToStr.Smv.form_act (simplify (concrete_prop_2_form cinv)) in
       print_endline (sprintf "rule %s, new %s, old %s" _name new_inv_str causal_inv_str);
       ([simplified], simplified)
     | Choose.Not_inv ->
@@ -496,6 +512,7 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
         List.concat new_invs
         |> List.dedup ~compare:(fun x y -> if symmetry_form x y then 0 else 1)
         |> List.map ~f:(normalize ~types)
+        |> List.map ~f:minify_inv
         |> List.filter ~f:(fun x ->
           let key = ToStr.Smv.form_act x in
           match Hashtbl.find inv_table key with 

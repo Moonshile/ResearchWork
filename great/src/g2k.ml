@@ -62,10 +62,17 @@ let n_SendReqS =
   let statement = (assign (record [arr "Chan1" [paramref "j"]; global "Cmd"]) (const _ReqS)) in
   rule name params formula statement
 
-let n_SendReqE =
-  let name = "n_SendReqE" in
+let n_SendReqEI =
+  let name = "n_SendReqEI" in
   let params = [paramdef "i" "NODE"] in
-  let formula = (andList [(orList [(eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _I)); (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _S))]); (eqn (var (record [arr "Chan1" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
+  let formula = (andList [(eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _I)); (eqn (var (record [arr "Chan1" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
+  let statement = (assign (record [arr "Chan1" [paramref "i"]; global "Cmd"]) (const _ReqE)) in
+  rule name params formula statement
+
+let n_SendReqES =
+  let name = "n_SendReqES" in
+  let params = [paramdef "i" "NODE"] in
+  let formula = (andList [(eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _S)); (eqn (var (record [arr "Chan1" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
   let statement = (assign (record [arr "Chan1" [paramref "i"]; global "Cmd"]) (const _ReqE)) in
   rule name params formula statement
 
@@ -76,10 +83,17 @@ let n_RecvReq =
   let statement = (parallel [(assign (global "CurCmd") (var (record [arr "Chan1" [paramref "i"]; global "Cmd"]))); (assign (record [arr "Chan1" [paramref "i"]; global "Cmd"]) (const _Empty)); (assign (global "CurPtr") (param (paramref "i"))); (forStatement (assign (arr "InvSet" [paramref "j"]) (var (arr "ShrSet" [paramref "j"]))) [paramdef "j" "NODE"])]) in
   rule name params formula statement
 
-let n_SendInv =
-  let name = "n_SendInv" in
+let n_SendInvS =
+  let name = "n_SendInvS" in
   let params = [paramdef "i" "NODE"] in
-  let formula = (andList [(andList [(orList [(andList [(eqn (var (global "CurCmd")) (const _ReqS)); (eqn (var (global "ExGntd")) (const _True))]); (eqn (var (global "CurCmd")) (const _ReqE))]); (eqn (var (arr "InvSet" [paramref "i"])) (const _True))]); (eqn (var (record [arr "Chan2" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
+  let formula = (andList [(andList [(andList [(eqn (var (global "CurCmd")) (const _ReqS)); (eqn (var (global "ExGntd")) (const _True))]); (eqn (var (arr "InvSet" [paramref "i"])) (const _True))]); (eqn (var (record [arr "Chan2" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
+  let statement = (parallel [(assign (record [arr "Chan2" [paramref "i"]; global "Cmd"]) (const _Inv)); (assign (arr "InvSet" [paramref "i"]) (const (boolc false)))]) in
+  rule name params formula statement
+
+let n_SendInvE =
+  let name = "n_SendInvE" in
+  let params = [paramdef "i" "NODE"] in
+  let formula = (andList [(andList [(eqn (var (global "CurCmd")) (const _ReqE)); (eqn (var (arr "InvSet" [paramref "i"])) (const _True))]); (eqn (var (record [arr "Chan2" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
   let statement = (parallel [(assign (record [arr "Chan2" [paramref "i"]; global "Cmd"]) (const _Inv)); (assign (arr "InvSet" [paramref "i"]) (const (boolc false)))]) in
   rule name params formula statement
 
@@ -132,7 +146,7 @@ let n_Store =
   let statement = (parallel [(assign (record [arr "Cache" [paramref "i"]; global "Data"]) (param (paramref "d"))); (assign (global "AuxData") (param (paramref "d")))]) in
   rule name params formula statement
 
-let rules = [n_SendReqS; n_SendReqE; n_RecvReq; n_SendInv; n_SendInvAck; n_RecvInvAck; n_SendGntS; n_SendGntE; n_RecvGntS; n_RecvGntE; n_Store]
+let rules = [n_SendReqS; n_SendReqEI; n_SendReqES; n_RecvReq; n_SendInvS; n_SendInvE; n_SendInvAck; n_RecvInvAck; n_SendGntS; n_SendGntE; n_RecvGntS; n_RecvGntE; n_Store]
 
 let n_DataProp =
   let name = "n_DataProp" in
