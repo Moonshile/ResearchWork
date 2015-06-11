@@ -340,6 +340,7 @@ module Choose = struct
 
   (* get new inv by removing a component in the pres *)
   let remove_one guards cons invs =
+    Prt.warning (String.concat ~sep:", " (List.map guards ToStr.Smv.form_act)^", "^ToStr.Smv.form_act cons);
     let rec wrapper guards necessary =
       match guards with
       | [] -> check_level (imply (andList necessary) cons) invs
@@ -501,7 +502,9 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
           | None -> Hashtbl.replace inv_table ~key ~data:true; true
           | _ -> false)
       in
-      Prt.info (String.concat ~sep:"\n" (List.map real_new_invs ~f:ToStr.Smv.form_act));
+      Prt.info (String.concat ~sep:"\n" (
+        List.map real_new_invs ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
+      ));
       let old_invs' = real_new_invs@old_invs in
       let rec invs_to_cinvs invs cinvs new_inv_id =
         match invs with

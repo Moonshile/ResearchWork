@@ -92,6 +92,17 @@ let flat_or_to_list form =
 let flat_to_orList form =
   orList (flat_or_to_list form)
 
+let rec remove_inner_andList_orList form =
+  match form with
+  | Chaos
+  | Miracle
+  | Eqn(_)
+  | Neg(Eqn(_)) -> [form]
+  | AndList(fl) -> List.concat (List.map fl ~f:remove_inner_andList_orList)
+  | OrList(fl) -> List.concat (List.map fl ~f:remove_inner_andList_orList)
+  | Neg(_)
+  | Imply(_) -> Prt.error (ToStr.Smv.form_act form); raise Empty_exception
+
 (** Simplify a formula *)
 let simplify form =
   let no_imply_neg = eliminate_imply_neg form in
@@ -104,8 +115,8 @@ let simplify form =
       if is_tautology form then chaos
       else if not (is_satisfiable form) then miracle
       else begin form end
-    | AndList(fl) ->
-      let simplified = List.map fl ~f:wrapper in
+    | AndList(_) ->
+      let simplified = List.map (remove_inner_andList_orList form) ~f:wrapper in
       if List.exists simplified ~f:(fun x -> x = Miracle) then miracle
       else begin
         let not_chaos = List.dedup (List.filter simplified ~f:(fun x -> not (x = Chaos))) in
@@ -114,8 +125,8 @@ let simplify form =
         | [one] -> one
         | _ -> andList not_chaos
       end
-    | OrList(fl) ->
-      let simplified = List.map fl ~f:(wrapper) in
+    | OrList(_) ->
+      let simplified = List.map (remove_inner_andList_orList form) ~f:(wrapper) in
       if List.exists simplified ~f:(fun x -> x = Chaos) then chaos
       else begin
         let not_miracle = List.dedup (List.filter simplified ~f:(fun x -> not (x = Miracle))) in
