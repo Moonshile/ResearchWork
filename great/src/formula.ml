@@ -92,14 +92,24 @@ let flat_or_to_list form =
 let flat_to_orList form =
   orList (flat_or_to_list form)
 
-let rec remove_inner_andList_orList form =
+let rec remove_inner_andList form =
   match form with
   | Chaos
   | Miracle
   | Eqn(_)
   | Neg(Eqn(_)) -> [form]
-  | AndList(fl) -> List.concat (List.map fl ~f:remove_inner_andList_orList)
-  | OrList(fl) -> List.concat (List.map fl ~f:remove_inner_andList_orList)
+  | AndList(fl) -> List.concat (List.map fl ~f:remove_inner_andList)
+  | OrList(fl) -> [orList (List.concat (List.map fl ~f:remove_inner_orList))]
+  | Neg(_)
+  | Imply(_) -> Prt.error (ToStr.Smv.form_act form); raise Empty_exception
+and remove_inner_orList form =
+  match form with
+  | Chaos
+  | Miracle
+  | Eqn(_)
+  | Neg(Eqn(_)) -> [form]
+  | AndList(fl) -> [andList (List.concat (List.map fl ~f:remove_inner_andList))]
+  | OrList(fl) -> List.concat (List.map fl ~f:remove_inner_orList)
   | Neg(_)
   | Imply(_) -> Prt.error (ToStr.Smv.form_act form); raise Empty_exception
 
@@ -116,7 +126,7 @@ let simplify form =
       else if not (is_satisfiable form) then miracle
       else begin form end
     | AndList(_) ->
-      let simplified = List.map (remove_inner_andList_orList form) ~f:wrapper in
+      let simplified = List.map (remove_inner_andList form) ~f:wrapper in
       if List.exists simplified ~f:(fun x -> x = Miracle) then miracle
       else begin
         let not_chaos = List.dedup (List.filter simplified ~f:(fun x -> not (x = Chaos))) in
@@ -131,7 +141,7 @@ let simplify form =
           |> (fun fl -> match fl with | [andf] -> andf | _ -> orList fl)
       end
     | OrList(_) ->
-      let simplified = List.map (remove_inner_andList_orList form) ~f:(wrapper) in
+      let simplified = List.map (remove_inner_orList form) ~f:(wrapper) in
       if List.exists simplified ~f:(fun x -> x = Chaos) then chaos
       else begin
         let not_miracle = List.dedup (List.filter simplified ~f:(fun x -> not (x = Miracle))) in
