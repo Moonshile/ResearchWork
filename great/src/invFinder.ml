@@ -340,7 +340,7 @@ module Choose = struct
 
   (* get new inv by removing a component in the pres *)
   let remove_one guards cons invs =
-    Prt.warning (String.concat ~sep:", " (List.map guards ToStr.Smv.form_act)^", "^ToStr.Smv.form_act cons);
+    Prt.warning (String.concat ~sep:", " (List.map guards ~f:ToStr.Smv.form_act)^", "^ToStr.Smv.form_act cons);
     let rec wrapper guards necessary =
       match guards with
       | [] -> check_level (imply (andList necessary) cons) invs
@@ -405,7 +405,7 @@ module Choose = struct
 end
 
 
-let rec minify_inv inv =
+let minify_inv inv =
   let ls = match inv with | OrList(fl) -> fl | _ -> [inv] in
   let rec wrapper necessary parts =
     match parts with
@@ -469,9 +469,11 @@ let deal_with_case_3 crule cinv cons old_invs =
 
 
 let symmetry_form f1 f2 =
-  match Choose.inv_implied_by_old f1 [f2] with
-  | Some(_) -> true
-  | _ -> false
+  let n1 = normalize ~types:(!type_defs) f1 in
+  let n2 = normalize ~types:(!type_defs) f2 in
+  match Choose.inv_implied_by_old n1 [n2] with
+  | Some(_) -> 0
+  | _ -> String.compare (ToStr.Smv.form_act n1) (ToStr.Smv.form_act n2)
 
 
 (* Find new inv and relations with concrete rule and a concrete invariant *)
@@ -485,7 +487,7 @@ let tabular_expans crule ~cinv ~old_invs =
   in
   (*Prt.warning (_name^": "^ToStr.Smv.form_act obligation^", "^ToStr.Smv.form_act inv_inst^"\n");*)
   (* case 2 *)
-  if symmetry_form obligation inv_inst then
+  if symmetry_form obligation inv_inst = 0 then
     ([], deal_with_case_2 crule cinv)
   (* case 1 *)
   else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
@@ -510,7 +512,7 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
       in
       let real_new_invs =
         List.concat new_invs
-        |> List.dedup ~compare:(fun x y -> if symmetry_form x y then 0 else 1)
+        |> List.dedup ~compare:symmetry_form
         |> List.map ~f:(normalize ~types)
         |> List.map ~f:minify_inv
         |> List.filter ~f:(fun x ->
@@ -548,6 +550,32 @@ let rule_inst_policy ~cinv ~types r =
     not (is_tautology (neg f))
   )
 
+let simplify_prop property =
+  let Prop(_, pds, f) = property in
+  let orList_items =
+    if List.length pds > 0 then
+      let ps = cart_product_with_paramfix pds (!type_defs) in
+      List.map ps ~f:(fun p -> simplify (neg (apply_form f ~p)))
+    else begin
+      [simplify (neg f)]
+    end
+  in
+  orList_items
+  |> List.map ~f:(fun form -> match form with | OrList(fl) -> fl | _ -> [form])
+  |> List.concat
+  |> List.filter ~f:(fun x -> match x with | Miracle -> false | _ -> true)
+  |> List.dedup ~compare:symmetry_form
+
+let result_to_str (_, invs, relations) =
+  let invs_str =
+    invs
+    |> List.map ~f:neg
+    |> List.map ~f:simplify
+    |> List.map ~f:ToStr.Smv.form_act
+  in
+  let relations_str = List.map relations ~f:to_str in
+  String.concat ~sep:"\n" (*relations_str@*)invs_str
+
 (** Find invs and causal relations of a protocol
 
     @param protocol the protocol
@@ -568,16 +596,9 @@ let find ?(prop_params=[[]]) ~protocol () =
       in
       wrapper cinvs' new_inv_id' ((cinv, invs_lib, relations)::table)
   in
-  let cinvs = List.map2_exn properties prop_params ~f:(concrete_prop) in
-  let [(cinv, invs, relations)] = wrapper cinvs 0 [] in
-  let invs_str =
-    invs
-    |> List.map ~f:neg
-    |> List.map ~f:simplify
-    |> List.map ~f:ToStr.Smv.form_act
+  let cinvs = 
+    List.concat (List.map properties ~f:simplify_prop)
+    |> List.map ~f:form_2_concreate_prop
   in
-  let relations_str = List.map relations ~f:to_str in
-  Prt.info (String.concat ~sep:"\n" relations_str);
-  printf "\n";
-  Prt.warning (String.concat ~sep:"\n" invs_str);
-  printf "\n";
+  let results = wrapper cinvs 0 [] in
+  printf "%s\n" (String.concat ~sep:"\n\n" (List.map results ~f:result_to_str));

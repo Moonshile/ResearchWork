@@ -62,8 +62,8 @@ let rules = [n_Try; n_Crit; n_Exit; n_Idle]
 
 let n_coherence =
   let name = "n_coherence" in
-  let params = [] in
-  let formula = (andList [(eqn (var (arr "n" [paramfix "i" "client" (intc 1)])) (const _C)); (eqn (var (arr "n" [paramfix "j" "client" (intc 2)])) (const _C))]) in
+  let params = [paramdef "i" "client"; paramdef "j" "client"] in
+  let formula = (imply (neg (eqn (param (paramref "i")) (param (paramref "j")))) (imply (eqn (var (arr "n" [paramref "i"])) (const _C)) (neg (eqn (var (arr "n" [paramref "j"])) (const _C))))) in
   prop name params formula
 
 let properties = [n_coherence]
