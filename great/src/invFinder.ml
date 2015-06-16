@@ -62,12 +62,12 @@ let type_defs = ref []
 
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ps =
-  List.map ps ~f:(fun params -> concrete_rule r params)
+  List.map ps ~f:(fun p -> concrete_rule (apply_rule r ~p) p)
 
 (* Convert concrete rule to rule instances *)
 let concrete_rule_2_rule_inst cr =
-  let ConcreteRule(r, p) = cr in
-  apply_rule r ~p
+  let ConcreteRule(r, _) = cr in
+  r
 
 (* Convert property to concrete property *)
 let prop_2_concrete property ps =
@@ -500,12 +500,11 @@ let tabular_expans crule ~cinv ~old_invs =
 let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
 (* Find new inv and relations with concrete rules and a concrete invariant *)
-let tabular_rules_cinvs rules cinvs rule_inst_policy ~new_inv_id =
+let tabular_rules_cinvs crules cinvs =
   let rec wrapper cinvs new_inv_id old_invs relations =
     match cinvs with
     | [] -> (new_inv_id, old_invs, relations)
     | cinv::cinvs' ->
-      let crules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types:(!type_defs))) in
       let (new_invs, new_relation) =
         List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
@@ -537,18 +536,7 @@ let tabular_rules_cinvs rules cinvs rule_inst_policy ~new_inv_id =
       wrapper cinvs'' new_inv_id' old_invs' (new_relation@relations)
   in
   let init_lib = List.map cinvs ~f:(fun cinv -> neg (concrete_prop_2_form cinv)) in
-  wrapper cinvs new_inv_id init_lib []
-
-
-(* Rule instant policy *)
-let rule_inst_policy ~cinv ~types r =
-  let Paramecium.Rule(_, paramdefs, _, _) = r in
-  let ps = cart_product_with_paramfix paramdefs types in
-  rule_2_concrete r ps
-  |> List.filter ~f:(fun (ConcreteRule(r, p)) ->
-    let Rule(_, _, f, _) = apply_rule r ~p in
-    not (is_tautology (neg f))
-  )
+  wrapper cinvs 0 init_lib []
 
 let simplify_prop property =
   let Prop(_, pds, f) = property in
@@ -582,7 +570,7 @@ let result_to_str (_, invs, relations) =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ?(prop_params=[[]]) ~protocol () =
+let find ~protocol () =
   let {name; types; vardefs; init=_; rules; properties} = protocol in
   type_defs := types;
   let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
@@ -591,5 +579,14 @@ let find ?(prop_params=[[]]) ~protocol () =
     List.concat (List.map properties ~f:simplify_prop)
     |> List.map ~f:form_2_concreate_prop
   in
-  let result = tabular_rules_cinvs rules cinvs rule_inst_policy ~new_inv_id:0 in
+  let inst_rule r =
+    let Paramecium.Rule(_, paramdefs, _, _) = r in
+    let ps = cart_product_with_paramfix paramdefs (!type_defs) in
+    rule_2_concrete r ps
+    |> List.filter ~f:(fun (ConcreteRule(r, p)) ->
+      let Rule(_, _, f, _) = r in
+      not (is_tautology (neg f))
+    )
+  in
+  let result = tabular_rules_cinvs (List.concat (List.map rules ~f:inst_rule)) cinvs in
   printf "%s\n" (result_to_str result);

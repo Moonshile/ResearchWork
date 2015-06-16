@@ -148,13 +148,19 @@ let n_Store =
 
 let rules = [n_SendReqS; n_SendReqEI; n_SendReqES; n_RecvReq; n_SendInvS; n_SendInvE; n_SendInvAck; n_RecvInvAck; n_SendGntS; n_SendGntE; n_RecvGntS; n_RecvGntE; n_Store]
 
+let n_CntrlProp =
+  let name = "n_CntrlProp" in
+  let params = [paramdef "i" "NODE"; paramdef "j" "NODE"] in
+  let formula = (imply (neg (eqn (param (paramref "i")) (param (paramref "j")))) (imply (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _E)) (neg (eqn (var (record [arr "Cache" [paramref "j"]; global "State"])) (const _E))))) in
+  prop name params formula
+
 let n_DataProp =
   let name = "n_DataProp" in
   let params = [] in
   let formula = (andList [(imply (eqn (var (global "ExGntd")) (const (boolc false))) (eqn (var (global "MemData")) (var (global "AuxData")))); (forallFormula ~types [paramdef "i" "NODE"] (imply (neg (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _I))) (eqn (var (record [arr "Cache" [paramref "i"]; global "Data"])) (var (global "AuxData")))))]) in
   prop name params formula
 
-let properties = [n_DataProp]
+let properties = [n_CntrlProp; n_DataProp]
 
 
 let protocol = Trans.act {
