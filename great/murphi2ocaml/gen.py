@@ -29,14 +29,17 @@ class TypeDef(object):
             self.typenames[name] = map(lambda x: '_%s'%x, values)
 
     def evalScalarset(self, text):
-        scalarsets = re.findall(r'(\w*?)\s*:\s*scalarset\s*\((\w*?)\)\s*;', text, re.S)
-        for name, v in scalarsets:
-            actualv = int(re.findall(r'%s\s*:\s*(\d+)\s*;'%v, text, re.S)[0])
+        scalarsets = re.findall(r'(\w*?)\s*:\s*(\w+?)\s*\.\.\s*(\w+?)\s*;', text, re.S)
+        def const2num(v, text):
+            return int(re.findall(r'%s\s*:\s*(\d+)\s*;'%v, text, re.S)[0])
+        for name, v1, v2 in scalarsets:
+            num1 = int(v1) if re.match(r'\d+', v1) else const2num(v1, text)
+            num2 = int(v2) if re.match(r'\d+', v2) else const2num(v2, text)
             self.typedefs.append('enum \"%s\" (int_consts [%s]);'%(
                 name,
-                '; '.join(map(lambda x: str(x), range(1, actualv + 1)))
+                '; '.join(map(lambda x: str(x), range(num1, num2 + 1)))
             ))
-            self.typenames[name] = map(lambda x: '(intc %d)'%x, range(1, actualv + 1))
+            self.typenames[name] = map(lambda x: '(intc %d)'%x, range(num1, num2 + 1))
 
     def evalBool(self):
         self.const_defs += ['let _True = boolc true', 'let _False = boolc false']

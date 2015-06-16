@@ -3,8 +3,8 @@ const
     DATA_NUM : 2;
 
 type
-     NODE : scalarset(NODE_NUM);
-     DATA : scalarset(DATA_NUM);
+     NODE : 1..NODE_NUM;
+     DATA : 1..DATA_NUM;
      
      CACHE_STATE : enum{I, S, E};
      CACHE : record State : CACHE_STATE; Data : DATA; end;
@@ -52,8 +52,14 @@ ruleset j: NODE do
 endrule; endruleset;
 
 ruleset i: NODE do
- rule "SendReqE"
-      (Cache[i].State = I | Cache[i].State = S ) & Chan1[i].Cmd = Empty ==> 
+ rule "SendReqEI"
+      (Cache[i].State = I) & Chan1[i].Cmd = Empty ==> 
+        begin Chan1[i].Cmd := ReqE;
+endrule; endruleset;
+
+ruleset i: NODE do
+ rule "SendReqES"
+      (Cache[i].State = S ) & Chan1[i].Cmd = Empty ==> 
         begin Chan1[i].Cmd := ReqE;
 endrule; endruleset;
 
@@ -69,9 +75,17 @@ ruleset i: NODE do
 endrule; endruleset;
   
 ruleset i: NODE do
- rule "SendInv"
-      (CurCmd = ReqS & ExGntd
-       | CurCmd = ReqE)
+ rule "SendInvS"
+      (CurCmd = ReqS & ExGntd)
+      & InvSet[i] & Chan2[i].Cmd = Empty ==>
+       begin
+        Chan2[i].Cmd := Inv;
+        InvSet[i] := false;
+endrule; endruleset;
+  
+ruleset i: NODE do
+ rule "SendInvE"
+      (CurCmd = ReqE)
       & InvSet[i] & Chan2[i].Cmd = Empty ==>
        begin
         Chan2[i].Cmd := Inv;

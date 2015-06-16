@@ -6,8 +6,8 @@ const
 
 type
 
-  NODE : scalarset(NODE_NUM);
-  DATA : scalarset(DATA_NUM);
+  NODE : 1..NODE_NUM;
+  DATA : 1..DATA_NUM;
 
   CACHE_STATE : enum {CACHE_I, CACHE_S, CACHE_E};
 

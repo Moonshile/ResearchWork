@@ -1,7 +1,7 @@
 const clientNUMS : 3;
 type state : enum{I, T, C, E};
 
-     client: scalarset(clientNUMS);
+     client: 1..clientNUMS;
 
 var n : array [client] of state;
 
