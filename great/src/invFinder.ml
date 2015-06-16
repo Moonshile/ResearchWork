@@ -467,12 +467,11 @@ let deal_with_case_3 crule cinv cons old_invs =
     relation = invHoldForRule3 (form_2_concreate_prop causal_inv);
   })
 
-
 let symmetry_form f1 f2 =
   let n1 = normalize ~types:(!type_defs) f1 in
   let n2 = normalize ~types:(!type_defs) f2 in
-  match Choose.inv_implied_by_old n1 [n2] with
-  | Some(_) -> 0
+  match Choose.inv_implied_by_old n1 [n2], Choose.inv_implied_by_old n2 [n1] with
+  | Some(_), Some(_) -> 0
   | _ -> String.compare (ToStr.Smv.form_act n1) (ToStr.Smv.form_act n2)
 
 
