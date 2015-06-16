@@ -123,7 +123,12 @@ let simplify form =
         match not_chaos with
         | [] -> chaos
         | [one] -> one
-        | _ -> andList not_chaos
+        | _ ->
+          not_chaos
+          |> List.map ~f:(fun x -> match x with | OrList(fl) -> fl | _ -> [x])
+          |> cartesian_product
+          |> List.map ~f:(fun x -> andList x)
+          |> (fun fl -> match fl with | [andf] -> andf | _ -> orList fl)
       end
     | OrList(_) ->
       let simplified = List.map (remove_inner_andList_orList form) ~f:(wrapper) in
