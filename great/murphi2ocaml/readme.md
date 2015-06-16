@@ -5,7 +5,7 @@
 
 1. All keywords must be in lower case.
 2. Comment lines are not supported.
-3. Unsupported statements: `clear`, `undifine`, `assert`, `error`, `alias`.
+3. Unsupported statements: `clear`, `undifine`, `assert`, `error`, `alias`. In fact, now only support assignments, `if`s and `for`s. 
 4. Unsupported grammers: local variables, functions, procedures.
 
 ## Type definitions
@@ -26,7 +26,7 @@ Allow three kinds of types, `scalarset`s, `enum`s and `record`s.
 Scalarsets must end with `;`, such as
 
 ```
-NODE : scalarset(NODE_NUM);
+NODE : 1..NODE_NUM;
 ```
 
 Enums must end with `;`, such as
@@ -81,8 +81,8 @@ const
   DATA_NUM : 2;
 
 type
-  NODE : scalarset(NODE_NUM);
-  DATA : scalarset(DATA_NUM);
+  NODE : 1..NODE_NUM;
+  DATA : 1..DATA_NUM;
 
 ...
 
@@ -102,6 +102,8 @@ Rules must be closed with `endrule`; `end` should NOT be used to close rules. A 
 rule <string> <formula> ==> begin <statements> endrule;
 ```
 
+Rules in rulesets are supported.
+
 ## Invariant
 Invariants should end with a `;`. An invariant must be difined as
 
@@ -109,7 +111,15 @@ Invariants should end with a `;`. An invariant must be difined as
 invariant <string> <formula>;
 ```
 
-Parameterized invariants are not supported currently.
+Invariants in rulesets are supported.
 
 ## Formula
+
+All formulae in murphi are supported.
+
+## Statement
+
+1. Assignments must be ended with `;`, including the last or the only assignment statement.
+2. `if` statements must be ended with `end` or `endif` and a following `;`
+3. `for` statements must be ended with `end` or `endfor` and a following `;`
 
