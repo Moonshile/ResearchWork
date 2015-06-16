@@ -35,5 +35,5 @@ endstartstate;
 
 ruleset i:client; j: client do
 invariant "coherence"
-  n[i] = C & n[j] = C;
+  i != j -> (n[i] = C -> n[j] != C);
 endruleset;

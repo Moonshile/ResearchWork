@@ -162,8 +162,12 @@ ruleset i: NODE; d: DATA do
        AuxData := d;
 endrule; endruleset;
 
-ruleset d: DATA do
-invariant "DataProp"
-  ExGntd = false & MemData != AuxData;
+ruleset i: NODE; j: NODE do
+invariant "CntrlProp"
+    i != j -> (Cache[i].State = E -> Cache[j].State != E);
 endruleset;
+
+invariant "DataProp"
+  ( ExGntd = false -> MemData = AuxData ) &
+  forall i : NODE do Cache[i].State != I -> Cache[i].Data = AuxData end;
 

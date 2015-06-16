@@ -626,28 +626,48 @@ class StartState(object):
 class Invariant(object):
     def __init__(self, text, consts, typenames):
         super(Invariant, self).__init__()
+        names = []
+        invs = []
+        invset_names, invset_invs = self.invsets(text, consts)
+        names += invset_names
+        invs += invset_invs
+        inv_alone_names, inv_alone_invs = self.inv_alone(text, consts)
+        names += inv_alone_names
+        invs += inv_alone_invs
+        self.value = '%s\n\nlet properties = [%s]'%('\n\n'.join(invs), '; '.join(names))
+
+    def invsets(self, text, consts):
         pattern = r'ruleset\s*([\w :;]*)do\s*invariant\s*\"(.*?)\"\s*(.*?)\s*;\s*endruleset\s*;'
         inv_strs = re.findall(pattern, text, re.S)
         invs = []
         names = []
         for params, name, form in inv_strs:
-            param_types, _ = analyzeParams(params)
-            next_type_value = {}
-            for t in typenames: next_type_value[t] = 0
+            param_name_dict, param_defs = analyzeParams(params)
             name = escape(name)
-            formula = Formula(form, param_types, consts)
-            value = formula.value
-            for n, t in param_types.items():
-                next_value = typenames[t][next_type_value[t]]
-                value = value.replace('paramref "%s"'%n, 'paramfix "%s" "%s" %s'%(n, t, next_value))
-                next_type_value[t] += 1
+            formula = Formula(form, param_name_dict, consts)
             names.append(name)
             invs.append('''let %s =
   let name = \"%s\" in
+  let params = %s in
+  let formula = %s in
+  prop name params formula'''%(name, name, param_defs, formula.value))
+        return names, invs
+
+    def inv_alone(self, text, consts):
+        pattern = r'[^do]+\s+invariant\s*\"(.*?)\"\s*(.*?)\s*;'
+        inv_strs = re.findall(pattern, text, re.S)
+        invs = []
+        names = []
+        for name, form in inv_strs:
+            name = escape(name)
+            formula = Formula(form, [], consts)
+            names.append(name)
+            invs.append('''let %s =
+  let name = "%s" in
   let params = [] in
   let formula = %s in
-  prop name params formula'''%(name, name, value))
-        self.value = '%s\n\nlet properties = [%s]'%('\n\n'.join(invs), '; '.join(names))
+  prop name params formula'''%(name, name, formula.value))
+        return names, invs
 
 
 
