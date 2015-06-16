@@ -20,7 +20,7 @@ exception Circular_parallel_assign
 
 (** Concrete rule
 
-    + ConcreteRule: rule, concrete param list
+    + ConcreteRule: instantiated rule, concrete param list
 *)
 type concrete_rule =
   | ConcreteRule of rule * paramref list
@@ -500,12 +500,12 @@ let tabular_expans crule ~cinv ~old_invs =
 let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
 (* Find new inv and relations with concrete rules and a concrete invariant *)
-let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
+let tabular_rules_cinvs rules cinvs rule_inst_policy ~new_inv_id =
   let rec wrapper cinvs new_inv_id old_invs relations =
     match cinvs with
     | [] -> (new_inv_id, old_invs, relations)
     | cinv::cinvs' ->
-      let crules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types)) in
+      let crules = List.concat (List.map rules ~f:(rule_inst_policy ~cinv ~types:(!type_defs))) in
       let (new_invs, new_relation) =
         List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
@@ -513,7 +513,7 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
       let real_new_invs =
         List.concat new_invs
         |> List.dedup ~compare:symmetry_form
-        |> List.map ~f:(normalize ~types)
+        |> List.map ~f:(normalize ~types:(!type_defs))
         |> List.map ~f:minify_inv
         |> List.filter ~f:(fun x ->
           let key = ToStr.Smv.form_act x in
@@ -536,8 +536,8 @@ let tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types =
       let cinvs'' = List.dedup (cinvs'@new_cinvs) in
       wrapper cinvs'' new_inv_id' old_invs' (new_relation@relations)
   in
-  let init_lib = [neg (concrete_prop_2_form cinv)] in
-  wrapper [cinv] new_inv_id init_lib []
+  let init_lib = List.map cinvs ~f:(fun cinv -> neg (concrete_prop_2_form cinv)) in
+  wrapper cinvs new_inv_id init_lib []
 
 
 (* Rule instant policy *)
@@ -587,18 +587,9 @@ let find ?(prop_params=[[]]) ~protocol () =
   type_defs := types;
   let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _smv_context = set_smv_context name (ToStr.Smv.protocol_act protocol) in
-  let rec wrapper cinvs new_inv_id table =
-    match cinvs with
-    | [] -> table
-    | cinv::cinvs' ->
-      let (new_inv_id', invs_lib, relations) =
-        tabular_rules_cinv rules cinv rule_inst_policy ~new_inv_id ~types
-      in
-      wrapper cinvs' new_inv_id' ((cinv, invs_lib, relations)::table)
-  in
   let cinvs = 
     List.concat (List.map properties ~f:simplify_prop)
     |> List.map ~f:form_2_concreate_prop
   in
-  let results = wrapper cinvs 0 [] in
-  printf "%s\n" (String.concat ~sep:"\n\n" (List.map results ~f:result_to_str));
+  let result = tabular_rules_cinvs rules cinvs rule_inst_policy ~new_inv_id:0 in
+  printf "%s\n" (result_to_str result);

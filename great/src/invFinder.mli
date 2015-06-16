@@ -14,7 +14,7 @@ exception Circular_parallel_assign
 
 (** Concrete rule
 
-    + ConcreteRule: rule, concrete param list
+    + ConcreteRule: instantiated rule, concrete param list
 *)
 type concrete_rule =
   | ConcreteRule of rule * paramref list
@@ -57,24 +57,6 @@ val rule_2_concrete : rule -> paramref list list -> concrete_rule list
 
 (** Convert t to a string *)
 val to_str : t -> string
-
-(** Find new inv and relations with concrete rule and concrete invariant
-    
-    @param cinv a concrete property
-    @param old_invs invariants in formula format that are already discovered
-    @param smv_file the smv file
-    @return a tuple of new invariant and relation, the new invariant list is empty or contains 1 inv
-*)
-val tabular_expans : concrete_rule -> cinv:concrete_prop -> old_invs:formula list -> formula list * t
-
-(** Find new inv and relations with concrete rules and a concrete invariant
-    
-    @param new_inv_id the id generated for new invariant
-    @return a triple: next id of new inv, new invs discovered, relations
-*)
-val tabular_rules_cinv : rule list -> concrete_prop -> 
-  (cinv:concrete_prop -> types:typedef list -> rule -> concrete_rule list) ->
-  new_inv_id:int -> types:typedef list -> int * formula list * t list
 
 (** Find invs and causal relations of a protocol
 
