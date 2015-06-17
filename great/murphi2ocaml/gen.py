@@ -200,12 +200,17 @@ class Formula(object):
         super(Formula, self).__init__()
         self.param_names = param_names
         self.consts = consts
-        self.text = self.splitText(text)
-        self.suffix = self.process(self.text)
-        self.value = self.evaluate(self.suffix, self.param_names)
+        try:
+            self.text = self.splitText(text)
+            self.suffix = self.process(self.text)
+            self.value = self.evaluate(self.suffix, self.param_names)
+        except Exception, e:
+            print e
+            print text
+            print self.text
 
     def splitText(self, text):
-        dividers = r'(do|end|\(|\)|=|!=|!|&|\||->)'
+        dividers = r'(do|endforall|endexists|end|\(|\)|=|!=|!|&|\||->)'
         parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(dividers, text)))
         big_parts = []
         to_add = []
@@ -216,7 +221,7 @@ class Formula(object):
                 to_add.append(p)
             elif p.startswith('end'):
                 exp_ends -= 1
-                to_add.append(p)
+                to_add.append('end')
                 if exp_ends == 0:
                     big_parts.append(' '.join(to_add))
                     to_add = []
