@@ -210,7 +210,7 @@ class Formula(object):
             print self.text
 
     def splitText(self, text):
-        dividers = r'(do|endforall|endexists|end[\s&\|!\->]|\(|\)|=|!=|!|&|\||->)'
+        dividers = r'(do|\sendforall|\sendexists|\send|\(|\)|=|!=|!|&|\||->)'
         parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(dividers, text)))
         big_parts = []
         to_add = []
