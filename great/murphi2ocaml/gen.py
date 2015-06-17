@@ -210,7 +210,7 @@ class Formula(object):
             print self.text
 
     def splitText(self, text):
-        dividers = r'(do|endforall|endexists|end|\(|\)|=|!=|!|&|\||->)'
+        dividers = r'(do|endforall|endexists|end[\s&\|!\->]|\(|\)|=|!=|!|&|\||->)'
         parts = filter(lambda p: p, map(lambda x: x.strip(), re.split(dividers, text)))
         big_parts = []
         to_add = []
@@ -330,8 +330,9 @@ class Formula(object):
                 lval = do_eval(*values.pop())
                 values.append((True, self.__RELATION_OP[s]%(lval, rval)))
             else:
+                print self.text
+                print suffix
                 logging.error('unknown operator %s'%s)
-                pass
         if values[0][0]: return values[0][1]
         elif values[0][1].strip()[:6] in ['forall', 'exists']:
             return self.evalAtom(values[0][1], param_names)
