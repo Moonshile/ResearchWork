@@ -2,12 +2,10 @@
 const
 
   NODE_NUM : 3;
-  DATA_NUM : 2;
 
 type
 
   NODE : 0..NODE_NUM;
-  DATA : 1..DATA_NUM;
 
   CACHE_STATE : enum {CACHE_I, CACHE_S, CACHE_E};
 
@@ -17,7 +15,6 @@ type
     ProcCmd : NODE_CMD;
     InvMarked : boolean;
     CacheState : CACHE_STATE;
-    CacheData : DATA;
   end;
 
   DIR_STATE : record
@@ -36,7 +33,6 @@ type
   UNI_MSG : record
     Cmd : UNI_CMD;
     Proc : NODE;
-    Data : DATA;
   end;
 
   INV_CMD : enum {INV_None, INV_Inv, INV_InvAck};
@@ -56,7 +52,6 @@ type
   WB_MSG : record
     Cmd : WB_CMD;
     Proc : NODE;
-    Data : DATA;
   end;
 
   SHWB_CMD : enum {SHWB_None, SHWB_ShWb, SHWB_FAck};
@@ -64,7 +59,6 @@ type
   SHWB_MSG : record
     Cmd : SHWB_CMD;
     Proc : NODE;
-    Data : DATA;
   end;
 
   NAKC_CMD : enum {NAKC_None, NAKC_Nakc};
@@ -76,7 +70,6 @@ type
   STATE : record
     Proc : array [NODE] of NODE_STATE;
     Dir : DIR_STATE;
-    MemData : DATA;
     UniMsg : array [NODE] of UNI_MSG;
     InvMsg : array [NODE] of INV_MSG;
     RpMsg : array [NODE] of RP_MSG;
@@ -91,10 +84,9 @@ var
   Sta : STATE;
 
 
-ruleset h : NODE; d : DATA do
+ruleset h : NODE do
 startstate "Init"
   Home := h;
-  Sta.MemData := d;
   Sta.Dir.Pending := false;
   Sta.Dir.Local := false;
   Sta.Dir.Dirty := false;
@@ -114,16 +106,6 @@ startstate "Init"
     Sta.RpMsg[p].Cmd := RP_None;
   end;
 endstartstate;
-endruleset;
-
-
-ruleset src : NODE; data : DATA do
-rule "Store"
-  Sta.Proc[src].CacheState = CACHE_E
-==>
-begin
-  Sta.Proc[src].CacheData := data;
-endrule;
 endruleset;
 
 ruleset src : NODE do
@@ -164,7 +146,6 @@ begin
     Sta.Proc[Home].CacheState := CACHE_I;
   else
     Sta.Proc[Home].CacheState := CACHE_S;
-    Sta.Proc[Home].CacheData := Sta.MemData;
   end;
 endrule;
 
@@ -223,7 +204,6 @@ begin
   Sta.Proc[Home].ProcCmd := NODE_None;
   Sta.Proc[Home].InvMarked := false;
   Sta.Proc[Home].CacheState := CACHE_E;
-  Sta.Proc[Home].CacheData := Sta.MemData;
 endrule;
 
 ruleset dst : NODE do
@@ -236,7 +216,6 @@ begin
   Sta.Proc[dst].CacheState := CACHE_I;
   Sta.WbMsg.Cmd := WB_Wb;
   Sta.WbMsg.Proc := dst;
-  Sta.WbMsg.Data := Sta.Proc[dst].CacheData;
 endrule;
 endruleset;
 
@@ -248,12 +227,10 @@ begin
   if (Sta.Dir.Pending) then
     Sta.Proc[Home].CacheState := CACHE_I;
     Sta.Dir.Dirty := false;
-    Sta.MemData := Sta.Proc[Home].CacheData;
   else
     Sta.Proc[Home].CacheState := CACHE_I;
     Sta.Dir.Local := false;
     Sta.Dir.Dirty := false;
-    Sta.MemData := Sta.Proc[Home].CacheData;
   end;
 endrule;
 
@@ -342,11 +319,9 @@ begin
     Sta.Dir.Dirty := false;
     Sta.Dir.HeadVld := true;
     Sta.Dir.HeadPtr := src;
-    Sta.MemData := Sta.Proc[Home].CacheData;
     Sta.Proc[Home].CacheState := CACHE_S;
     Sta.UniMsg[src].Cmd := UNI_Put;
     Sta.UniMsg[src].Proc := Home;
-    Sta.UniMsg[src].Data := Sta.Proc[Home].CacheData;
   else
     if (Sta.Dir.HeadVld) then
       Sta.Dir.ShrVld := true;
@@ -364,7 +339,6 @@ begin
     end;
     Sta.UniMsg[src].Cmd := UNI_Put;
     Sta.UniMsg[src].Proc := Home;
-    Sta.UniMsg[src].Data := Sta.MemData;
   end;
 endrule;
 endruleset;
@@ -394,11 +368,9 @@ begin
   Sta.Proc[dst].CacheState := CACHE_S;
   Sta.UniMsg[src].Cmd := UNI_Put;
   Sta.UniMsg[src].Proc := dst;
-  Sta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
   if (src != Home) then
     Sta.ShWbMsg.Cmd := SHWB_ShWb;
     Sta.ShWbMsg.Proc := src;
-    Sta.ShWbMsg.Data := Sta.Proc[dst].CacheData;
   end;
 endrule;
 endruleset;
@@ -453,7 +425,6 @@ begin
     end;
     Sta.UniMsg[src].Cmd := UNI_PutX;
     Sta.UniMsg[src].Proc := Home;
-    Sta.UniMsg[src].Data := Sta.Proc[Home].CacheData;
     Sta.Proc[Home].CacheState := CACHE_I;
   elsif (Sta.Dir.HeadVld ->
          Sta.Dir.HeadPtr = src  &
@@ -469,7 +440,6 @@ begin
     end;
     Sta.UniMsg[src].Cmd := UNI_PutX;
     Sta.UniMsg[src].Proc := Home;
-    Sta.UniMsg[src].Data := Sta.MemData;
     Sta.Proc[Home].CacheState := CACHE_I;
     if (Sta.Dir.Local) then
       Sta.Proc[Home].CacheState := CACHE_I;
@@ -498,7 +468,6 @@ begin
     end;
     Sta.UniMsg[src].Cmd := UNI_PutX;
     Sta.UniMsg[src].Proc := Home;
-    Sta.UniMsg[src].Data := Sta.MemData;
     if (Sta.Dir.Local) then
       Sta.Proc[Home].CacheState := CACHE_I;
       if (Sta.Proc[Home].ProcCmd = NODE_Get) then
@@ -534,7 +503,6 @@ begin
   Sta.Proc[dst].CacheState := CACHE_I;
   Sta.UniMsg[src].Cmd := UNI_PutX;
   Sta.UniMsg[src].Proc := dst;
-  Sta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
   if (src != Home) then
     Sta.ShWbMsg.Cmd := SHWB_FAck;
     Sta.ShWbMsg.Proc := src;
@@ -550,14 +518,12 @@ begin
   Sta.Dir.Pending := false;
   Sta.Dir.Dirty := false;
   Sta.Dir.Local := true;
-  Sta.MemData := Sta.UniMsg[Home].Data;
   Sta.Proc[Home].ProcCmd := NODE_None;
   if (Sta.Proc[Home].InvMarked) then
     Sta.Proc[Home].InvMarked := false;
     Sta.Proc[Home].CacheState := CACHE_I;
   else
     Sta.Proc[Home].CacheState := CACHE_S;
-    Sta.Proc[Home].CacheData := Sta.UniMsg[Home].Data;
   end;
 endrule;
 
@@ -574,7 +540,6 @@ begin
     Sta.Proc[dst].CacheState := CACHE_I;
   else
     Sta.Proc[dst].CacheState := CACHE_S;
-    Sta.Proc[dst].CacheData := Sta.UniMsg[dst].Data;
   end;
 endrule;
 endruleset;
@@ -590,7 +555,6 @@ begin
   Sta.Proc[Home].ProcCmd := NODE_None;
   Sta.Proc[Home].InvMarked := false;
   Sta.Proc[Home].CacheState := CACHE_E;
-  Sta.Proc[Home].CacheData := Sta.UniMsg[Home].Data;
 endrule;
 
 ruleset dst : NODE do
@@ -604,7 +568,6 @@ begin
   Sta.Proc[dst].ProcCmd := NODE_None;
   Sta.Proc[dst].InvMarked := false;
   Sta.Proc[dst].CacheState := CACHE_E;
-  Sta.Proc[dst].CacheData := Sta.UniMsg[dst].Data;
 endrule;
 endruleset;
 
@@ -647,7 +610,6 @@ begin
   Sta.WbMsg.Cmd := WB_None;
   Sta.Dir.Dirty := false;
   Sta.Dir.HeadVld := false;
-  Sta.MemData := Sta.WbMsg.Data;
 endrule;
 
 rule "NI_FAck"
@@ -673,7 +635,6 @@ begin
     Sta.Dir.ShrSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
     Sta.Dir.InvSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
   end;
-  Sta.MemData := Sta.ShWbMsg.Data;
 endrule;
 
 ruleset src : NODE do
