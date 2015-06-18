@@ -68,14 +68,10 @@ let concrete_rule_2_rule_inst cr =
   let ConcreteRule(r, _) = cr in
   r
 
-(* Convert property to concrete property *)
-let prop_2_concrete property ps =
-  List.map ps ~f:(fun params -> concrete_prop property params)
-
 (* Convert concrete property to formula *)
 let concrete_prop_2_form cprop =
-  let ConcreteProp(property, p) = cprop in
-  let Prop(_, _, form) = apply_prop property ~p in
+  let ConcreteProp(property, _) = cprop in
+  let Prop(_, _, form) = property in
   form
 
 (* Convert formula to concrete property *)
@@ -83,8 +79,9 @@ let form_2_concreate_prop ?(id=0) form =
   let new_inv_name_base = "inv__" in
   (* Generate names for new invariants found *)
   let next_inv_name id = sprintf "%s%d" new_inv_name_base id in
-  let (pds, pfs, form') = Generalize.form_act (normalize form ~types:!type_defs) in
-  let property = prop (next_inv_name id) pds form' in
+  let normalized = normalize form ~types:!type_defs in
+  let (_pds, pfs, _form') = Generalize.form_act normalized in
+  let property = prop (next_inv_name id) [] normalized in
   concrete_prop property pfs
 
 (* Convert statements to a list of assignments *)
@@ -591,7 +588,7 @@ let find ~protocol:{name; types; vardefs; init; rules; properties} () =
     vardefs;
     init;
     rules = List.map crules ~f:(fun (ConcreteRule(r, _)) -> r);
-    properties
+    properties = List.map cinvs ~f:(fun (ConcreteProp(property, _)) -> property)
   }) 
   in
   let result = tabular_rules_cinvs crules cinvs in

@@ -350,18 +350,7 @@ module Smv = struct
     sprintf "SPEC\n  AG (!%s)" (form_act f)
 
   let protocol_act {name=_; types; vardefs; init; rules; properties} =
-    let property_strs = List.map properties ~f:(fun property ->
-      let Prop(_, pds, _) = property in
-      if not (List.is_empty pds) then
-        let ps = cart_product_with_paramfix pds types in
-        List.map ps ~f:(fun p -> apply_prop property ~p)
-        |> List.map ~f:prop_act
-        |> String.concat ~sep:"\n"
-      else begin
-        prop_act property
-      end
-    )
-    in
+    let property_strs = List.map properties ~f:prop_act in
     let rule_proc_insts, rule_procs =List.unzip (List.map rules ~f:rule_act) in
     let vardef_str = 
       sprintf "VAR\n%s" (String.concat ~sep:"\n" (List.map vardefs ~f:(vardef_act ~types)))
