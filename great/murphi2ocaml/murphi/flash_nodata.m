@@ -6,7 +6,7 @@ const
 
 type
 
-  NODE : 1..NODE_NUM;
+  NODE : 0..NODE_NUM;
   DATA : 1..DATA_NUM;
 
   CACHE_STATE : enum {CACHE_I, CACHE_S, CACHE_E};
@@ -83,16 +83,6 @@ type
     WbMsg : WB_MSG;
     ShWbMsg : SHWB_MSG;
     NakcMsg : NAKC_MSG;
-    CurrData : DATA;
-    PrevData : DATA;
-    LastWrVld : boolean;
-    LastWrPtr : NODE;
-    Requester : NODE;
-    Collecting : boolean;
-    FwdCmd : UNI_CMD;
-    FwdSrc : NODE;
-    LastInvAck : NODE;
-    LastOtherInvAck : NODE;
   end;
 
 var
@@ -123,11 +113,6 @@ startstate "Init"
     Sta.InvMsg[p].Cmd := INV_None;
     Sta.RpMsg[p].Cmd := RP_None;
   end;
-  Sta.CurrData := d;
-  Sta.PrevData := d;
-  Sta.LastWrVld := false;
-  Sta.Collecting := false;
-  Sta.FwdCmd := UNI_None;
 endstartstate;
 endruleset;
 
@@ -138,9 +123,6 @@ rule "Store"
 ==>
 begin
   Sta.Proc[src].CacheData := data;
-  Sta.CurrData := data;
-  Sta.LastWrVld := true;
-  Sta.LastWrPtr := src;
 endrule;
 endruleset;
 
@@ -167,11 +149,6 @@ begin
   Sta.Dir.Pending := true;
   Sta.UniMsg[Home].Cmd := UNI_Get;
   Sta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
-  if (Sta.Dir.HeadPtr != Home) then
-    Sta.FwdCmd := UNI_Get;
-  end;
-  Sta.Requester := Home;
-  Sta.Collecting := false;
 endrule;
 
 rule "PI_Local_Get_Put"
@@ -215,11 +192,6 @@ begin
   Sta.Dir.Pending := true;
   Sta.UniMsg[Home].Cmd := UNI_GetX;
   Sta.UniMsg[Home].Proc := Sta.Dir.HeadPtr;
-  if (Sta.Dir.HeadPtr != Home) then
-    Sta.FwdCmd := UNI_GetX;
-  end;
-  Sta.Requester := Home;
-  Sta.Collecting := false;
 endrule;
 
 rule "PI_Local_GetX_PutX"
@@ -247,9 +219,6 @@ begin
         Sta.InvMsg[p].Cmd := INV_None;
       end;
     end;
-    Sta.Collecting := true;
-    Sta.PrevData := Sta.CurrData;
-    Sta.LastOtherInvAck := Sta.Dir.HeadPtr;
   end;
   Sta.Proc[Home].ProcCmd := NODE_None;
   Sta.Proc[Home].InvMarked := false;
@@ -356,11 +325,6 @@ begin
   Sta.Dir.Pending := true;
   Sta.UniMsg[src].Cmd := UNI_Get;
   Sta.UniMsg[src].Proc := Sta.Dir.HeadPtr;
-  if (Sta.Dir.HeadPtr != Home) then
-    Sta.FwdCmd := UNI_Get;
-  end;
-  Sta.Requester := src;
-  Sta.Collecting := false;
 endrule;
 endruleset;
 
@@ -388,7 +352,11 @@ begin
       Sta.Dir.ShrVld := true;
       Sta.Dir.ShrSet[src] := true;
       for p : NODE do
-        Sta.Dir.InvSet[p] := (p = src) | Sta.Dir.ShrSet[p];
+        if (p = src) | Sta.Dir.ShrSet[p] then
+        Sta.Dir.InvSet[p] := true;
+        else
+        Sta.Dir.InvSet[p] := false;
+          end;
       end;
     else
       Sta.Dir.HeadVld := true;
@@ -412,8 +380,6 @@ begin
   Sta.UniMsg[src].Cmd := UNI_Nak;
   Sta.UniMsg[src].Proc := dst;
   Sta.NakcMsg.Cmd := NAKC_Nakc;
-  Sta.FwdCmd := UNI_None;
-  Sta.FwdSrc := src;
 endrule;
 endruleset;
 
@@ -434,8 +400,6 @@ begin
     Sta.ShWbMsg.Proc := src;
     Sta.ShWbMsg.Data := Sta.Proc[dst].CacheData;
   end;
-  Sta.FwdCmd := UNI_None;
-  Sta.FwdSrc := src;
 endrule;
 endruleset;
 
@@ -465,11 +429,6 @@ begin
   Sta.Dir.Pending := true;
   Sta.UniMsg[src].Cmd := UNI_GetX;
   Sta.UniMsg[src].Proc := Sta.Dir.HeadPtr;
-  if (Sta.Dir.HeadPtr != Home) then
-    Sta.FwdCmd := UNI_GetX;
-  end;
-  Sta.Requester := src;
-  Sta.Collecting := false;
 endrule;
 endruleset;
 
@@ -546,16 +505,6 @@ begin
         Sta.Proc[Home].InvMarked := true;
       end;
     end;
-    Sta.Requester := src;
-    Sta.Collecting := true;
-    Sta.PrevData := Sta.CurrData;
-    if (Sta.Dir.HeadPtr != src) then
-      Sta.LastOtherInvAck := Sta.Dir.HeadPtr;
-    else
-      for p : NODE do
-        if (p != src & Sta.Dir.ShrSet[p]) then Sta.LastOtherInvAck := p; end;
-      end;
-    end;
   end;
 endrule;
 endruleset;
@@ -571,8 +520,6 @@ begin
   Sta.UniMsg[src].Cmd := UNI_Nak;
   Sta.UniMsg[src].Proc := dst;
   Sta.NakcMsg.Cmd := NAKC_Nakc;
-  Sta.FwdCmd := UNI_None;
-  Sta.FwdSrc := src;
 endrule;
 endruleset;
 
@@ -592,8 +539,6 @@ begin
     Sta.ShWbMsg.Cmd := SHWB_FAck;
     Sta.ShWbMsg.Proc := src;
   end;
-  Sta.FwdCmd := UNI_None;
-  Sta.FwdSrc := src;
 endrule;
 endruleset;
 
@@ -686,20 +631,11 @@ rule "NI_InvAck"
 begin
   Sta.InvMsg[src].Cmd := INV_None;
   Sta.Dir.InvSet[src] := false;
-  if (exists p : NODE do p != src & Sta.Dir.InvSet[p] end) then
-    Sta.LastInvAck := src;
-    for p : NODE do
-      if (p != src & Sta.Dir.InvSet[p]) then
-        Sta.LastOtherInvAck := p;
-      end;
-    end;
-  else
+  if (forall p : NODE do p = src | !Sta.Dir.InvSet[p] end) then
     Sta.Dir.Pending := false;
     if (Sta.Dir.Local & !Sta.Dir.Dirty) then
       Sta.Dir.Local := false;
     end;
-    Sta.Collecting := false;
-    Sta.LastInvAck := src;
   end;
 endrule;
 endruleset;
@@ -759,63 +695,6 @@ invariant "CacheStateProp"
     p != q ->
     !(Sta.Proc[p].CacheState = CACHE_E & Sta.Proc[q].CacheState = CACHE_E)
   end end;
-
-invariant "CacheDataProp"
-  forall p : NODE do
-    ( Sta.Proc[p].CacheState = CACHE_E ->
-      Sta.Proc[p].CacheData = Sta.CurrData ) &
-    ( Sta.Proc[p].CacheState = CACHE_S ->
-      ( Sta.Collecting -> Sta.Proc[p].CacheData = Sta.PrevData ) &
-      (!Sta.Collecting -> Sta.Proc[p].CacheData = Sta.CurrData ) )
-  end;
-
-invariant "MemDataProp"
-  !Sta.Dir.Dirty -> Sta.MemData = Sta.CurrData;
-
-
-
-invariant "lemma1"
-  forall h: NODE do forall i: NODE do
-    h = Home & Sta.Proc[i].CacheState = CACHE_E ->
-    Sta.Dir.Dirty & Sta.WbMsg.Cmd != WB_Wb & Sta.ShWbMsg.Cmd != SHWB_ShWb 
-    & Sta.UniMsg[h].Cmd != UNI_Put & 
-    forall j: NODE do Sta.UniMsg[j].Cmd != UNI_PutX end &
-    forall j: NODE do j != i -> Sta.Proc[j].CacheState != CACHE_E end
-  end end; 
-
-invariant "lemma2"
-  forall h: NODE do forall i: NODE do forall j: NODE do
-    h = Home & i != j & j != h & Sta.UniMsg[i].Cmd = UNI_Get 
-    & Sta.UniMsg[i].Proc = j
-    -> Sta.Dir.Pending & !Sta.Dir.Local & Sta.Requester = i 
-    & Sta.FwdCmd = UNI_Get
-  end end end;
-
-invariant "lemma3"
-  forall h: NODE do forall i: NODE do forall j: NODE do
-    h = Home & i != j & j != h & Sta.UniMsg[i].Cmd = UNI_GetX 
-    & Sta.UniMsg[i].Proc = j
-    -> Sta.Dir.Pending & !Sta.Dir.Local & Sta.Requester = i 
-    & Sta.FwdCmd = UNI_GetX
-  end end end;
-
-invariant "lemma4"
-  forall h: NODE do forall i: NODE do
-    h = Home & i != h & Sta.InvMsg[i].Cmd = INV_InvAck ->
-    Sta.Dir.Pending & Sta.Collecting & Sta.NakcMsg.Cmd = NAKC_None 
-    & Sta.ShWbMsg.Cmd = SHWB_None
-    & forall j: NODE do
-      (Sta.UniMsg[j].Cmd = UNI_Get | Sta.UniMsg[j].Cmd = UNI_GetX 
-      -> Sta.UniMsg[j].Proc = h)
-      & (Sta.UniMsg[j].Cmd = UNI_PutX -> Sta.UniMsg[j].Proc = h 
-        & Sta.Requester = j)
-  end end end;
-
-invariant "lemma5"
-  forall i: NODE do 
-    Sta.Proc[i].CacheState = CACHE_E -> Sta.Proc[i].CacheData = Sta.CurrData end;
-
-
 
 
 
