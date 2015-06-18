@@ -609,12 +609,14 @@ class StartState(object):
             params, statements = '', re.findall(init_p2, text, re.S)[0]
         param_types, _ = analyzeParams(params)
         for k, v in param_types.items():
-            param_types[k] = typenames[v][0]
+            param_types[k] = (v, typenames[v][0])
         statement = Statement(statements, param_types, consts)
         statement_value = statement.value
         for k, v in param_types.items():
-            statement_value = statement_value.replace('param (paramref \"%s\")'%k, 'const %s'%v)
-            statement_value = statement_value.replace('paramref \"%s\"'%k, v)
+            statement_value = statement_value.replace('param (paramref \"%s\")'%k, 
+                'param (paramfix "%s" "%s" %s)'%(k, v[0],v[1]))
+            statement_value = statement_value.replace('paramref \"%s\"'%k, 
+                'paramfix "%s" "%s" %s'%(k, v[0],v[1]))
         self.value = 'let init = %s'%statement_value
 
 
