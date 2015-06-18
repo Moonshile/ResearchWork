@@ -108,7 +108,7 @@ let vardefs = List.concat [
   record_def "Sta" [] _STATE
 ]
 
-let _Home = paramfix "Home" "NODE" (intc 0)
+let _Home = paramfix "Home" "NODE" (intc 3)
 
 let init = (parallel [(assign (record [global "Sta"; global "Dir"; global "Pending"]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; global "Local"]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; global "Dirty"]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; global "HeadVld"]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; global "ShrVld"]) (const (boolc false))); (assign (record [global "Sta"; global "WbMsg"; global "Cmd"]) (const _WB_None)); (assign (record [global "Sta"; global "ShWbMsg"; global "Cmd"]) (const _SHWB_None)); (assign (record [global "Sta"; global "NakcMsg"; global "Cmd"]) (const _NAKC_None)); (forStatement (parallel [(assign (record [global "Sta"; arr "Proc" [paramref "p"]; global "ProcCmd"]) (const _NODE_None)); (assign (record [global "Sta"; arr "Proc" [paramref "p"]; global "InvMarked"]) (const (boolc false))); (assign (record [global "Sta"; arr "Proc" [paramref "p"]; global "CacheState"]) (const _CACHE_I)); (assign (record [global "Sta"; global "Dir"; arr "ShrSet" [paramref "p"]]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; arr "InvSet" [paramref "p"]]) (const (boolc false))); (assign (record [global "Sta"; arr "UniMsg" [paramref "p"]; global "Cmd"]) (const _UNI_None)); (assign (record [global "Sta"; arr "InvMsg" [paramref "p"]; global "Cmd"]) (const _INV_None)); (assign (record [global "Sta"; arr "RpMsg" [paramref "p"]; global "Cmd"]) (const _RP_None))]) [paramdef "p" "NODE"])])
 
