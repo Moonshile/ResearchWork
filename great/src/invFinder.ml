@@ -577,8 +577,15 @@ let find ~protocol:{name; types; vardefs; init; rules; properties} () =
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
     rule_2_concrete r ps
     |> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
-      concrete_rule (rule n pd (simplify f) s) p
+      let simplified_g = simplify f in
+      match simplified_g with
+      | OrList(fl) ->
+        let indice = up_to (List.length fl) in
+        let gen_new_name name i = sprintf "%s_part_%d" name i in
+        List.map2_exn fl indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
+      | _ -> [concrete_rule (rule n pd simplified_g s) p]
     )
+    |> List.concat
     |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), p)) -> is_satisfiable f)
   in
   let crules = List.concat (List.map rules ~f:inst_rule) in
