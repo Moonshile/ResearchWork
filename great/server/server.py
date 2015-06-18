@@ -54,7 +54,7 @@ def serv(conn, addr):
                 data += d
         except socket.timeout, e:
             pass
-    if __verbose: print data
+    if __verbose: print data[:10240]
     cmd = data.split(',')
     if cmd[0] == COMPUTE_REACHABLE:
         """
