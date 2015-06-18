@@ -86,6 +86,8 @@ module Trans = struct
   *)
   exception Unexhausted_inst
 
+  exception Unexhausted_flatten
+
   (* Translate data structures from Loach to Paramecium *)
 
   let rec trans_statement ~types statement =
@@ -113,12 +115,43 @@ module Trans = struct
         let instantiated = parallel (List.map ps ~f:(fun p -> apply_statement ~p s)) in
         trans_statement ~types instantiated
 
+  let flatten_statement s =
+    let rec wrapper s =
+      match s with
+      | Paramecium.Assign(_) -> [s]
+      | Paramecium.Parallel(ss) -> List.concat (List.map ss ~f:wrapper)
+    in
+    Paramecium.parallel (wrapper s)
+
+  (* remove duplicated assignments to a var, the last assignment will be reserved *)
+  let remove_dup_assigns s =
+    let flattened = flatten_statement s in
+    let do_work s m =
+      match s with
+      | Paramecium.Assign(v, _) -> String.Map.add m ~key:(ToStr.Debug.var_act v) ~data:s
+      | _ -> raise Unexhausted_flatten
+    in
+    match flattened with
+    | Paramecium.Assign(_) -> raise Unexhausted_flatten
+    | Paramecium.Parallel(ss) ->
+      let rec wrapper ss m =
+        match ss with
+        | [] -> m
+        | s::ss' -> wrapper ss' (do_work s m)
+      in
+      let m = wrapper ss String.Map.empty in
+      Paramecium.parallel (List.map (String.Map.keys m) ~f:(fun k -> String.Map.find_exn m k))
+
   let trans_rule ~types r =
     match r with
     | Rule(n, p, f, s) ->
-      let guarded_s = trans_statement ~types s in
+      let guarded_s = 
+        trans_statement ~types s
+        |> List.map ~f:(fun (g, s) -> g, remove_dup_assigns s)
+        |> List.filter ~f:(fun (_, s) -> 
+          match s with | Paramecium.Parallel([]) -> false | _ -> true)
+      in
       let indice = up_to (List.length guarded_s) in
-      (* TODO generate a new rule name??? *)
       List.map2_exn guarded_s indice ~f:(fun (g, s) i -> 
         Paramecium.rule (sprintf "%s_%d" n i) p (andList [f; g]) s)
 

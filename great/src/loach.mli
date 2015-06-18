@@ -66,6 +66,8 @@ module Trans : sig
   *)
   exception Unexhausted_inst
 
+  exception Unexhausted_flatten
+
   (** Translate language of Loach to Paramecium
 
       @param loach cache coherence protocol written in Loach
