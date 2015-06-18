@@ -283,7 +283,24 @@ let name_match params defs =
 
 (** Apply rule with param *)
 let apply_rule r ~p =
-  let Rule(name, paramdefs, f, s) = r in
+  let Rule(n, paramdefs, f, s) = r in
+  let name =
+    if p = [] then n
+    else begin
+      let const_act c =
+        match c with
+        | Intc(i) -> Int.to_string i
+        | Strc(s) -> String.lowercase s
+        | Boolc(b) -> String.uppercase (Bool.to_string b)
+      in
+      let paramref_act pr =
+        match pr with
+        | Paramfix(_, _, c) -> sprintf "[%s]" (const_act c)
+        | Paramref(_) -> raise Unexhausted_inst
+      in
+      sprintf "%s%s" n (String.concat (List.map p ~f:paramref_act))
+    end
+  in
   if name_match p paramdefs then
     rule name [] (apply_form f ~p) (apply_statement s ~p)
   else

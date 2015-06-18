@@ -4,9 +4,7 @@
     @author Kaiqiang Duan <duankq@ios.ac.cn>
 *)
 
-(** Raises when there is an error in the formula to be judged *)
-exception Error_in_formula
-exception Name_not_known
+exception Protocol_name_not_set
 
 val set_smt_context : string -> string -> bool
 

@@ -5,7 +5,6 @@
 *)
 
 open Utils
-open Smt
 open Smv
 open Formula
 open Paramecium
@@ -569,11 +568,9 @@ let result_to_str (_, invs, relations) =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol () =
-  let {name; types; vardefs; init=_; rules; properties} = protocol in
+let find ~protocol:{name; types; vardefs; init; rules; properties} () =
   type_defs := types;
-  let _smt_context = set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
-  let _smv_context = set_smv_context name (ToStr.Smv.protocol_act protocol) in
+  let _smt_context = Smt.set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let cinvs = 
     List.concat (List.map properties ~f:simplify_prop)
     |> List.map ~f:form_2_concreate_prop
@@ -582,10 +579,20 @@ let find ~protocol () =
     let Paramecium.Rule(_, paramdefs, _, _) = r in
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
     rule_2_concrete r ps
-    |> List.filter ~f:(fun (ConcreteRule(r, p)) ->
-      let Rule(_, _, f, _) = r in
-      not (is_tautology (neg f))
+    |> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
+      concrete_rule (rule n pd (simplify f) s) p
     )
+    |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), p)) -> is_satisfiable f)
   in
-  let result = tabular_rules_cinvs (List.concat (List.map rules ~f:inst_rule)) cinvs in
+  let crules = List.concat (List.map rules ~f:inst_rule) in
+  let _smv_context = Smv.set_smv_context name (ToStr.Smv.protocol_act {
+    name;
+    types;
+    vardefs;
+    init;
+    rules = List.map crules ~f:(fun (ConcreteRule(r, _)) -> r);
+    properties
+  }) 
+  in
+  let result = tabular_rules_cinvs crules cinvs in
   printf "%s\n" (result_to_str result);

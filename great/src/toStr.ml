@@ -321,7 +321,7 @@ module Smv = struct
         |> String.concat ~sep:"\n"
       end
 
-  let rule_act r p =
+  let rule_act r =
     let escape n =
       String.substr_replace_all n ~pattern:"[" ~with_:"__"
       |> String.substr_replace_all ~pattern:"]" ~with_:""
@@ -333,12 +333,7 @@ module Smv = struct
     let vars_str = String.concat vars ~sep:", " in
     (* rule process instance *)
     let Rule(n, _, f, s) = r in
-    let name = 
-      if p = [] then n
-      else begin
-        sprintf "%s%s" n (String.concat (List.map p ~f:paramref_act))
-      end
-      |> escape
+    let name = escape n
     in
     let rule_proc_inst = sprintf "%s : process Proc__%s(%s);" name name vars_str in
     (* rule process *)
@@ -355,17 +350,6 @@ module Smv = struct
     sprintf "SPEC\n  AG (!%s)" (form_act f)
 
   let protocol_act {name=_; types; vardefs; init; rules; properties} =
-    let rule_proccesses = List.map rules ~f:(fun r ->
-      let Rule(_, pds, _, _) = r in
-      let ps = cart_product_with_paramfix pds types in
-      let rule_proc_insts, rule_procs =
-        List.map ps ~f:(fun p -> (apply_rule r ~p, p))
-        |> List.filter ~f:(fun (Rule(_, _, f, _), p) -> 
-          Smt.is_satisfiable ~quiet:true (Smt2.form_of f))
-        |> List.map ~f:(fun (r, p) -> rule_act r p)
-        |> List.unzip
-      in (String.concat ~sep:"\n" rule_proc_insts, String.concat ~sep:"\n\n" rule_procs)
-    ) in
     let property_strs = List.map properties ~f:(fun property ->
       let Prop(_, pds, _) = property in
       if not (List.is_empty pds) then
@@ -376,8 +360,9 @@ module Smv = struct
       else begin
         prop_act property
       end
-    ) in
-    let rule_proc_insts, rule_procs = List.unzip rule_proccesses in
+    )
+    in
+    let rule_proc_insts, rule_procs =List.unzip (List.map rules ~f:rule_act) in
     let vardef_str = 
       sprintf "VAR\n%s" (String.concat ~sep:"\n" (List.map vardefs ~f:(vardef_act ~types)))
     in

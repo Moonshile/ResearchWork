@@ -9,8 +9,7 @@ open Utils
 open Core.Std
 
 (* Raises when there are some errors in the NuSMV code *)
-exception Error_in_smv
-exception Name_not_known
+exception Protocol_name_not_set
 
 let protocol_name = ref ""
 
@@ -37,7 +36,7 @@ let is_inv_by_smv ?(quiet=true) inv =
   match Hashtbl.find table inv with
   | Some (r) -> r
   | None -> 
-    if (!protocol_name) = "" then raise Name_not_known
+    if (!protocol_name) = "" then raise Protocol_name_not_set
     else begin
       let r = Client.Smv.check_inv (!protocol_name) inv in
       (Hashtbl.replace table ~key:inv ~data:r); r

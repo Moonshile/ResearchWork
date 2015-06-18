@@ -5,8 +5,7 @@
 *)
 
 (* Raises when there are some errors in the NuSMV code *)
-exception Error_in_smv
-exception Name_not_known
+exception Protocol_name_not_set
 
 val set_smv_context : string -> string -> int
 

@@ -9,8 +9,7 @@ open Utils
 open Core.Std
 
 (** Raises when there is an error in the formula to be judged *)
-exception Error_in_formula
-exception Name_not_known
+exception Protocol_name_not_set
 
 let protocol_name = ref ""
 
@@ -30,7 +29,7 @@ let is_satisfiable ?(quiet=true) f =
   match Hashtbl.find table f with
   | Some (r) -> r
   | None -> 
-    if (!protocol_name) = "" then raise Name_not_known
+    if (!protocol_name) = "" then raise Protocol_name_not_set
     else begin
       let r = Client.Smt2.check (!protocol_name) f in
       Hashtbl.replace table ~key:f ~data:r; r

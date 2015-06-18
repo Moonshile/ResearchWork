@@ -16,6 +16,8 @@ open Paramecium
 *)
 val is_tautology : ?quiet:bool -> formula -> bool
 
+val is_satisfiable : ?quiet:bool -> formula -> bool
+
 (** Cast a formula to a list of formulae with and relation between them *)
 val flat_and_to_list : formula -> formula list
 
