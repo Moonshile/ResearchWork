@@ -632,8 +632,13 @@ begin
   Sta.Dir.Dirty := false;
   Sta.Dir.ShrVld := true;
   for p : NODE do
-    Sta.Dir.ShrSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
-    Sta.Dir.InvSet[p] := (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p];
+    if (p = Sta.ShWbMsg.Proc) | Sta.Dir.ShrSet[p] then
+      Sta.Dir.ShrSet[p] := true;
+      Sta.Dir.InvSet[p] := true;
+    else
+      Sta.Dir.ShrSet[p] := false;
+      Sta.Dir.InvSet[p] := false;
+    end;
   end;
 endrule;
 
