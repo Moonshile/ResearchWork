@@ -178,13 +178,18 @@ let normalize form ~types =
           | None -> (
               let vname = name_of_param pf in
               let tname = typename_of_paramfix pf in
-              match range with
-              | [] -> (
-                  match name2type ~tname ~types with
-                  | [] -> raise Empty_exception
-                  | v::range' -> gen_map pfs' range' (Map.add m ~key ~data:(paramfix vname tname v))
-                )
-              | v::range' -> gen_map pfs' range' (Map.add m ~key ~data:(paramfix vname tname v))
+              (* 暂时特殊处理参数0 *)
+              if pf = paramfix vname tname (intc 0) then
+                gen_map pfs' range (Map.add m ~key ~data:(paramfix vname tname (intc 0)))
+              else begin
+                match range with
+                | [] -> (
+                    match List.filter (name2type ~tname ~types) ~f:(fun v -> not (v = intc 0)) with
+                    | [] -> raise Empty_exception
+                    | v::range' -> gen_map pfs' range' (Map.add m ~key ~data:(paramfix vname tname v))
+                  )
+                | v::range' -> gen_map pfs' range' (Map.add m ~key ~data:(paramfix vname tname v))
+              end
             )
           | Some(_) -> gen_map pfs' range m
         )
