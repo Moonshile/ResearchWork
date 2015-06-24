@@ -577,16 +577,28 @@ class RuleSet(object):
     def __init__(self, text, consts):
         super(RuleSet, self).__init__()
         rules = []
+        rules += self.rulesets(text, consts)
+        rules += self.singlerules(text, consts, map(lambda r: r.name, rules))
+        self.value = '%s\n\nlet rules = [%s]'%(
+            '\n\n'.join(map(lambda r: r.value, rules)), 
+            '; '.join(map(lambda r: r.name, rules))
+        )
+
+    def rulesets(self, text, consts):
+        rules = []
         pattern = re.compile(r'ruleset(.*?)do(.*?)endruleset\s*;', re.S)
         rulesets = pattern.findall(text)
         for params, rules_str in rulesets:
             param_name_dict, param_defs = analyzeParams(params)
             rule_texts = re.findall(r'(rule.*?endrule;)', rules_str, re.S)
             rules += map(lambda r: Rule(r, param_defs, param_name_dict, consts), rule_texts)
-        self.value = '%s\n\nlet rules = [%s]'%(
-            '\n\n'.join(map(lambda r: r.value, rules)), 
-            '; '.join(map(lambda r: r.name, rules))
-        )
+        return rules
+
+    def singlerules(self, text, consts, ruleset_names):
+        pattern = re.compile(r'(rule.*?endrule\s*;)', re.S)
+        rule_texts = pattern.findall(text)
+        rules = map(lambda r: Rule(r, [], {}, consts), rule_texts)
+        return filter(lambda r: r.name not in ruleset_names, rules)
 
 
 

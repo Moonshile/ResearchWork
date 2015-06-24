@@ -180,7 +180,7 @@ let normalize form ~types =
               let tname = typename_of_paramfix pf in
               (* 暂时特殊处理参数0 *)
               if pf = paramfix vname tname (intc 0) then
-                gen_map pfs' range (Map.add m ~key ~data:(paramfix vname tname (intc 0)))
+                gen_map pfs' range (Map.add m ~key ~data:pf)
               else begin
                 match range with
                 | [] -> (
