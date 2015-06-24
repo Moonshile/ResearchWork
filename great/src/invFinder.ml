@@ -61,7 +61,11 @@ let type_defs = ref []
 
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ps =
-  List.map ps ~f:(fun p -> concrete_rule (apply_rule r ~p) p)
+  if List.length ps = 0 then
+    [concrete_rule r []]
+  else begin
+    List.map ps ~f:(fun p -> concrete_rule (apply_rule r ~p) p)
+  end
 
 (* Convert concrete rule to rule instances *)
 let concrete_rule_2_rule_inst cr =
@@ -586,7 +590,7 @@ let find ~protocol:{name; types; vardefs; init; rules; properties} () =
       | _ -> [concrete_rule (rule n pd simplified_g s) p]
     )
     |> List.concat
-    |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), p)) -> is_satisfiable f)
+    |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)
   in
   let crules = List.concat (List.map rules ~f:inst_rule) in
   let _smv_context = Smv.set_smv_context name (ToStr.Smv.protocol_act {
