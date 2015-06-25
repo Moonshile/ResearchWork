@@ -574,10 +574,16 @@ let result_to_str (_, invs, relations) =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol () =
+let find ~protocol ?(smv="") () =
   let {name; types; vardefs; init=_init; rules; properties} = Loach.Trans.act protocol in
   let _smt_context = Smt.set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
-  let _smv_context = Smv.set_smv_context name (Loach.ToSmv.protocol_act protocol) in
+  let _smv_context =
+    if smv = "" then
+      Smv.set_smv_context name (Loach.ToSmv.protocol_act protocol)
+    else begin
+      Smv.set_smv_context name smv
+    end
+  in
   type_defs := types;
   let cinvs = 
     List.concat (List.map properties ~f:simplify_prop)

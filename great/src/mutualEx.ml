@@ -91,15 +91,16 @@ let coherence =
   let name = "coherence" in
   let params = [defi; defj] in
   let formula =
+    let pre = neg (eqn (param i) (param j)) in
     let f1 = eqn (var (arr "n" [i])) _C in
     let f2 = eqn (var (arr "n" [j])) _C in
-    andList [f1; f2]
+    imply pre (imply f1 (neg f2))
   in
   prop name params formula
 
 let properties = [coherence]
 
-let protocol = Trans.act {
+let protocol = {
   name = "mutualEx";
   types;
   vardefs;
@@ -108,5 +109,4 @@ let protocol = Trans.act {
   properties;
 };;
 
-let prop_params = [paramfix "i" "node" (intc 1); paramfix "j" "node" (intc 2)] in
-find ~protocol ~prop_params:[prop_params] ();;
+find ~protocol ();;
