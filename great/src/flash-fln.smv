@@ -49,7 +49,8 @@ Sta.WbMsg.Proc : {0, 1, 2, 3};
 Sta.ShWbMsg.Cmd : {shwb_none, shwb_shwb, shwb_fack};
 Sta.ShWbMsg.Proc : {0, 1, 2, 3};
 Sta.NakcMsg.Cmd : {nakc_none, nakc_nakc};
-
+Requester : {0, 1, 2, 3};
+FwdCmd : {uni_none, uni_get, uni_getx, uni_put, uni_putx, uni_nak};
 
 --------------------------------------------------------------------------------------
   N0_Store : process Store(0, 0, 0, 1, 2, 3, Sta.Dir.Pending, 
@@ -1696,6 +1697,9 @@ esac;
 init(Sta.WbMsg.Cmd) := case
 TRUE : wb_none;
 esac;
+
+init(Requester) := 0;
+init(FwdCmd) := uni_none;
 
 --------------------
 
