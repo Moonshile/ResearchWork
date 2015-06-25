@@ -510,6 +510,7 @@ let tabular_rules_cinvs crules cinvs =
       in
       let real_new_invs =
         List.concat new_invs
+        |> List.map ~f:simplify
         |> List.dedup ~compare:symmetry_form
         |> List.map ~f:(normalize ~types:(!type_defs))
         |> List.map ~f:minify_inv
@@ -518,6 +519,7 @@ let tabular_rules_cinvs crules cinvs =
           match Hashtbl.find inv_table key with 
           | None -> Hashtbl.replace inv_table ~key ~data:true; true
           | _ -> false)
+        |> List.filter ~f:(fun f -> all old_invs ~f:(fun old -> not (symmetry_form f old = 0)))
       in
       Prt.info (String.concat ~sep:"\n" (
         List.map real_new_invs ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
@@ -535,6 +537,9 @@ let tabular_rules_cinvs crules cinvs =
       wrapper cinvs'' new_inv_id' old_invs' (new_relation@relations)
   in
   let init_lib = List.map cinvs ~f:(fun cinv -> neg (concrete_prop_2_form cinv)) in
+  Prt.warning ("initial invs:\n"^String.concat ~sep:"\n" (
+    List.map init_lib ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
+  ));
   wrapper cinvs 0 init_lib []
 
 let simplify_prop property =
@@ -561,7 +566,7 @@ let result_to_str (_, invs, relations) =
     |> List.map ~f:ToStr.Smv.form_act
   in
   let relations_str = List.map relations ~f:to_str in
-  String.concat ~sep:"\n" (*relations_str@*)invs_str
+  String.concat ~sep:"\n" ((*relations_str@*)invs_str)
 
 (** Find invs and causal relations of a protocol
 
@@ -569,9 +574,11 @@ let result_to_str (_, invs, relations) =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol:{name; types; vardefs; init; rules; properties} () =
-  type_defs := types;
+let find ~protocol () =
+  let {name; types; vardefs; init=_init; rules; properties} = Loach.Trans.act protocol in
   let _smt_context = Smt.set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
+  let _smv_context = Smv.set_smv_context name (Loach.ToSmv.protocol_act protocol) in
+  type_defs := types;
   let cinvs = 
     List.concat (List.map properties ~f:simplify_prop)
     |> List.map ~f:form_2_concreate_prop
@@ -593,14 +600,5 @@ let find ~protocol:{name; types; vardefs; init; rules; properties} () =
     |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)
   in
   let crules = List.concat (List.map rules ~f:inst_rule) in
-  let _smv_context = Smv.set_smv_context name (ToStr.Smv.protocol_act {
-    name;
-    types;
-    vardefs;
-    init;
-    rules = List.map crules ~f:(fun (ConcreteRule(r, _)) -> r);
-    properties = List.map cinvs ~f:(fun (ConcreteProp(property, _)) -> property)
-  }) 
-  in
   let result = tabular_rules_cinvs crules cinvs in
   printf "%s\n" (result_to_str result);

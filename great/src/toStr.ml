@@ -297,19 +297,23 @@ module Smv = struct
       |> sprintf "(%s)"
     | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
 
-  let rec statement_act s fstr =
+  let rec statement_act ?(is_init=false) s fstr =
     match s with
     | Assign(v, e) ->
       let var_str = var_act v in
       let exp_str = exp_act e in
-      sprintf "next(%s) := case\n%s : %s;\nTRUE : %s;\nesac;" var_str fstr exp_str var_str
+      if is_init then
+        sprintf "init(%s) := case\nTRUE : %s;\nesac;" var_str exp_str
+      else begin
+        sprintf "next(%s) := case\n%s : %s;\nTRUE : %s;\nesac;" var_str fstr exp_str var_str
+      end
     | Parallel(ss) ->
       if ss = [] then "" else begin
-        List.map ss ~f:(fun s' -> statement_act s' fstr)
+        List.map ss ~f:(fun s' -> statement_act ~is_init s' fstr)
         |> String.concat ~sep:"\n"
       end
 
-  let rec init_act s =
+  (*let rec init_act s =
     match s with
     | Assign(v, e) ->
       let var_str = var_act v in
@@ -319,7 +323,8 @@ module Smv = struct
       if ss = [] then "" else begin
         List.map ss ~f:init_act
         |> String.concat ~sep:"\n"
-      end
+      end*)
+  let init_act s = statement_act ~is_init:true s "TRUE"
 
   let rule_act r =
     let escape n =

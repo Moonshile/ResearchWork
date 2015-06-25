@@ -33,6 +33,7 @@ module Smv : sig
 
   val const_act : const -> string
   val paramref_act : paramref -> string
+  val vardef_act : types:Paramecium.typedef list -> Paramecium.vardef -> string
   val var_act : var -> string
   val exp_act : exp -> string
 

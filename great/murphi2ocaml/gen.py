@@ -722,7 +722,7 @@ open Paramecium
 open Loach
 open Formula
 open InvFinder\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n
-let protocol = Trans.act {
+let protocol = {
   name = \"%s\";
   types;
   vardefs;

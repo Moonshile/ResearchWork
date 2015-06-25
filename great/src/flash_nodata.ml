@@ -347,7 +347,7 @@ let n_CacheStateProp =
 let properties = [n_CacheStateProp]
 
 
-let protocol = Trans.act {
+let protocol = {
   name = "n_flash_nodata";
   types;
   vardefs;

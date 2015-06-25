@@ -149,7 +149,7 @@ let n_DataProp =
 let properties = [n_CntrlProp; n_DataProp]
 
 
-let protocol = Trans.act {
+let protocol = {
   name = "n_g2k";
   types;
   vardefs;

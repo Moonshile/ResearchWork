@@ -69,7 +69,7 @@ let n_coherence =
 let properties = [n_coherence]
 
 
-let protocol = Trans.act {
+let protocol = {
   name = "n_mutualEx";
   types;
   vardefs;

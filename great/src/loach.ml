@@ -10,6 +10,11 @@ open Core.Std
 
 open Paramecium
 
+(** Unexhausted instantiation
+    This exception should never be raised. Once raised, There should be a bug in this tool.
+*)
+exception Unexhausted_inst
+
 (** Global variable *)
 let global name = arr name []
 
@@ -67,31 +72,89 @@ type protocol = {
   properties: prop list;
 }
 
-let rec apply_statement statement ~p =
+let rec apply_statement statement ~p ~types =
   match statement with
   | Assign(v, e) -> assign (apply_array v ~p) (apply_exp e ~p)
-  | Parallel(sl) -> parallel (List.map sl ~f:(apply_statement ~p))
-  | IfStatement(f, s) -> ifStatement (apply_form f ~p) (apply_statement s ~p)
+  | Parallel(sl) -> parallel (List.map sl ~f:(apply_statement ~p ~types))
+  | IfStatement(f, s) -> ifStatement (apply_form f ~p) (apply_statement s ~p ~types)
   | IfelseStatement(f, s1, s2) ->
-    ifelseStatement (apply_form f ~p) (apply_statement s1 ~p) (apply_statement s2 ~p)
-  | ForStatement(s, pd) -> forStatement (apply_statement s ~p) pd
+    ifelseStatement (apply_form f ~p) (apply_statement s1 ~p ~types) (apply_statement s2 ~p ~types)
+  | ForStatement(s, pd) ->
+    let s' = apply_statement s ~p ~types in
+    let pfs = cart_product_with_paramfix pd types in
+    parallel (List.map pfs ~f:(fun p -> apply_statement s' ~p ~types))
+
+let rec eliminate_for statement ~types =
+  match statement with
+  | Assign(_) -> statement
+  | Parallel(sl) -> parallel (List.map sl ~f:(eliminate_for ~types))
+  | IfStatement(f, s) -> ifStatement f (eliminate_for s ~types)
+  | IfelseStatement(f, s1, s2) ->
+    ifelseStatement f (eliminate_for s1 ~types) (eliminate_for s2 ~types)
+  | ForStatement(s, pd) ->
+    let pfs = cart_product_with_paramfix pd types in
+    parallel (List.map pfs ~f:(fun p -> apply_statement s ~p ~types))
+
+let apply_rule r ~p ~types =
+  let Rule(n, paramdefs, f, s) = r in
+  let name =
+    if p = [] then n
+    else begin
+      let const_act c =
+        match c with
+        | Intc(i) -> Int.to_string i
+        | Strc(s) -> String.lowercase s
+        | Boolc(b) -> String.uppercase (Bool.to_string b)
+      in
+      let paramref_act pr =
+        match pr with
+        | Paramfix(_, _, c) -> sprintf "[%s]" (const_act c)
+        | Paramref(_) -> raise Unexhausted_inst
+      in
+      sprintf "%s%s" n (String.concat (List.map p ~f:paramref_act))
+    end
+  in
+  rule name [] (apply_form f ~p) (apply_statement s ~p ~types)
+
+let rule_to_insts r ~types =
+  let Rule(n, pd, f, s) = r in
+  let ps = cart_product_with_paramfix pd types in
+  if pd = [] then
+    [rule n pd f (eliminate_for s ~types)]
+  else begin
+    List.map ps ~f:(fun p -> apply_rule r ~p ~types)
+  end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (*----------------------------- Translate module ---------------------------------*)
 
 (** Translate language of this level to the next lower level *)
 module Trans = struct
 
-  (** Unexhausted instantiation
-      This exception should never be raised. Once raised, There should be a bug in this tool.
-  *)
-  exception Unexhausted_inst
-
   exception Unexhausted_flatten
 
   (* Translate data structures from Loach to Paramecium *)
 
   let rec trans_statement ~types statement =
-    match statement with
+    match eliminate_for statement ~types with
     | Assign(v, e) -> [(chaos, Paramecium.assign v e)]
     | Parallel(slist) -> 
       cartesian_product (List.map slist ~f:(trans_statement ~types))
@@ -110,10 +173,7 @@ module Trans = struct
         let translated2 = trans_statement ~types s2 in
         let res2 = List.map translated2 ~f:(fun (f', s') -> (andList [neg f; f'], s')) in
         List.concat [res1; res2]
-    | ForStatement(s, paramdefs) ->
-        let ps = cart_product_with_paramfix paramdefs types in
-        let instantiated = parallel (List.map ps ~f:(fun p -> apply_statement ~p s)) in
-        trans_statement ~types instantiated
+    | ForStatement(_) -> raise Empty_exception
 
   let flatten_statement s =
     let rec wrapper s =
@@ -174,5 +234,192 @@ module Trans = struct
       rules = new_rules;
       properties = properties;
     }
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(*********************************** Module Variable Names, with Param values *****************)
+
+(** Get variable names in the components *)
+module VarNamesWithParam = struct
+  
+  open String.Set
+
+  let of_var_ref = ref (fun _x -> of_list [])
+
+  (** Names of exp *)
+  let of_exp e =
+    match e with
+    | Const(_)
+    | Param(_) -> of_list []
+    | Var(v) -> (!of_var_ref) v
+
+  (** Names of formula *)
+  let rec of_form f =
+    match f with
+    | Chaos
+    | Miracle -> of_list []
+    | Eqn(e1, e2) -> union_list [of_exp e1; of_exp e2]
+    | Neg(form) -> of_form form
+    | AndList(fl)
+    | OrList(fl) -> union_list (List.map fl ~f:(of_form))
+    | Imply(f1, f2) -> union_list [of_form f1; of_form f2]
+
+
+  let rec of_statement s =
+    match s with
+    | Assign(v, e) -> union_list [(!of_var_ref) v; of_exp e]
+    | Parallel(slist) -> union_list (List.map slist ~f:(of_statement))
+    | IfStatement(f, s) -> union_list [of_form f; of_statement s]
+    | IfelseStatement(f, s1, s2) -> union_list [of_form f; of_statement s1; of_statement s2]
+    | ForStatement(_) -> raise Empty_exception
+
+  let of_rule ~of_var r = 
+    of_var_ref := of_var;
+    match r with
+    | Rule(_, _, f, s) -> union_list [of_form f; of_statement s]
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+module ToSmv = struct
+  open ToStr.Smv
+  open Formula
+
+  let types_ref = ref []
+
+  let analyze_if statement guard =
+    let nofor = eliminate_for statement ~types:(!types_ref) in
+    let rec wrapper statement ~m ~g =
+      match statement with
+      | Assign(v, e) ->
+        let key = ToStr.Debug.var_act v in 
+        let data = (
+          match String.Map.find m key with
+          | None -> (v, [(g, e)])
+          | Some(v, exps) -> (v, (g, e)::exps)
+        ) in
+        String.Map.add m ~key ~data
+      | Parallel(sl) ->
+        let rec wrap_parallel sl m =
+          match sl with
+          | [] -> m
+          | s::sl' -> wrap_parallel sl' (wrapper s ~m ~g)
+        in
+        wrap_parallel sl m
+      | IfStatement(f, s) -> wrapper s ~m ~g:(andList [f; g])
+      | IfelseStatement(f, s1, s2) ->
+        let if_part = wrapper s1 ~m ~g:(andList [neg f; g]) in
+        wrapper s2 ~m:if_part ~g:(andList [f; g])
+      | ForStatement(_) -> raise Empty_exception
+    in
+    let m = wrapper nofor ~m:String.Map.empty ~g:guard in
+    let keys = String.Map.keys m in
+    List.map keys ~f:(fun k -> String.Map.find_exn m k)
+
+  let statement_act ?(is_init=false) statement guard =
+    let analyzed = analyze_if statement guard in
+    let trans_assigns v guarded_exps =
+      let rec wrapper guarded_exps cur_str =
+        match guarded_exps with
+        | [] -> cur_str
+        | (g, e)::guarded_exps' ->
+          let gstr = form_act (simplify g) in
+          let estr = exp_act e in
+          let cur_str' =
+            if gstr = "FALSE" then
+              cur_str
+            else begin
+              sprintf "%s%s : %s;\n" cur_str gstr estr
+            end
+          in
+          if gstr = "TRUE" then
+            cur_str'
+          else begin
+            wrapper guarded_exps' cur_str'
+          end
+      in
+      let vstr = var_act v in
+      let conditions = wrapper guarded_exps "" in
+      if is_init then
+        sprintf "init(%s) := case\n%sesac;" vstr conditions
+      else begin
+        sprintf "next(%s) := case\n%sTRUE : %s;\nesac;" vstr conditions vstr
+      end
+    in
+    List.map analyzed ~f:(fun (v, guarded_exps) -> trans_assigns v guarded_exps)
+    |> String.concat ~sep:"\n"
+
+  let init_act statement =
+    statement_act statement ~is_init:true chaos
+
+  let rule_act r =
+    let escape n =
+      String.substr_replace_all n ~pattern:"[" ~with_:"__"
+      |> String.substr_replace_all ~pattern:"]" ~with_:""
+      |> String.substr_replace_all ~pattern:"." ~with_:"__"
+    in
+    let vars = String.Set.to_list (VarNamesWithParam.of_rule r ~of_var:(fun v ->
+      String.Set.of_list [var_act v]
+    )) in
+    let vars_str = String.concat vars ~sep:", " in
+    (* rule process instance *)
+    let Rule(n, _, f, s) = r in
+    let name = escape n
+    in
+    let rule_proc_inst = sprintf "%s : process Proc__%s(%s);" name name vars_str in
+    (* rule process *)
+    let statement_str = escape (statement_act s f) in
+    let rule_proc = 
+      sprintf "MODULE Proc__%s(%s)\nASSIGN\n%s" name (escape vars_str) statement_str
+    in
+    (* result *)
+    (rule_proc_inst, rule_proc)
+
+  let prop_act property =
+    let Prop(_, _, f) = property in
+    sprintf "SPEC\n  AG (!%s)" (form_act (simplify f))
+
+  let protocol_act {name=_; types; vardefs; init; rules; properties} =
+    types_ref := types;
+    let property_strs = [""] (* List.map properties ~f:prop_act *) in
+    let rule_insts = List.concat (List.map rules ~f:(rule_to_insts ~types)) in
+    let rule_proc_insts, rule_procs = List.unzip (List.map rule_insts ~f:(rule_act)) in
+    let vardef_str =
+      sprintf "VAR\n%s" (String.concat ~sep:"\n" (List.map vardefs ~f:(vardef_act ~types)))
+    in
+    let rule_proc_insts_str = String.concat ~sep:"\n\n" rule_proc_insts in
+    let init_str = sprintf "ASSIGN\n%s" (init_act (eliminate_for init ~types)) in
+    let prop_str = String.concat ~sep:"\n\n" property_strs in
+    let rule_procs_str = String.concat ~sep:"\n\n---------\n\n" rule_procs in
+    let strs = [vardef_str; rule_proc_insts_str; init_str; prop_str] in
+    let main_module = 
+      sprintf "MODULE main\n%s" (String.concat ~sep:"\n\n--------------------\n\n" strs)
+    in
+    sprintf "%s\n\n--------------------\n\n%s" main_module rule_procs_str
+
 
 end

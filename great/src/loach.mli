@@ -8,6 +8,11 @@
 
 open Paramecium
 
+(** Unexhausted instantiation
+    This exception should never be raised. Once raised, There should be a bug in this tool.
+*)
+exception Unexhausted_inst
+
 (** Global variable *)
 val global : string -> var
 
@@ -61,11 +66,6 @@ type protocol = {
 (** Translate language of this level to the next lower level *)
 module Trans : sig
 
-  (** Unexhausted instantiation
-      This exception should never be raised. Once raised, There should be a bug in this tool.
-  *)
-  exception Unexhausted_inst
-
   exception Unexhausted_flatten
 
   (** Translate language of Loach to Paramecium
@@ -75,3 +75,9 @@ module Trans : sig
   *)
   val act : loach:protocol -> Paramecium.protocol
 end
+
+
+module ToSmv : sig
+  val protocol_act : protocol -> string
+end
+
