@@ -356,4 +356,6 @@ let protocol = {
   properties;
 };;
 
-find ~protocol ();;
+
+
+find ~protocol ~smv:(In_channel.read_all "flash-fln.smv") ();;
