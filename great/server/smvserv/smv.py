@@ -14,7 +14,7 @@ class SMV(object):
         super(SMV, self).__init__()
         self.smv_path = smv_path
         self.process = spawn(smv_path + ' -dcx -int -old ' + smv_file)
-        self.process.expect(['NuSMV > ', EOF, TIMEOUT])
+        self.process.expect(['NuSMV\s+>\s+', EOF, TIMEOUT])
         self.diameter = None
         self.isComputing = False
 
@@ -26,11 +26,14 @@ class SMV(object):
     def query_reachable(self):
         if self.diameter:
             return self.diameter
-        computed = self.process.expect(['The diameter of the FSM is ', EOF, TIMEOUT], timeout=0)
+        computed = self.process.expect(
+            ['The\s+diameter\s+of\s+the\s+FSM\s+is ', EOF, TIMEOUT], 
+            timeout=0
+        )
         if computed == 2:
             return None
         elif computed == 0:
-            res = self.process.expect(['\.\s+NuSMV > ', EOF, TIMEOUT])
+            res = self.process.expect(['\.\s+NuSMV\s+>\s+', EOF, TIMEOUT])
             if res == 0:
                 self.diameter = self.process.before
                 return self.diameter
@@ -38,11 +41,11 @@ class SMV(object):
 
     def check(self, invariant):
         self.process.send('check_invar -p \"' + invariant + '\"\n')
-        self.process.expect(['-- invariant .* is ', 'ERROR: ', EOF, TIMEOUT], timeout=1)
+        self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT], timeout=1)
         self.process.before
-        res = self.process.expect(['\s*NuSMV > ', EOF, TIMEOUT], timeout=1)
+        res = self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=1)
         if res == 0:
-            return self.process.before
+            return self.process.before.strip()
         return '0'
 
     def exit(self):
