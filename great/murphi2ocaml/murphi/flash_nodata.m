@@ -91,6 +91,7 @@ startstate "Init"
   Sta.Dir.Local := false;
   Sta.Dir.Dirty := false;
   Sta.Dir.HeadVld := false;
+  Sta.Dir.HeadPtr := h;
   Sta.Dir.ShrVld := false;
   Sta.WbMsg.Cmd := WB_None;
   Sta.ShWbMsg.Cmd := SHWB_None;
