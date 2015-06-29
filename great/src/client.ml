@@ -9,10 +9,6 @@ open Utils;;
 
 exception Server_exception
 
-let host = UnixLabels.inet_addr_of_string "127.0.0.1"
-
-let port = 50008
-
 type request_type =
   | ERROR
   | WAITING
@@ -52,7 +48,7 @@ let str_to_request_type str =
   | "6" -> QUERY_STAND_SMT2
   | _ -> raise Empty_exception
 
-let make_request str =
+let make_request str host port =
   let sock = Unix.socket ~domain:UnixLabels.PF_INET ~kind:UnixLabels.SOCK_STREAM ~protocol:0 in
   let res = String.make 1024 '\000' in
   Unix.connect sock ~addr:(UnixLabels.ADDR_INET(host, port));
@@ -63,13 +59,13 @@ let make_request str =
 
 let command_id = ref 0
 
-let request cmd req_str =
+let request cmd req_str host port =
   let cmd  = request_type_to_str cmd in
   let cmd_id = !command_id in
   let req = sprintf "%s,%d,%s" cmd cmd_id req_str in
   let wrapped = sprintf "%d,%s" (String.length req) req in
   incr command_id; (*printf "%d\n" (!command_id);*)
-  let res = String.split (make_request wrapped) ~on:',' in
+  let res = String.split (make_request wrapped host port) ~on:',' in
   match res with
   | [] -> raise Empty_exception
   | status::res' -> 
@@ -78,13 +74,17 @@ let request cmd req_str =
     else begin (s, res') end
 
 module Smv = struct
+
+  let host = UnixLabels.inet_addr_of_string "192.168.1.33"
+
+  let port = 50008
   
   let compute_reachable name content =
-    let (status, _) = request COMPUTE_REACHABLE (sprintf "%s,%s" name content) in
+    let (status, _) = request COMPUTE_REACHABLE (sprintf "%s,%s" name content) host port in
     status = OK
 
   let query_reachable name =
-    let (status, diameter) = request QUERY_REACHABLE name in
+    let (status, diameter) = request QUERY_REACHABLE name host port in
     if status = OK then 
       match diameter with
       | "-1"::[] -> raise Server_exception
@@ -93,25 +93,29 @@ module Smv = struct
     else begin 0 end
 
   let check_inv name inv =
-    let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) in
+    let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) host port in
     match res with
     | r::[] -> Bool.of_string r
     | _ -> raise Server_exception
 
   let quit name =
-    let (s, _) = request SMV_QUIT name in
+    let (s, _) = request SMV_QUIT name host port in
     s = OK
 
 end
 
 module Smt2 = struct
 
+let host = UnixLabels.inet_addr_of_string "127.0.0.1"
+
+let port = 50008
+
   let set_context name context =
-    let (s, _) = request SET_SMT2_CONTEXT (sprintf "%s,%s" name context) in
+    let (s, _) = request SET_SMT2_CONTEXT (sprintf "%s,%s" name context) host port in
     s = OK
 
   let check name f =
-    let (_, res) = request QUERY_SMT2 (sprintf "%s,%s" name f) in
+    let (_, res) = request QUERY_SMT2 (sprintf "%s,%s" name f) host port in
     match res with
     | r::[] ->
       if r = "unsat" then false
@@ -120,7 +124,7 @@ module Smt2 = struct
     | _ -> raise Server_exception
 
   let check_stand context f =
-    let (_, res) = request QUERY_STAND_SMT2 (sprintf "%s,%s" context f) in
+    let (_, res) = request QUERY_STAND_SMT2 (sprintf "%s,%s" context f) host port in
     match res with
     | r::[] -> 
       if r = "unsat" then false
