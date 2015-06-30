@@ -223,14 +223,14 @@ module Trans = struct
     | AndList(fl) -> Paramecium.andList (List.map fl ~f:trans_formula)
     | OrList(fl) -> Paramecium.orList (List.map fl ~f:trans_formula)
     | Imply(f1, f2) -> Paramecium.imply (trans_formula f1) (trans_formula f2)
-    | ForallFormula(types, paramdefs, form) -> 
+    | ForallFormula(types, paramdefs, f) -> 
       let ps = cart_product_with_paramfix paramdefs types in
-      let form' = trans_formula form in
-      Paramecium.andList (List.map ps ~f:(fun p -> Paramecium.apply_form ~p form'))
-    | ExistFormula(types, paramdefs, form) -> 
+      let f' = trans_formula f in
+      Paramecium.andList (List.map ps ~f:(fun p -> Paramecium.apply_form ~p f'))
+    | ExistFormula(types, paramdefs, f) -> 
       let ps = cart_product_with_paramfix paramdefs types in
-      let form' = trans_formula form in
-      Paramecium.orList (List.map ps ~f:(fun p -> Paramecium.apply_form ~p form'))
+      let f' = trans_formula f in
+      Paramecium.orList (List.map ps ~f:(fun p -> Paramecium.apply_form ~p f'))
 
   let rec trans_statement ~types statement =
     match eliminate_for statement ~types with

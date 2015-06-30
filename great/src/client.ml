@@ -92,10 +92,15 @@ module Smv = struct
       | _ -> raise Server_exception
     else begin 0 end
 
-  let check_inv name inv =
+  let rec check_inv name inv =
     let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) host port in
     match res with
-    | r::[] -> Bool.of_string r
+    | r::[] -> 
+      if r = "true" || r = "false" then
+        Bool.of_string r
+      else begin
+        check_inv name inv
+      end
     | _ -> raise Server_exception
 
   let quit name =

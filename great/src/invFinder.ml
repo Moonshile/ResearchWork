@@ -516,8 +516,8 @@ let tabular_rules_cinvs crules cinvs =
         List.concat new_invs
         |> List.map ~f:simplify
         |> List.dedup ~compare:symmetry_form
-        |> List.map ~f:minify_inv
         |> List.map ~f:(normalize ~types:(!type_defs))
+        |> List.map ~f:minify_inv
         |> List.filter ~f:(fun x ->
           let key = ToStr.Smv.form_act x in
           match Hashtbl.find inv_table key with 
