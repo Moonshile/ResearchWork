@@ -463,8 +463,8 @@ let deal_with_case_3 crule cinv cons old_invs =
       let inv_str = ToStr.Smv.form_act (concrete_prop_2_form cinv) in
       let guard_str = ToStr.Smv.form_act guard in
       Prt.error (sprintf "\n\n%s, %s\nguard: %s\n%s\n" name params_str guard_str inv_str);
-      ([], miracle)
-      (*raise Empty_exception*)
+      (*[], miracle*)
+      raise Empty_exception
   in
   (new_inv, { rule = crule;
     inv = cinv;
@@ -516,8 +516,8 @@ let tabular_rules_cinvs crules cinvs =
         List.concat new_invs
         |> List.map ~f:simplify
         |> List.dedup ~compare:symmetry_form
-        |> List.map ~f:(normalize ~types:(!type_defs))
         |> List.map ~f:minify_inv
+        |> List.map ~f:(normalize ~types:(!type_defs))
         |> List.filter ~f:(fun x ->
           let key = ToStr.Smv.form_act x in
           match Hashtbl.find inv_table key with 
