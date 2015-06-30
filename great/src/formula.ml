@@ -57,7 +57,11 @@ let flat_and_to_list form =
     | Miracle
     | Eqn(_)
     | Neg(Eqn(_)) -> [form]
+    | AndList([]) -> [chaos]
+    | AndList([f]) -> [f]
     | AndList(fl) -> List.concat (List.map fl ~f:wrapper)
+    | OrList([]) -> [miracle]
+    | OrList([f]) -> [f]
     | OrList(fl) -> [form]
     | Neg(_)
     | Imply(_) -> raise Empty_exception

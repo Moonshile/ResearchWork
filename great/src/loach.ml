@@ -30,15 +30,26 @@ let record vars =
   let names, prs = List.unzip named_vars in
   arr (String.concat names ~sep:".") (List.concat prs)
 
-(** Forall formula *)
-let forallFormula ~types paramdefs form =
-  let ps = cart_product_with_paramfix paramdefs types in
-  andList (List.map ps ~f:(fun p -> apply_form ~p form))
+type formula =
+  | Chaos
+  | Miracle
+  | Eqn of exp * exp
+  | Neg of formula
+  | AndList of formula list
+  | OrList of formula list
+  | Imply of formula * formula
+  | ForallFormula of typedef list * paramdef list * formula
+  | ExistFormula of typedef list * paramdef list * formula
 
-(** Exist formula *)
-let existFormula ~types paramdefs form =
-  let ps = cart_product_with_paramfix paramdefs types in
-  orList (List.map ps ~f:(fun p -> apply_form ~p form))
+let chaos = Chaos
+let miracle = Miracle
+let eqn e1 e2 = Eqn(e1, e2)
+let neg f = Neg f
+let andList fs = AndList fs
+let orList fs = OrList fs
+let imply f1 f2 = Imply(f1, f2)
+let forallFormula ~types paramdefs form = ForallFormula(types, paramdefs, form)
+let existFormula ~types paramdefs form = ExistFormula(types, paramdefs, form)
 
 (** Assignment statements *)
 type statement =
@@ -62,6 +73,11 @@ type rule =
 
 let rule name paramdef f s = Rule(name, paramdef, f, s)
 
+type prop =
+  | Prop of string * paramdef list * formula
+
+let prop name paramdef f = Prop(name, paramdef, f)
+
 (** Represents the whole protocol *)
 type protocol = {
   name: string;
@@ -71,6 +87,18 @@ type protocol = {
   rules: rule list;
   properties: prop list;
 }
+
+let rec apply_form f ~p =
+  match f with
+  | Chaos
+  | Miracle -> f
+  | Eqn(e1, e2) -> eqn (apply_exp e1 ~p) (apply_exp e2 ~p)
+  | Neg(form) -> neg (apply_form form ~p)
+  | AndList(fl) -> andList (List.map fl ~f:(apply_form ~p))
+  | OrList(fl) -> orList (List.map fl ~f:(apply_form ~p))
+  | Imply(f1, f2) -> imply (apply_form f1 ~p) (apply_form f2 ~p)
+  | ForallFormula(types, paramdefs, form) -> forallFormula ~types paramdefs (apply_form form ~p)
+  | ExistFormula(types, paramdefs, form) -> existFormula ~types paramdefs (apply_form form ~p)
 
 let rec apply_statement statement ~p ~types =
   match statement with
@@ -116,6 +144,10 @@ let apply_rule r ~p ~types =
   in
   rule name [] (apply_form f ~p) (apply_statement s ~p ~types)
 
+let apply_prop property ~p =
+  let Prop(name, paramdefs, f) = property in
+  prop name [] (apply_form f ~p)
+
 let rule_to_insts r ~types =
   let Rule(n, pd, f, s) = r in
   let ps = cart_product_with_paramfix pd types in
@@ -125,6 +157,35 @@ let rule_to_insts r ~types =
     List.map ps ~f:(fun p -> apply_rule r ~p ~types)
   end
 
+
+let analyze_if statement guard ~types =
+  let nofor = eliminate_for statement ~types in
+  let rec wrapper statement ~m ~g =
+    match statement with
+    | Assign(v, e) ->
+      let key = ToStr.Debug.var_act v in 
+      let data = (
+        match String.Map.find m key with
+        | None -> (v, [(g, e)])
+        | Some(v, exps) -> (v, (g, e)::exps)
+      ) in
+      String.Map.add m ~key ~data
+    | Parallel(sl) ->
+      let rec wrap_parallel sl m =
+        match sl with
+        | [] -> m
+        | s::sl' -> wrap_parallel sl' (wrapper s ~m ~g)
+      in
+      wrap_parallel sl m
+    | IfStatement(f, s) -> wrapper s ~m ~g:(andList [f; g])
+    | IfelseStatement(f, s1, s2) ->
+      let if_part = wrapper s1 ~m ~g:(andList [neg f; g]) in
+      wrapper s2 ~m:if_part ~g:(andList [f; g])
+    | ForStatement(_) -> raise Empty_exception
+  in
+  let m = wrapper nofor ~m:String.Map.empty ~g:guard in
+  let keys = String.Map.keys m in
+  List.map keys ~f:(fun k -> String.Map.find_exn m k)
 
 
 
@@ -153,25 +214,49 @@ module Trans = struct
 
   (* Translate data structures from Loach to Paramecium *)
 
+  let rec trans_formula form =
+    match form with
+    | Chaos -> Paramecium.chaos
+    | Miracle -> Paramecium.miracle
+    | Eqn(e1, e2) -> Paramecium.eqn e1 e2
+    | Neg(f) -> Paramecium.neg (trans_formula f)
+    | AndList(fl) -> Paramecium.andList (List.map fl ~f:trans_formula)
+    | OrList(fl) -> Paramecium.orList (List.map fl ~f:trans_formula)
+    | Imply(f1, f2) -> Paramecium.imply (trans_formula f1) (trans_formula f2)
+    | ForallFormula(types, paramdefs, form) -> 
+      let ps = cart_product_with_paramfix paramdefs types in
+      let form' = trans_formula form in
+      Paramecium.andList (List.map ps ~f:(fun p -> Paramecium.apply_form ~p form'))
+    | ExistFormula(types, paramdefs, form) -> 
+      let ps = cart_product_with_paramfix paramdefs types in
+      let form' = trans_formula form in
+      Paramecium.orList (List.map ps ~f:(fun p -> Paramecium.apply_form ~p form'))
+
   let rec trans_statement ~types statement =
     match eliminate_for statement ~types with
-    | Assign(v, e) -> [(chaos, Paramecium.assign v e)]
+    | Assign(v, e) -> [(Paramecium.chaos, Paramecium.assign v e)]
     | Parallel(slist) -> 
       cartesian_product (List.map slist ~f:(trans_statement ~types))
       |> List.map ~f:(fun x ->
         let gs, ss = List.unzip x in
-        (andList gs, Paramecium.parallel ss)
+        (Paramecium.andList gs, Paramecium.parallel ss)
       )
     | IfStatement(f, s) ->
         let translated = trans_statement ~types s in
-        let res1 = List.map translated ~f:(fun (f', s') -> (andList [f; f'], s')) in
-        let res2 = List.map translated ~f:(fun _ -> (neg f, Paramecium.parallel [])) in
+        let translated_f = trans_formula f in
+        let res1 = List.map translated ~f:(fun (f', s') -> 
+          (Paramecium.andList [translated_f; f'], s')) in
+        let res2 = List.map translated ~f:(fun _ -> 
+          (Paramecium.neg translated_f, Paramecium.parallel [])) in
         List.concat [res1; res2]
     | IfelseStatement(f, s1, s2) ->
         let translated1 = trans_statement ~types s1 in
-        let res1 = List.map translated1 ~f:(fun (f', s') -> (andList [f; f'], s')) in
+        let translated_f = trans_formula f in
+        let res1 = List.map translated1 ~f:(fun (f', s') -> 
+          (Paramecium.andList [translated_f; f'], s')) in
         let translated2 = trans_statement ~types s2 in
-        let res2 = List.map translated2 ~f:(fun (f', s') -> (andList [neg f; f'], s')) in
+        let res2 = List.map translated2 ~f:(fun (f', s') -> 
+          (Paramecium.andList [Paramecium.neg translated_f; f'], s')) in
         List.concat [res1; res2]
     | ForStatement(_) -> raise Empty_exception
 
@@ -202,6 +287,10 @@ module Trans = struct
       let m = wrapper ss String.Map.empty in
       Paramecium.parallel (List.map (String.Map.keys m) ~f:(fun k -> String.Map.find_exn m k))
 
+  let trans_prop property =
+    let Prop(n, p, f) = property in
+    Paramecium.prop n p (trans_formula f)
+
   let trans_rule ~types r =
     match r with
     | Rule(n, p, f, s) ->
@@ -213,7 +302,7 @@ module Trans = struct
       in
       let indice = up_to (List.length guarded_s) in
       List.map2_exn guarded_s indice ~f:(fun (g, s) i -> 
-        Paramecium.rule (sprintf "%s_%d" n i) p (andList [f; g]) s)
+        Paramecium.rule (sprintf "%s_%d" n i) p (Paramecium.andList [trans_formula f; g]) s)
 
   (** Translate language of Loach to Paramecium
 
@@ -225,6 +314,7 @@ module Trans = struct
       let _, ss = List.unzip (trans_statement ~types init) in
       Paramecium.parallel ss
     in
+    let new_prop = List.map properties ~f:trans_prop in
     let new_rules = List.concat (List.map rules ~f:(trans_rule ~types)) in
     Prt.info "Done\n";
     { Paramecium.name = name;
@@ -232,7 +322,7 @@ module Trans = struct
       vardefs = vardefs;
       init = new_init;
       rules = new_rules;
-      properties = properties;
+      properties = new_prop;
     }
 
 end
@@ -270,7 +360,7 @@ module VarNamesWithParam = struct
   (** Names of formula *)
   let rec of_form f =
     match f with
-    | Chaos
+    | Paramecium.Chaos
     | Miracle -> of_list []
     | Eqn(e1, e2) -> union_list [of_exp e1; of_exp e2]
     | Neg(form) -> of_form form
@@ -283,14 +373,17 @@ module VarNamesWithParam = struct
     match s with
     | Assign(v, e) -> union_list [(!of_var_ref) v; of_exp e]
     | Parallel(slist) -> union_list (List.map slist ~f:(of_statement))
-    | IfStatement(f, s) -> union_list [of_form f; of_statement s]
-    | IfelseStatement(f, s1, s2) -> union_list [of_form f; of_statement s1; of_statement s2]
+    | IfStatement(f, s) -> union_list [of_form (Trans.trans_formula f); of_statement s]
+    | IfelseStatement(f, s1, s2) -> union_list [of_form (Trans.trans_formula f); 
+      of_statement s1; of_statement s2]
     | ForStatement(_) -> raise Empty_exception
 
   let of_rule ~of_var r = 
     of_var_ref := of_var;
     match r with
-    | Rule(_, _, f, s) -> union_list [of_form f; of_statement s]
+    | Rule(_, _, f, s) ->
+      let f' = Trans.trans_formula f in
+      union_list [of_form f'; of_statement s]
 end
 
 
@@ -311,43 +404,14 @@ module ToSmv = struct
 
   let types_ref = ref []
 
-  let analyze_if statement guard =
-    let nofor = eliminate_for statement ~types:(!types_ref) in
-    let rec wrapper statement ~m ~g =
-      match statement with
-      | Assign(v, e) ->
-        let key = ToStr.Debug.var_act v in 
-        let data = (
-          match String.Map.find m key with
-          | None -> (v, [(g, e)])
-          | Some(v, exps) -> (v, (g, e)::exps)
-        ) in
-        String.Map.add m ~key ~data
-      | Parallel(sl) ->
-        let rec wrap_parallel sl m =
-          match sl with
-          | [] -> m
-          | s::sl' -> wrap_parallel sl' (wrapper s ~m ~g)
-        in
-        wrap_parallel sl m
-      | IfStatement(f, s) -> wrapper s ~m ~g:(andList [f; g])
-      | IfelseStatement(f, s1, s2) ->
-        let if_part = wrapper s1 ~m ~g:(andList [neg f; g]) in
-        wrapper s2 ~m:if_part ~g:(andList [f; g])
-      | ForStatement(_) -> raise Empty_exception
-    in
-    let m = wrapper nofor ~m:String.Map.empty ~g:guard in
-    let keys = String.Map.keys m in
-    List.map keys ~f:(fun k -> String.Map.find_exn m k)
-
   let statement_act ?(is_init=false) statement guard =
-    let analyzed = analyze_if statement guard in
+    let analyzed = analyze_if statement guard ~types:(!types_ref) in
     let trans_assigns v guarded_exps =
       let rec wrapper guarded_exps cur_str =
         match guarded_exps with
         | [] -> cur_str
         | (g, e)::guarded_exps' ->
-          let gstr = form_act (simplify g) in
+          let gstr = form_act (simplify (Trans.trans_formula g)) in
           let estr = exp_act e in
           let cur_str' =
             if gstr = "FALSE" then
@@ -401,7 +465,7 @@ module ToSmv = struct
 
   let prop_act property =
     let Prop(_, _, f) = property in
-    sprintf "SPEC\n  AG (!%s)" (form_act (simplify f))
+    sprintf "SPEC\n  AG (!%s)" (form_act (simplify (Trans.trans_formula f)))
 
   let protocol_act {name=_; types; vardefs; init; rules; properties} =
     types_ref := types;

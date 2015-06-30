@@ -340,7 +340,9 @@ module Choose = struct
 
   (* get new inv by removing a component in the pres *)
   let remove_one guards cons invs =
-    Prt.warning (String.concat ~sep:", " (List.map guards ~f:ToStr.Smv.form_act)^", "^ToStr.Smv.form_act cons);
+    (*Prt.warning (String.concat ~sep:", " (List.map guards ~f:ToStr.Smv.form_act)^
+      ", "^ToStr.Smv.form_act cons
+    );*)
     let rec wrapper guards necessary =
       match guards with
       | [] -> check_level (imply (andList necessary) cons) invs
@@ -459,8 +461,10 @@ let deal_with_case_3 crule cinv cons old_invs =
         | Paramfix(n, _, _) -> sprintf "%s:%s" n (ToStr.Smv.paramref_act pr) in
       let params_str = String.concat (List.map ps ~f:cp_2_str) ~sep:", " in
       let inv_str = ToStr.Smv.form_act (concrete_prop_2_form cinv) in
-      Prt.error (sprintf "\n\n%s, %s\n%s\n" name params_str inv_str);
-      raise Empty_exception
+      let guard_str = ToStr.Smv.form_act guard in
+      Prt.error (sprintf "\n\n%s, %s\nguard: %s\n%s\n" name params_str guard_str inv_str);
+      ([], miracle)
+      (*raise Empty_exception*)
   in
   (new_inv, { rule = crule;
     inv = cinv;

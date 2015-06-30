@@ -22,6 +22,25 @@ val record_def : string -> paramdef list-> vardef list -> vardef list
 (** Record *)
 val record : var list -> var
 
+type formula =
+  | Chaos
+  | Miracle
+  | Eqn of exp * exp
+  | Neg of formula
+  | AndList of formula list
+  | OrList of formula list
+  | Imply of formula * formula
+  | ForallFormula of typedef list * paramdef list * formula
+  | ExistFormula of typedef list * paramdef list * formula
+
+val chaos : formula
+val miracle : formula
+val eqn : exp -> exp -> formula
+val neg : formula -> formula
+val andList : formula list -> formula
+val orList : formula list -> formula
+val imply : formula -> formula -> formula
+
 (** Forall formula *)
 val forallFormula : types:typedef list -> paramdef list -> formula -> formula
 
@@ -42,6 +61,11 @@ val ifStatement : formula -> statement -> statement
 val ifelseStatement : formula -> statement -> statement -> statement
 val forStatement : statement -> paramdef list -> statement
 
+type prop =
+  | Prop of string * paramdef list * formula
+
+val prop : string -> paramdef list -> formula -> prop
+
 type rule = 
   | Rule of string * paramdef list * formula * statement
 
@@ -60,6 +84,14 @@ type protocol = {
 (*----------------------------- Exceptions ----------------------------------*)
 
 (*----------------------------- Functions ----------------------------------*)
+val apply_form : formula -> p:Paramecium.paramref list -> formula
+val apply_statement : statement -> p:Paramecium.paramref list -> types:Paramecium.typedef list -> 
+      statement
+val eliminate_for : statement -> types:Paramecium.typedef list -> statement
+val apply_rule : rule -> p:Paramecium.paramref list -> types:Paramecium.typedef list -> rule
+val rule_to_insts : rule -> types:Paramecium.typedef list -> rule list
+val analyze_if : statement -> formula -> types:Paramecium.typedef list -> 
+      (Paramecium.var * (formula * Paramecium.exp) list) list
 
 (*----------------------------- Translate module ---------------------------------*)
 

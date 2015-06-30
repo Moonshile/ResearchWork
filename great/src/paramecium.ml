@@ -71,6 +71,10 @@ type exp =
   | Var of var
   | Param of paramref
 
+let const c = Const c
+let var v = Var v
+let param paramref = Param(paramref)
+
 (** Boolean expressions, including
     + Boolean constants, Chaos as True, Miracle as false
     + Equation expression
@@ -85,10 +89,6 @@ type formula =
   | AndList of formula list
   | OrList of formula list
   | Imply of formula * formula
-
-let const c = Const c
-let var v = Var v
-let param paramref = Param(paramref)
 
 let chaos = Chaos
 let miracle = Miracle

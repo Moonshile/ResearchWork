@@ -69,6 +69,10 @@ type exp =
   | Var of var
   | Param of paramref
 
+val const : const -> exp
+val var : var -> exp
+val param : paramref -> exp
+
 (** Boolean expressions, including
     + Boolean constants, Chaos as True, Miracle as false
     + Equation expression
@@ -83,10 +87,6 @@ type formula =
   | AndList of formula list
   | OrList of formula list
   | Imply of formula * formula
-
-val const : const -> exp
-val var : var -> exp
-val param : paramref -> exp
 
 val chaos : formula
 val miracle : formula
