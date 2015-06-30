@@ -74,9 +74,9 @@ let concrete_rule_2_rule_inst cr =
 
 (* Convert concrete property to formula *)
 let concrete_prop_2_form cprop =
-  let ConcreteProp(property, _) = cprop in
+  let ConcreteProp(property, pfs) = cprop in
   let Prop(_, _, form) = property in
-  form
+  apply_form form pfs
 
 (* Convert formula to concrete property *)
 let form_2_concreate_prop ?(id=0) form =
@@ -84,8 +84,8 @@ let form_2_concreate_prop ?(id=0) form =
   (* Generate names for new invariants found *)
   let next_inv_name id = sprintf "%s%d" new_inv_name_base id in
   let normalized = normalize form ~types:!type_defs in
-  let (_pds, pfs, _form') = Generalize.form_act normalized in
-  let property = prop (next_inv_name id) [] normalized in
+  let (pds, pfs, form') = Generalize.form_act normalized in
+  let property = prop (next_inv_name id) pds form' in
   concrete_prop property pfs
 
 (* Convert statements to a list of assignments *)
@@ -338,25 +338,6 @@ module Choose = struct
     let enhancedGuards = List.map guards ~f:(fun g -> andList [g; ant_0_dimen]) in
     choose_one enhancedGuards cons invs
 
-  (* get new inv by removing a component in the pres *)
-  let remove_one guards cons invs =
-    (*Prt.warning (String.concat ~sep:", " (List.map guards ~f:ToStr.Smv.form_act)^
-      ", "^ToStr.Smv.form_act cons
-    );*)
-    let rec wrapper guards necessary =
-      match guards with
-      | [] -> check_level (imply (andList necessary) cons) invs
-      | g::guards' -> (
-          let op_inv = (imply (andList (guards'@necessary)) cons) in
-          match check_level op_inv invs with
-          | New_inv(_)
-          | Tautology(_)
-          | Implied(_) -> wrapper guards' necessary
-          | Not_inv -> wrapper guards' (g::necessary)
-        )
-    in
-    wrapper guards []
-
   (* Assign to formula *)
   let assign_to_form (v, e) = eqn (var v) e
 
@@ -399,27 +380,12 @@ module Choose = struct
         if not (choosed_by_policy_2 = Not_inv) then
           choosed_by_policy_2
         else begin
-          remove_one guards cons invs
+          check_level (imply (andList guards) cons) invs
         end
       end
     end
 
 end
-
-
-let minify_inv inv =
-  let ls = match inv with | OrList(fl) -> fl | _ -> [inv] in
-  let rec wrapper necessary parts =
-    match parts with
-    | [] -> necessary
-    | p::parts' ->
-      if Smv.is_inv_by_smv (ToStr.Smv.form_act (orList (necessary@parts'))) then
-        wrapper necessary parts'
-      else begin
-        wrapper (p::necessary) parts'
-      end
-  in
-  orList (wrapper [] ls)
   
 
 
@@ -500,7 +466,27 @@ let tabular_expans crule ~cinv ~old_invs =
     deal_with_case_3 crule cinv (neg obligation) old_invs
   end
 
+
+
 let inv_table = Hashtbl.create ~hashable:String.hashable ()
+
+
+
+let minify_inv inv =
+  let ls = match inv with | OrList(fl) -> fl | _ -> [inv] in
+  let rec wrapper necessary parts =
+    match parts with
+    | [] -> necessary
+    | p::parts' ->
+      if Smv.is_inv_by_smv (ToStr.Smv.form_act (orList (necessary@parts'))) then
+        wrapper necessary parts'
+      else begin
+        wrapper (p::necessary) parts'
+      end
+  in
+  orList (wrapper [] ls)
+
+
 
 (* Find new inv and relations with concrete rules and a concrete invariant *)
 let tabular_rules_cinvs crules cinvs =
@@ -512,6 +498,15 @@ let tabular_rules_cinvs crules cinvs =
         List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
       in
+      let new_invs' =
+        List.concat new_invs
+        |> List.map ~f:simplify
+        |> List.dedup ~compare:symmetry_form
+        |> List.map ~f:(normalize ~types:(!type_defs))
+      in
+      Prt.warning (String.concat ~sep:"\n" (
+        List.map new_invs' ~f:(fun f -> ToStr.Smv.form_act f)
+      ));
       let real_new_invs =
         List.concat new_invs
         |> List.map ~f:simplify
