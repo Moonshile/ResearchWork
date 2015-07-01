@@ -498,21 +498,14 @@ let tabular_rules_cinvs crules cinvs =
         List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
       in
-      let new_invs' =
-        List.concat new_invs
-        |> List.map ~f:simplify
-        |> List.dedup ~compare:symmetry_form
-        |> List.map ~f:(normalize ~types:(!type_defs))
-      in
-      Prt.warning (String.concat ~sep:"\n" (
-        List.map new_invs' ~f:(fun f -> ToStr.Smv.form_act f)
-      ));
       let real_new_invs =
         List.concat new_invs
         |> List.map ~f:simplify
         |> List.dedup ~compare:symmetry_form
         |> List.map ~f:(normalize ~types:(!type_defs))
         |> List.map ~f:minify_inv
+        |> List.map ~f:(normalize ~types:(!type_defs))
+        |> List.dedup ~compare:symmetry_form
         |> List.filter ~f:(fun x ->
           let key = ToStr.Smv.form_act x in
           match Hashtbl.find inv_table key with 
@@ -520,15 +513,17 @@ let tabular_rules_cinvs crules cinvs =
           | _ -> false)
         |> List.filter ~f:(fun f -> all old_invs ~f:(fun old -> not (symmetry_form f old = 0)))
       in
-      Prt.info (String.concat ~sep:"\n" (
-        List.map real_new_invs ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
-      ));
+      if real_new_invs = [] then () else begin
+        print_endline ("NewInv: "^String.concat ~sep:"\n" (
+          List.map real_new_invs ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
+        ))
+      end;
       let old_invs' = real_new_invs@old_invs in
       let rec invs_to_cinvs invs cinvs new_inv_id =
         match invs with
         | [] -> (cinvs, new_inv_id)
         | inv::invs' ->
-          let cinv = form_2_concreate_prop ~id:new_inv_id (neg inv) in
+          let cinv = form_2_concreate_prop ~id:new_inv_id (simplify (neg inv)) in
           invs_to_cinvs invs' (cinv::cinvs) (new_inv_id + 1)
       in
       let (new_cinvs, new_inv_id') = invs_to_cinvs real_new_invs [] new_inv_id in
