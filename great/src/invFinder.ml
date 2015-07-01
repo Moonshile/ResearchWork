@@ -515,7 +515,7 @@ let tabular_rules_cinvs crules cinvs =
       in
       if real_new_invs = [] then () else begin
         print_endline ("NewInv: "^String.concat ~sep:"\n" (
-          List.map real_new_invs ~f:(fun f -> ToStr.Debug.form_act (simplify (neg f)))
+          List.map real_new_invs ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
         ))
       end;
       let old_invs' = real_new_invs@old_invs in
