@@ -22,6 +22,8 @@ module Debug = struct
     | Strc(s) -> s
     | Boolc(b) -> String.uppercase (Bool.to_string b)
 
+  let paramdef_act (Paramdef(vn, tn)) = sprintf "[def-%s:%s]" vn tn
+
   (** Translate a paramref to Debug string *)
   let paramref_act pr =
     match pr with

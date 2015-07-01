@@ -21,18 +21,16 @@ let next_name () =
 let paramref_act pr pds pfs =
   match pr with
   | Paramref(_) -> Prt.error (ToStr.Debug.paramref_act pr^"\n"); raise Unexhausted_inst
-  | Paramfix(vname, tname, c) -> (
+  | Paramfix(_, tname, c) -> (
     let key = tname^ToStr.Debug.const_act c in
     match Hashtbl.find table key with
     | None ->
-      let new_name = 
-        if String.length vname > 14 && String.sub vname ~pos:0 ~len:14 = "__invFinder_p_" then
-          vname
-        else begin next_name () end in
+      let new_name = next_name () in
       let new_pd = paramdef new_name tname in
       Hashtbl.replace table ~key ~data:new_pd;
       (new_pd::pds, paramfix new_name tname c::pfs, paramref new_name)
-    | Some(Paramdef(vn, _)) -> (pds, pfs, paramref vn)
+    | Some(Paramdef(vn, _)) ->
+      (paramdef vn tname::pds, paramfix vn tname c::pfs, paramref vn)
   )
 
 (** Convert a list of components *)
@@ -64,7 +62,6 @@ let exp_act e pds pfs =
 
 (** Convert formula *)
 let form_act f =
-  (*Prt.info (ToStr.Debug.form_act f^", ");*)
   let rec wrapper f pds pfs =
     match f with
     | Chaos
@@ -87,13 +84,19 @@ let form_act f =
       let (pds2, pfs2, f2') = wrapper f2 pds1 pfs1 in
       (pds2, pfs2, imply f1' f2')
   in
-  let (pds, pfs, f') = Hashtbl.clear table; wrapper f [] [] in
+  let (pds, pfs, f') = wrapper f [] [] in
   let sorted_pds =
-    List.sort ~cmp:(fun (Paramdef(n1, _)) (Paramdef(n2, _)) -> String.compare n1 n2) pds
+    pds
+    |> List.dedup ~compare:(fun pd1 pd2 ->
+      String.compare (ToStr.Debug.paramdef_act pd1) (ToStr.Debug.paramdef_act pd2))
+    |> List.sort ~cmp:(fun (Paramdef(n1, _)) (Paramdef(n2, _)) -> String.compare n1 n2)
     |> List.sort ~cmp:(fun (Paramdef(_, tn1)) (Paramdef(_, tn2)) -> String.compare tn1 tn2)
   in
   let sorted_pfs =
-    List.sort ~cmp:(fun pf1 pf2 -> String.compare (name_of_param pf1) (name_of_param pf2)) pfs
+    pfs
+    |> List.dedup ~compare:(fun pf1 pf2 ->
+      String.compare (ToStr.Debug.paramref_act pf1) (ToStr.Debug.paramref_act pf2))
+    |> List.sort ~cmp:(fun pf1 pf2 -> String.compare (name_of_param pf1) (name_of_param pf2))
     |> List.sort ~cmp:(fun pf1 pf2 ->
       let typenameof pf =
         match pf with
@@ -103,7 +106,9 @@ let form_act f =
       String.compare (typenameof pf1) (typenameof pf2)
     )
   in
-  (*Prt.info (ToStr.Debug.form_act f'^", "^
-    (String.concat (List.map sorted_pfs ~f:ToStr.Debug.paramref_act))^"\n");*)
+  if (!debug_switch) then
+    Prt.info (ToStr.Debug.form_act f^"\n"^ToStr.Debug.form_act f'^", "^
+      (String.concat (List.map sorted_pfs ~f:ToStr.Debug.paramref_act))^"\n")
+  else begin () end;
   (sorted_pds, sorted_pfs, f')
 
