@@ -17,6 +17,7 @@ module Debug = struct
 
   (* Translate a const to Debug const *)
   let const_act c =
+    "const "^
     match c with
     | Intc(i) -> Int.to_string i
     | Strc(s) -> s

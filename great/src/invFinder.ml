@@ -119,8 +119,8 @@ let to_str {rule; inv; relation} =
 let expEval exp ~assigns =
   match exp with
   | Const(_) -> exp
-  | Param(Paramfix(_, _, c)) -> Const c
   | Param(Paramref _) -> raise Unexhausted_inst
+  | Param(_) -> exp
   | Var(v) ->
     let value = List.Assoc.find assigns v ~equal:(fun x y -> ToStr.Smv.var_act x = ToStr.Smv.var_act y) in (
       match value with
