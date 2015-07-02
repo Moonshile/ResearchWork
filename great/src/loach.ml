@@ -179,8 +179,8 @@ let analyze_if statement guard ~types =
       wrap_parallel sl m
     | IfStatement(f, s) -> wrapper s ~m ~g:(andList [f; g])
     | IfelseStatement(f, s1, s2) ->
-      let if_part = wrapper s1 ~m ~g:(andList [neg f; g]) in
-      wrapper s2 ~m:if_part ~g:(andList [f; g])
+      let if_part = wrapper s1 ~m ~g:(andList [f; g]) in
+      wrapper s2 ~m:if_part ~g:(andList [neg f; g])
     | ForStatement(_) -> raise Empty_exception
   in
   let m = wrapper nofor ~m:String.Map.empty ~g:guard in
