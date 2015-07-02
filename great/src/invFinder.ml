@@ -281,7 +281,7 @@ module Choose = struct
     match invs with
     | [] -> None
     | old::invs' ->
-      let res = can_imply old inv in
+      let res = can_imply inv old in
       if res = None then inv_implied_by_old inv invs' else begin res end
 
   (* Check the level of an optional invariant *)
@@ -294,7 +294,7 @@ module Choose = struct
       match implied_by_old with
       | Some(old) -> implied inv old
       | None ->
-        if is_inv_by_smv (ToStr.Smv.form_act inv) then
+        if is_inv_by_smv (ToStr.Smv.form_act (neg inv)) then
           new_inv inv
         else begin
           not_inv
@@ -307,7 +307,7 @@ module Choose = struct
       match pres with
       | [] -> not_inv
       | pre::pres' ->
-        let level = check_level (imply pre cons) invs in (
+        let level = check_level (simplify (andList [pre; neg cons])) invs in (
           match level with
           | New_inv(_)
           | Tautology(_)
@@ -334,7 +334,7 @@ module Choose = struct
     if not inter_is_empty then
       not_inv
     else begin
-      let inv_on_0_dimen = imply (andList (form_on_0_dimen guards)) cons in
+      let inv_on_0_dimen = simplify (andList (neg cons::form_on_0_dimen guards)) in
       check_level inv_on_0_dimen invs
     end
 
@@ -363,6 +363,9 @@ module Choose = struct
       else begin
         dimen_0
         |> List.map ~f:assign_to_form
+        (* if a var was assigned with e in a rule, means that it shouldn't be e
+            before this rule
+        *)
         |> List.map ~f:neg
       end
     in
@@ -385,7 +388,7 @@ module Choose = struct
         if not (choosed_by_policy_2 = Not_inv) then
           choosed_by_policy_2
         else begin
-          check_level (imply (andList guards) cons) invs
+          check_level (simplify (andList (neg cons::guards))) invs
         end
       end
     end
@@ -478,18 +481,18 @@ let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
 
 let minify_inv inv =
-  let ls = match inv with | OrList(fl) -> fl | _ -> [inv] in
+  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
   let rec wrapper necessary parts =
     match parts with
     | [] -> necessary
     | p::parts' ->
-      if Smv.is_inv_by_smv (ToStr.Smv.form_act (orList (necessary@parts'))) then
+      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList (necessary@parts')))) then
         wrapper necessary parts'
       else begin
         wrapper (p::necessary) parts'
       end
   in
-  orList (wrapper [] ls)
+  andList (wrapper [] ls)
 
 
 
@@ -511,7 +514,7 @@ let tabular_rules_cinvs crules cinvs =
       in
       if new_invs' = [] then () else begin
         Prt.warning (String.concat ~sep:"\n" (
-          List.map new_invs' ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
+          List.map new_invs' ~f:(fun f -> ToStr.Smv.form_act f)
         ))
       end;
       let real_new_invs =
@@ -529,7 +532,7 @@ let tabular_rules_cinvs crules cinvs =
       in
       if real_new_invs = [] then () else begin
         print_endline (String.concat ~sep:"\n" (
-          List.map real_new_invs ~f:(fun f -> "NewInv: "^ToStr.Smv.form_act (simplify (neg f)))
+          List.map real_new_invs ~f:(fun f -> "NewInv: "^ToStr.Smv.form_act f)
         ))
       end;
       let old_invs' = real_new_invs@old_invs in
@@ -537,16 +540,16 @@ let tabular_rules_cinvs crules cinvs =
         match invs with
         | [] -> (cinvs, new_inv_id)
         | inv::invs' ->
-          let cinv = form_2_concreate_prop ~id:new_inv_id (simplify (neg inv)) in
+          let cinv = form_2_concreate_prop ~id:new_inv_id (simplify inv) in
           invs_to_cinvs invs' (cinv::cinvs) (new_inv_id + 1)
       in
       let (new_cinvs, new_inv_id') = invs_to_cinvs real_new_invs [] new_inv_id in
       let cinvs'' = List.dedup (cinvs'@new_cinvs) in
       wrapper cinvs'' new_inv_id' old_invs' (new_relation@relations)
   in
-  let init_lib = List.map cinvs ~f:(fun cinv -> neg (concrete_prop_2_form cinv)) in
+  let init_lib = List.map cinvs ~f:(fun cinv -> concrete_prop_2_form cinv) in
   Prt.warning ("initial invs:\n"^String.concat ~sep:"\n" (
-    List.map init_lib ~f:(fun f -> ToStr.Smv.form_act (simplify (neg f)))
+    List.map init_lib ~f:(fun f -> ToStr.Smv.form_act f)
   ));
   wrapper cinvs 0 init_lib []
 
@@ -569,7 +572,6 @@ let simplify_prop property =
 let result_to_str (_, invs, relations) =
   let invs_str =
     invs
-    |> List.map ~f:neg
     |> List.map ~f:simplify
     |> List.map ~f:ToStr.Smv.form_act
   in
