@@ -53,7 +53,7 @@ let vardefs = List.concat [
   [arrdef "AuxData" [] "DATA"]
 ]
 
-let init = (parallel [(forStatement (parallel [(assign (record [arr "Chan1" [paramref "i"]; global "Cmd"]) (const _Empty)); (assign (record [arr "Chan2" [paramref "i"]; global "Cmd"]) (const _Empty)); (assign (record [arr "Chan3" [paramref "i"]; global "Cmd"]) (const _Empty)); (assign (record [arr "Cache" [paramref "i"]; global "State"]) (const _I)); (assign (arr "InvSet" [paramref "i"]) (const (boolc false))); (assign (arr "ShrSet" [paramref "i"]) (const (boolc false)))]) [paramdef "i" "NODE"]); (assign (global "ExGntd") (const (boolc false))); (assign (global "CurCmd") (const _Empty)); (assign (global "MemData") (const (intc 1))); (assign (global "AuxData") (const (intc 1)))])
+let init = (parallel [(forStatement (parallel [(assign (record [arr "Chan1" [paramref "i"]; global "Cmd"]) (const _Empty)); (assign (record [arr "Chan2" [paramref "i"]; global "Cmd"]) (const _Empty)); (assign (record [arr "Chan3" [paramref "i"]; global "Cmd"]) (const _Empty)); (assign (record [arr "Cache" [paramref "i"]; global "State"]) (const _I)); (assign (arr "InvSet" [paramref "i"]) (const (boolc false))); (assign (arr "ShrSet" [paramref "i"]) (const (boolc false)))]) [paramdef "i" "NODE"]); (assign (global "ExGntd") (const (boolc false))); (assign (global "CurCmd") (const _Empty)); (assign (global "MemData") (param (paramfix "d" "DATA" (intc 1)))); (assign (global "AuxData") (param (paramfix "d" "DATA" (intc 1))))])
 
 let n_Store =
   let name = "n_Store" in
@@ -143,14 +143,20 @@ let rules = [n_Store; n_SendReqS; n_SendReqE; n_RecvReqS; n_RecvReqE; n_SendInv;
 
 let n_CntrlProp =
   let name = "n_CntrlProp" in
-  let params = [] in
-  let formula = (imply (neg (eqn (param (paramfix "NODE" (intc 1))) (param (paramfix "NODE" (intc 2))))) (andList [(imply (eqn (var (record [arr "Cache" [paramfix "NODE" (intc 1)]; global "State"])) (const _E)) (eqn (var (record [arr "Cache" [paramfix "NODE" (intc 2)]; global "State"])) (const _I))); (imply (eqn (var (record [arr "Cache" [paramfix "NODE" (intc 1)]; global "State"])) (const _S)) (orList [(eqn (var (record [arr "Cache" [paramfix "NODE" (intc 2)]; global "State"])) (const _I)); (eqn (var (record [arr "Cache" [paramfix "NODE" (intc 2)]; global "State"])) (const _S))]))])) in
+  let params = [paramdef "i" "NODE"; paramdef "j" "NODE"] in
+  let formula = (imply (neg (eqn (param (paramref "i")) (param (paramref "j")))) (andList [(imply (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _E)) (eqn (var (record [arr "Cache" [paramref "j"]; global "State"])) (const _I))); (imply (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _S)) (orList [(eqn (var (record [arr "Cache" [paramref "j"]; global "State"])) (const _I)); (eqn (var (record [arr "Cache" [paramref "j"]; global "State"])) (const _S))]))])) in
   prop name params formula
 
-let properties = [n_CntrlProp]
+let n_DataProp =
+  let name = "n_DataProp" in
+  let params = [] in
+  let formula = (andList [(imply (eqn (var (global "ExGntd")) (const (boolc false))) (eqn (var (global "MemData")) (var (global "AuxData")))); (forallFormula ~types [paramdef "i" "NODE"] (imply (neg (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _I))) (eqn (var (record [arr "Cache" [paramref "i"]; global "Data"])) (var (global "AuxData")))))]) in
+  prop name params formula
+
+let properties = [n_CntrlProp; n_DataProp]
 
 
-let protocol = Trans.act {
+let protocol = {
   name = "n_german";
   types;
   vardefs;
