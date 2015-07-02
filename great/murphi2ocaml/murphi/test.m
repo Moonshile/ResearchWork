@@ -22,12 +22,6 @@ var
 ruleset p : NODE do
 startstate "Init"
   a := true;
-  b := true;
-  c[p] := true;
-  d := true;
-  e := 1;
-  f := true;
-  g := true;
 endstartstate;
 endruleset;
 
@@ -39,6 +33,8 @@ begin
     for p : NODE do
       if (p != src & c[p]) then
         e := p;
+      else
+        e := src;
       end;
     end;
 endrule;

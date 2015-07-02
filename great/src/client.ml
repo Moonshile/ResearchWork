@@ -75,7 +75,9 @@ let request cmd req_str host port =
 
 module Smv = struct
 
-  let host = UnixLabels.inet_addr_of_string "192.168.1.33"
+  let host = UnixLabels.inet_addr_of_string (
+    if (!debug_switch) then "127.0.0.1" else begin "192.168.1.33" end
+  )
 
   let port = 50008
   

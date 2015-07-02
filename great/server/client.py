@@ -3,15 +3,13 @@
 import time
 import socket
 
-HOST = '192.168.1.204'
+HOST = '192.168.1.33'
 PORT = 50008
 
-while True:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, PORT))
-    s.sendall('6,,(declare-fun x () Int)(declare-fun y () Int)(declare-fun z () Int),(assert (>= (* 2 x) (+ y z)))(declare-fun f (Int) Int)(declare-fun g (Int Int) Int)(assert (< (f x) (g x x)))(assert (> (f y) (g x x)))(assert (= x y))(check-sat)')
-    data = s.recv(1024)
-    print data
-    s.close()
-
-    time.sleep(.1)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+to_check = '3,1,n_flash_nodata,(!((Sta.Proc.CacheState[0] = cache_s) & (!Sta.Dir.HeadVld = TRUE)))'
+s.sendall('%d,%s'%(len(to_check), to_check))
+data = s.recv(1024)
+print data
+s.close()
