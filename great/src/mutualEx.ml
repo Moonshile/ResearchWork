@@ -109,4 +109,6 @@ let protocol = {
   properties;
 };;
 
-find ~protocol ();;
+(*find ~protocol ();;*)
+
+print_endline (Isabelle.protocol_act protocol);;
