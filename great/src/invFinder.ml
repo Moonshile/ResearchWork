@@ -242,42 +242,47 @@ module Choose = struct
       end
     end
 
-  (* Check if the new inv could be implied by old ones *)
-  let inv_implied_by_old inv invs =
-    let wrapper inv old =
-      let inv_vars = VarNames.of_form inv in
-      let old_vars = VarNames.of_form old in
-      let ConcreteProp(Prop(_, old_pd, old_gened), old_p) = form_2_concreate_prop old in
-      let ConcreteProp(Prop(_, _, _), inv_p) = form_2_concreate_prop inv in
+  (* Decide if formula cons could be implied by ant *)
+  let can_imply ant cons =
+      let ant_vars = VarNames.of_form ant in
+      let cons_vars = VarNames.of_form cons in
+      let ConcreteProp(Prop(_, ant_pd, ant_gened), ant_p) = form_2_concreate_prop ant in
+      let ConcreteProp(Prop(_, _, _), cons_p) = form_2_concreate_prop cons in
       (* If vars in old are more than vars in inv, then can't imply *)
       (* TODO is there some problems in this strategy? *)
-      if String.Set.length (String.Set.diff old_vars inv_vars) > 0 then
+      if String.Set.length (String.Set.diff ant_vars cons_vars) > 0 then
         None
       (* If length of parameters in old is 0, then check directly *)
-      else if List.length old_pd = 0 then
-        if is_tautology (imply (simplify old) (simplify inv)) then Some old
+      else if List.length ant_pd = 0 then
+        if is_tautology (imply (simplify ant) (simplify cons)) then Some ant
         else begin None end
       (* If old has more paramters, then false *)
-      else if param_compatible inv_p old_p = [] then None
+      else if param_compatible cons_p ant_p = [] then None
       (* Otherwise, check old with parameters of inv *)
       (*else if form_are_symmetric inv old then Some old*)
       else begin
-        let params = param_compatible inv_p old_p in
-        let forms = List.map params ~f:(fun p-> apply_form old_gened ~p) in
-        let tautologies = List.filter forms ~f:(fun form ->
-          is_tautology (imply (simplify form) (simplify inv))
-        ) in
-        match tautologies with
-        | [] -> None
-        | form::_ -> Some form
+        let params = param_compatible cons_p ant_p in
+        let rec has_implied params =
+          match params with
+          | [] -> None
+          | p::params' ->
+            let new_ant = apply_form ant_gened ~p in
+            if is_tautology (imply (simplify new_ant) (simplify cons)) then
+              Some new_ant
+            else begin
+              has_implied params'
+            end
+        in
+        has_implied params
       end
-    in
-    let implies = List.map invs ~f:(fun old -> wrapper inv old) in
-    let not_none = List.filter implies ~f:(fun i -> not (i = None)) in
-    match not_none with
-    | [] -> None
-    | form::_ -> form
 
+  (* Check if the new inv could be implied by old ones *)
+  let rec inv_implied_by_old inv invs =
+    match invs with
+    | [] -> None
+    | old::invs' ->
+      let res = can_imply old inv in
+      if res = None then inv_implied_by_old inv invs' else begin res end
 
   (* Check the level of an optional invariant *)
   let check_level inv invs =
@@ -440,7 +445,7 @@ let deal_with_case_3 crule cinv cons old_invs =
 let symmetry_form f1 f2 =
   let n1 = normalize ~types:(!type_defs) f1 in
   let n2 = normalize ~types:(!type_defs) f2 in
-  match Choose.inv_implied_by_old n1 [n2], Choose.inv_implied_by_old n2 [n1] with
+  match Choose.can_imply n1 n2, Choose.can_imply n2 n1 with
   | Some(_), Some(_) -> 0
   | _ -> String.compare (ToStr.Smv.form_act n1) (ToStr.Smv.form_act n2)
 
