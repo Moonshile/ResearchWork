@@ -26,6 +26,9 @@ val permutation : 'a list -> 'a list list
 (** Generate the combination of a list *)
 val combination : 'a list -> int -> 'a list list
 
+(** Generate all combinations of a list *)
+val combination_all : 'a list -> 'a list list
+
 (** Combination firstly and permutation for each element of the combination *)
 val combination_permutation : 'a list -> int -> 'a list list
 

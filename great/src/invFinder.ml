@@ -281,6 +281,11 @@ module Choose = struct
     match invs with
     | [] -> None
     | old::invs' ->
+      (* Note that invariants here are of their negation format.
+          i.e. A real INV is of form inv = (neg INV), so as old = (neg OLD).
+          Because there is implication OLD -> INV, thus (neg INV) -> (neg OLD),
+          which means inv -> old
+      *)
       let res = can_imply inv old in
       if res = None then inv_implied_by_old inv invs' else begin res end
 
@@ -479,9 +484,8 @@ let tabular_expans crule ~cinv ~old_invs =
 let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
 
-
+(* Minify inv by remove useless components one by one *)
 let minify_inv inv =
-  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
   let rec wrapper necessary parts =
     match parts with
     | [] -> necessary
@@ -492,7 +496,32 @@ let minify_inv inv =
         wrapper (p::necessary) parts'
       end
   in
+  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
   andList (wrapper [] ls)
+
+(* Minify inv by add useful components one by one *)
+let minify_inv_inc inv =
+  let rec wrapper components =
+    match components with
+    | [] -> raise Empty_exception
+    | parts::components' ->
+      let piece = normalize (andList parts) ~types:(!type_defs) in
+      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then
+        piece
+      else begin
+        wrapper components'
+      end
+  in
+  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
+  let components = combination_all ls in
+  wrapper components
+
+
+
+
+
+
+
 
 
 
@@ -506,21 +535,23 @@ let tabular_rules_cinvs crules cinvs =
         List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
       in
-      let new_invs' =
-        List.concat new_invs
-        |> List.map ~f:simplify
-        |> List.map ~f:minify_inv
-        |> List.dedup ~compare:symmetry_form
-      in
-      if new_invs' = [] then () else begin
-        Prt.warning (String.concat ~sep:"\n" (
-          List.map new_invs' ~f:(fun f -> ToStr.Smv.form_act f)
-        ))
-      end;
+      if (!debug_switch) then
+        let new_invs' =
+          List.concat new_invs
+          |> List.map ~f:simplify
+          |> List.map ~f:minify_inv_inc
+          |> List.dedup ~compare:symmetry_form
+        in
+        if new_invs' = [] then () else begin
+          Prt.warning (String.concat ~sep:"\n" (
+            List.map new_invs' ~f:(fun f -> ToStr.Debug.form_act f)
+          ))
+        end
+      else begin () end;
       let real_new_invs =
         List.concat new_invs
         |> List.map ~f:simplify
-        |> List.map ~f:minify_inv
+        |> List.map ~f:minify_inv_inc
         |> List.dedup ~compare:symmetry_form
         |> List.map ~f:(normalize ~types:(!type_defs))
         |> List.filter ~f:(fun x ->

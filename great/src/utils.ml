@@ -63,6 +63,12 @@ let rec combination list n =
         first_set@(combination list' n)
     end
 
+(** Generate all combinations of a list *)
+let combination_all list =
+  let nums = List.map (up_to (List.length list)) ~f:(fun x -> x + 1) in
+  List.concat (List.map nums ~f:(fun n -> combination list n))
+
+
 (** Combination firstly and permutation for each element of the combination *)
 let combination_permutation list n =
   combination list n
