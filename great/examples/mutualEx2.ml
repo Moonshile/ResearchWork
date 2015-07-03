@@ -7,6 +7,7 @@ open Paramecium
 open Loach
 open Formula
 open InvFinder
+open Cmdline
 
 let _I = strc "I"
 let _T = strc "T"
@@ -76,6 +77,6 @@ let protocol = {
   init;
   rules;
   properties;
-};;
+}
 
-find ~protocol ();;
+let () = run_with_cmdline (find ~protocol)

@@ -354,6 +354,6 @@ let protocol = {
   init;
   rules;
   properties;
-};;
+}
 
-find ~protocol ~smv:(In_channel.read_all "flash-fln.smv") ();;
+let () = run_with_cmdline (find ~protocol ~smv:(In_channel.read_all "flash-fln.smv"));;

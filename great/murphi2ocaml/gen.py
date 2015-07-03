@@ -721,7 +721,8 @@ open Utils
 open Paramecium
 open Loach
 open Formula
-open InvFinder\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n
+open InvFinder
+open Cmdline\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n
 let protocol = {
   name = \"%s\";
   types;
@@ -729,7 +730,7 @@ let protocol = {
   init;
   rules;
   properties;
-};;\n\nfind ~protocol ();;'''%(types.value, records.value, vardefs.value, init.value, rulesets.value, invs.value, self.name)
+}\n\nlet () = run_with_cmdline (find ~protocol)\n'''%(types.value, records.value, vardefs.value, init.value, rulesets.value, invs.value, self.name)
 
 
 

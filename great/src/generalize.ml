@@ -106,9 +106,7 @@ let form_act f =
       String.compare (typenameof pf1) (typenameof pf2)
     )
   in
-  if (!debug_switch) then
-    Prt.info (ToStr.Debug.form_act f^"\n"^ToStr.Debug.form_act f'^", "^
-      (String.concat (List.map sorted_pfs ~f:ToStr.Debug.paramref_act))^"\n")
-  else begin () end;
+  (*Prt.info (ToStr.Debug.form_act f^"\n"^ToStr.Debug.form_act f'^", "^
+    (String.concat (List.map sorted_pfs ~f:ToStr.Debug.paramref_act))^"\n")*)
   (sorted_pds, sorted_pfs, f')
 

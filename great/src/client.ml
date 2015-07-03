@@ -75,18 +75,16 @@ let request cmd req_str host port =
 
 module Smv = struct
 
-  let host = UnixLabels.inet_addr_of_string (
-    if (!debug_switch) then "127.0.0.1" else begin "192.168.1.33" end
-  )
+  let host = ref (UnixLabels.inet_addr_of_string "127.0.0.1")
 
-  let port = 50008
+  let port = ref 50008
   
   let compute_reachable name content =
-    let (status, _) = request COMPUTE_REACHABLE (sprintf "%s,%s" name content) host port in
+    let (status, _) = request COMPUTE_REACHABLE (sprintf "%s,%s" name content) (!host) (!port) in
     status = OK
 
   let query_reachable name =
-    let (status, diameter) = request QUERY_REACHABLE name host port in
+    let (status, diameter) = request QUERY_REACHABLE name (!host) (!port) in
     if status = OK then 
       match diameter with
       | "-1"::[] -> raise Server_exception
@@ -95,7 +93,7 @@ module Smv = struct
     else begin 0 end
 
   let rec check_inv name inv =
-    let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) host port in
+    let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) (!host) (!port) in
     match res with
     | r::[] -> 
       if r = "true" || r = "false" then
@@ -106,23 +104,23 @@ module Smv = struct
     | _ -> raise Server_exception
 
   let quit name =
-    let (s, _) = request SMV_QUIT name host port in
+    let (s, _) = request SMV_QUIT name (!host) (!port) in
     s = OK
 
 end
 
 module Smt2 = struct
 
-let host = UnixLabels.inet_addr_of_string "127.0.0.1"
+let host = ref (UnixLabels.inet_addr_of_string "127.0.0.1")
 
-let port = 50008
+let port = ref 50008
 
   let set_context name context =
-    let (s, _) = request SET_SMT2_CONTEXT (sprintf "%s,%s" name context) host port in
+    let (s, _) = request SET_SMT2_CONTEXT (sprintf "%s,%s" name context) (!host) (!port) in
     s = OK
 
   let check name f =
-    let (_, res) = request QUERY_SMT2 (sprintf "%s,%s" name f) host port in
+    let (_, res) = request QUERY_SMT2 (sprintf "%s,%s" name f) (!host) (!port) in
     match res with
     | r::[] ->
       if r = "unsat" then false
@@ -131,7 +129,7 @@ let port = 50008
     | _ -> raise Server_exception
 
   let check_stand context f =
-    let (_, res) = request QUERY_STAND_SMT2 (sprintf "%s,%s" context f) host port in
+    let (_, res) = request QUERY_STAND_SMT2 (sprintf "%s,%s" context f) (!host) (!port) in
     match res with
     | r::[] -> 
       if r = "unsat" then false

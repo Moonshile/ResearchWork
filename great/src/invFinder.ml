@@ -536,6 +536,9 @@ let tabular_rules_cinvs crules cinvs =
         |> List.unzip
       in
       if (!debug_switch) then
+        (* This debug block is to check whether function normalize
+            could work correctly or not
+        *)
         let new_invs' =
           List.concat new_invs
           |> List.map ~f:simplify

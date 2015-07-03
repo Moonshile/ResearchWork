@@ -354,6 +354,6 @@ let protocol = {
   init;
   rules;
   properties;
-};;
+}
 
-find ~protocol ();;
+let () = run_with_cmdline (find ~protocol)
