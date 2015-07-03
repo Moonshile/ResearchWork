@@ -312,7 +312,7 @@ module Choose = struct
       match pres with
       | [] -> not_inv
       | pre::pres' ->
-        let level = check_level (simplify (andList [pre; neg cons])) invs in (
+        let level = check_level (simplify (andList [pre; cons])) invs in (
           match level with
           | New_inv(_)
           | Tautology(_)
@@ -339,7 +339,7 @@ module Choose = struct
     if not inter_is_empty then
       not_inv
     else begin
-      let inv_on_0_dimen = simplify (andList (neg cons::form_on_0_dimen guards)) in
+      let inv_on_0_dimen = simplify (andList (cons::form_on_0_dimen guards)) in
       check_level inv_on_0_dimen invs
     end
 
@@ -368,14 +368,12 @@ module Choose = struct
       else begin
         dimen_0
         |> List.map ~f:assign_to_form
-        (* if a var was assigned with e in a rule, means that it shouldn't be e
-            before this rule
-        *)
-        |> List.map ~f:neg
       end
     in
     let choosed_0_dimen = 
-      choose_with_0_dimen_var guards ants_0_dimen cons invs
+      if not (ants_0_dimen = []) then
+        choose_with_0_dimen_var guards ants_0_dimen cons invs
+      else begin not_inv end
     in
     if not (choosed_0_dimen = Not_inv) then
       choosed_0_dimen
@@ -393,7 +391,7 @@ module Choose = struct
         if not (choosed_by_policy_2 = Not_inv) then
           choosed_by_policy_2
         else begin
-          check_level (simplify (andList (neg cons::guards))) invs
+          check_level (simplify (andList (cons::guards))) invs
         end
       end
     end
@@ -476,7 +474,7 @@ let tabular_expans crule ~cinv ~old_invs =
     ([], deal_with_case_1 crule cinv)
   (* case 3 *)
   else begin
-    deal_with_case_3 crule cinv (neg obligation) old_invs
+    deal_with_case_3 crule cinv obligation old_invs
   end
 
 
@@ -485,10 +483,13 @@ let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
 
 (* Minify inv by remove useless components one by one *)
-let minify_inv inv =
+let minify_inv_desc inv =
   let rec wrapper necessary parts =
     match parts with
-    | [] -> necessary
+    | [] ->
+      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList necessary))) then
+        necessary
+      else begin raise Empty_exception end
     | p::parts' ->
       if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList (necessary@parts')))) then
         wrapper necessary parts'
@@ -499,7 +500,7 @@ let minify_inv inv =
   let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
   andList (wrapper [] ls)
 
-(* Minify inv by add useful components one by one *)
+(* Minify inv by add useful components gradually *)
 let minify_inv_inc inv =
   let rec wrapper components =
     match components with
