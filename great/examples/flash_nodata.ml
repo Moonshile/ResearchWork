@@ -7,6 +7,7 @@ open Paramecium
 open Loach
 open Formula
 open InvFinder
+open Cmdline
 
 let _CACHE_I = strc "CACHE_I"
 let _CACHE_S = strc "CACHE_S"

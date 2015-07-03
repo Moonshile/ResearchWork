@@ -6,6 +6,7 @@ open Paramecium
 open Loach
 open Formula
 open InvFinder
+open Cmdline
 
 (* Common parameter definitions and references *)
 let defi = paramdef "i" "node"

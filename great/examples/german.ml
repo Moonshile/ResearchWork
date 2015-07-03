@@ -7,6 +7,7 @@ open Paramecium
 open Loach
 open Formula
 open InvFinder
+open Cmdline
 
 let _I = strc "I"
 let _S = strc "S"
