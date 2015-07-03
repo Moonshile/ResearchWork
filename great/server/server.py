@@ -88,6 +88,7 @@ def serv(conn, addr):
         In this case, cmd should be [length, command, command_id, name]
         """
         smv_pool[cmd[2]].exit()
+        del smv_pool[cmd[2]]
         conn.sendall(OK)
     elif cmd[0] == SET_SMT2_CONTEXT:
         """

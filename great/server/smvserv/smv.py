@@ -51,6 +51,7 @@ class SMV(object):
     def exit(self):
         self.process.send('quit\n')
         res = self.process.expect([EOF, TIMEOUT], timeout=1)
+        self.process.terminate(force=True)
         return res == 0
 
 """
