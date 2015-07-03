@@ -1,4 +1,4 @@
-const clientNUMS : 3;
+const clientNUMS : 5;
 type state : enum{I, T, C, E};
 
      client: 1..clientNUMS;

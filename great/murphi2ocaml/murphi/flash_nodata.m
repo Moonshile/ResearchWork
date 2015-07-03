@@ -1,7 +1,7 @@
 
 const
 
-  NODE_NUM : 3;
+  NODE_NUM : 5;
 
 type
 

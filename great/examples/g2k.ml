@@ -25,7 +25,7 @@ let _False = boolc false
 let types = [
   enum "CACHE_STATE" [_I; _S; _E];
   enum "MSG_CMD" [_Empty; _ReqS; _ReqE; _Inv; _InvAck; _GntS; _GntE];
-  enum "NODE" (int_consts [1; 2; 3]);
+  enum "NODE" (int_consts [1; 2; 3; 4; 5;]);
   enum "DATA" (int_consts [1; 2]);
   enum "boolean" [_True; _False];
 ]
@@ -108,7 +108,7 @@ let n_SendGntS =
 let n_SendGntE =
   let name = "n_SendGntE" in
   let params = [paramdef "i" "NODE"] in
-  let formula = (andList [(andList [(andList [(andList [(eqn (var (global "CurCmd")) (const _ReqE)); (eqn (var (global "CurPtr")) (param (paramref "i")))]); (eqn (var (global "ExGntd")) (const _False))]); (forallFormula ~types [paramdef "j" "NODE"] (eqn (var (arr "ShrSet" [paramref "j"])) (const (boolc false))))]); (eqn (var (record [arr "Chan2" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
+  let formula = (andList [(andList [(andList [(andList [(eqn (var (global "CurCmd")) (const _ReqE)); (eqn (var (global "CurPtr")) (param (paramref "i")))]); (eqn (var (global "ExGntd")) (const _False))]); (forallFormula [paramdef "j" "NODE"] (eqn (var (arr "ShrSet" [paramref "j"])) (const (boolc false))))]); (eqn (var (record [arr "Chan2" [paramref "i"]; global "Cmd"])) (const _Empty))]) in
   let statement = (parallel [(assign (arr "ShrSet" [paramref "i"]) (const (boolc true))); (assign (global "CurCmd") (const _Empty)); (assign (global "ExGntd") (const (boolc true))); (assign (record [arr "Chan2" [paramref "i"]; global "Cmd"]) (const _GntE)); (assign (record [arr "Chan2" [paramref "i"]; global "Data"]) (var (global "MemData")))]) in
   rule name params formula statement
 
@@ -144,7 +144,7 @@ let n_CntrlProp =
 let n_DataProp =
   let name = "n_DataProp" in
   let params = [] in
-  let formula = (andList [(imply (eqn (var (global "ExGntd")) (const (boolc false))) (eqn (var (global "MemData")) (var (global "AuxData")))); (forallFormula ~types [paramdef "i" "NODE"] (imply (neg (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _I))) (eqn (var (record [arr "Cache" [paramref "i"]; global "Data"])) (var (global "AuxData")))))]) in
+  let formula = (andList [(imply (eqn (var (global "ExGntd")) (const (boolc false))) (eqn (var (global "MemData")) (var (global "AuxData")))); (forallFormula [paramdef "i" "NODE"] (imply (neg (eqn (var (record [arr "Cache" [paramref "i"]; global "State"])) (const _I))) (eqn (var (record [arr "Cache" [paramref "i"]; global "Data"])) (var (global "AuxData")))))]) in
   prop name params formula
 
 let properties = [n_CntrlProp; n_DataProp]

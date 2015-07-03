@@ -12,6 +12,9 @@ exception Unexhausted_flat_parallel
 (** Raised when circular parallel assignments detected *)
 exception Circular_parallel_assign
 
+(** Raised when require to check a inv has too many paramters *)
+exception Parameter_overflow
+
 (** Concrete rule
 
     + ConcreteRule: instantiated rule, concrete param list

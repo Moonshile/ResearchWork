@@ -182,6 +182,7 @@ let normalize form ~types =
           | None -> (
               let vname = name_of_param pf in
               let tname = typename_of_paramfix pf in
+              (* TODO *)
               (* 暂时特殊处理参数0 *)
               if pf = paramfix vname tname (intc 0) then
                 gen_map pfs' range (Map.add m ~key ~data:pf)

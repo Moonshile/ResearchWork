@@ -30,8 +30,8 @@ type formula =
   | AndList of formula list
   | OrList of formula list
   | Imply of formula * formula
-  | ForallFormula of typedef list * paramdef list * formula
-  | ExistFormula of typedef list * paramdef list * formula
+  | ForallFormula of paramdef list * formula
+  | ExistFormula of paramdef list * formula
 
 val chaos : formula
 val miracle : formula
@@ -42,10 +42,10 @@ val orList : formula list -> formula
 val imply : formula -> formula -> formula
 
 (** Forall formula *)
-val forallFormula : types:typedef list -> paramdef list -> formula -> formula
+val forallFormula : paramdef list -> formula -> formula
 
 (** Exist formula *)
-val existFormula : types:typedef list -> paramdef list -> formula -> formula
+val existFormula : paramdef list -> formula -> formula
 
 (** Assignment statements *)
 type statement =

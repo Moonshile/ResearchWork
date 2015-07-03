@@ -17,6 +17,9 @@ exception Unexhausted_flat_parallel
 (** Raised when circular parallel assignments detected *)
 exception Circular_parallel_assign
 
+(** Raised when require to check a inv has too many paramters *)
+exception Parameter_overflow
+
 (** Concrete rule
 
     + ConcreteRule: instantiated rule, concrete param list
@@ -299,7 +302,8 @@ module Choose = struct
       match implied_by_old with
       | Some(old) -> implied inv old
       | None ->
-        if is_inv_by_smv (ToStr.Smv.form_act (neg inv)) then
+        let normalized = normalize inv ~types:(!type_defs) in
+        if is_inv_by_smv (ToStr.Smv.form_act (neg normalized)) then
           new_inv inv
         else begin
           not_inv
@@ -507,11 +511,15 @@ let minify_inv_inc inv =
     | [] -> raise Empty_exception
     | parts::components' ->
       let piece = normalize (andList parts) ~types:(!type_defs) in
-      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then
-        piece
-      else begin
-        wrapper components'
-      end
+      (*Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
+        "\nnormalized: "^ToStr.Smv.form_act piece);*)
+      let (_, pfs, _) = Generalize.form_act piece in
+      (* TODO *)
+      (* 为了赶进度，先这样吧 *)
+      if List.length pfs <= 3 then
+        if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then piece
+        else begin wrapper components' end
+      else begin raise Parameter_overflow end
   in
   let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
   let components = combination_all ls in

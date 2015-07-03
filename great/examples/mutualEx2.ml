@@ -18,7 +18,7 @@ let _False = boolc false
 
 let types = [
   enum "state" [_I; _T; _C; _E];
-  enum "client" (int_consts [1; 2; 3]);
+  enum "client" (int_consts [1; 2; 3; 4; 5;]);
   enum "boolean" [_True; _False];
 ]
 

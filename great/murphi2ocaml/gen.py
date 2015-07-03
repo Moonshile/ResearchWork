@@ -291,9 +291,9 @@ class Formula(object):
             text = self.splitText(text)
             sub_form = self.evaluate(self.process(text), param_name_dict)
             if re.match(r'^forall.*?end$', atom):
-                return '(forallFormula ~types %s %s)'%(param_defs, sub_form)
+                return '(forallFormula %s %s)'%(param_defs, sub_form)
             else:
-                return '(existFormula ~types %s %s)'%(param_defs, sub_form)
+                return '(existFormula %s %s)'%(param_defs, sub_form)
         else:
             return '(var %s)'%self.evalVar(atom)
 

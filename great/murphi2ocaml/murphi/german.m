@@ -1,6 +1,6 @@
 const
 
-  NODE_NUM : 2;
+  NODE_NUM : 5;
   DATA_NUM : 2;
 
 type
