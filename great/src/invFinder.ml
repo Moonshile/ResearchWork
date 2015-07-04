@@ -293,7 +293,7 @@ module Choose = struct
       if res = None then inv_implied_by_old inv invs' else begin res end
 
   (* Check the level of an optional invariant *)
-  let check_level inv invs =
+  let check_level ?(must_new=false) inv invs =
     let inv = simplify inv in
     if is_tautology inv then
       tautology inv
@@ -303,7 +303,7 @@ module Choose = struct
       | Some(old) -> implied inv old
       | None ->
         let normalized = normalize inv ~types:(!type_defs) in
-        if is_inv_by_smv (ToStr.Smv.form_act (neg normalized)) then
+        if must_new || is_inv_by_smv (ToStr.Smv.form_act (neg normalized)) then
           new_inv inv
         else begin
           not_inv
@@ -365,7 +365,9 @@ module Choose = struct
 
   (* choose new inv *)
   let choose guards assigns cons invs =
-    let dimen_0 = assigns_on_0_dimen assigns in
+    (* It seems that if we simplify invs increasingly, then we should check big inv directly *)
+    check_level ~must_new:true (simplify (andList (cons::guards))) invs
+    (*let dimen_0 = assigns_on_0_dimen assigns in
     let ants_0_dimen = 
       if dimen_0 = [] then
         []
@@ -395,10 +397,10 @@ module Choose = struct
         if not (choosed_by_policy_2 = Not_inv) then
           choosed_by_policy_2
         else begin
-          check_level (simplify (andList (cons::guards))) invs
+          check_level ~must_new:true (simplify (andList (cons::guards))) invs
         end
       end
-    end
+    end*)
 
 end
   
