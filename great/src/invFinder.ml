@@ -510,7 +510,9 @@ let minify_inv_desc inv =
 let minify_inv_inc inv =
   let rec wrapper components =
     match components with
-    | [] -> raise Empty_exception
+    | [] -> 
+      Prt.error ("Not invariant: "^ToStr.Smv.form_act inv);
+      raise Empty_exception
     | parts::components' ->
       let piece = normalize (andList parts) ~types:(!type_defs) in
       let (_, pfs, _) = Generalize.form_act piece in
@@ -528,7 +530,7 @@ let minify_inv_inc inv =
         else begin wrapper components' end
       else begin 
         Prt.error ("Paramter overflow: "^ToStr.Smv.form_act piece);
-        raise Parameter_overflow
+        chaos(*raise Parameter_overflow*)
       end
   in
   let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
