@@ -526,7 +526,10 @@ let minify_inv_inc inv =
       if List.length pfs <= 3 then
         if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then piece
         else begin wrapper components' end
-      else begin raise Parameter_overflow end
+      else begin 
+        Prt.error ("Paramter overflow: "^ToStr.Smv.form_act piece);
+        raise Parameter_overflow
+      end
   in
   let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
   let components = combination_all ls in
@@ -586,7 +589,6 @@ let tabular_rules_cinvs crules cinvs =
         ))
       end;
       let old_invs' = real_new_invs@old_invs in
-      raise Empty_exception;
       let rec invs_to_cinvs invs cinvs new_inv_id =
         match invs with
         | [] -> (cinvs, new_inv_id)
