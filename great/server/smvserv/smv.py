@@ -10,11 +10,12 @@ Functions for checking invariants with NuSMV
 from pexpect import spawn, EOF, TIMEOUT
 
 class SMV(object):
-    def __init__(self, smv_path, smv_file):
+    def __init__(self, smv_path, smv_file, timeout=1):
         super(SMV, self).__init__()
         self.smv_path = smv_path
         self.process = spawn(smv_path + ' -dcx -int -old ' + smv_file)
         self.process.expect(['NuSMV\s+>\s+', EOF, TIMEOUT])
+        self.timeout = timeout
         self.diameter = None
         self.isComputing = False
 
@@ -41,16 +42,17 @@ class SMV(object):
 
     def check(self, invariant):
         self.process.send('check_invar -p \"' + invariant + '\"\n')
-        self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT], timeout=1)
+        self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT],
+            timeout=self.timeout)
         self.process.before
-        res = self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=1)
+        res = self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=self.timeout)
         if res == 0:
             return self.process.before.strip()
         return '0'
 
     def exit(self):
         self.process.send('quit\n')
-        res = self.process.expect([EOF, TIMEOUT], timeout=1)
+        res = self.process.expect([EOF, TIMEOUT], timeout=self.timeout)
         self.process.terminate(force=True)
         return res == 0
 

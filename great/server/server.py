@@ -66,7 +66,7 @@ def serv(conn, addr):
         new_smv_file, smv_file = gen_smv_file(name, content)
         if new_smv_file or name not in smv_pool:
             if __verbose: print "Start to compute reachable set"
-            smv = SMV(SMV_PATH, smv_file)
+            smv = SMV(SMV_PATH, smv_file, timeout=TIME_OUT)
             if name in smv_pool: smv_pool[name].exit()
             smv_pool[name] = smv
             data = smv.go_and_compute_reachable()

@@ -513,9 +513,14 @@ let minify_inv_inc inv =
     | [] -> raise Empty_exception
     | parts::components' ->
       let piece = normalize (andList parts) ~types:(!type_defs) in
-      (*Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
-        "\nnormalized: "^ToStr.Smv.form_act piece);*)
       let (_, pfs, _) = Generalize.form_act piece in
+      (*Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
+        "\nnormalized: "^ToStr.Smv.form_act piece^"Res: "^
+        (if List.length pfs <= 3 then
+          (if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then "true" else "false")
+          else begin "unknown" end
+        )
+      );*)
       (* TODO *)
       (* 为了赶进度，先这样吧 *)
       if List.length pfs <= 3 then
@@ -581,6 +586,7 @@ let tabular_rules_cinvs crules cinvs =
         ))
       end;
       let old_invs' = real_new_invs@old_invs in
+      raise Empty_exception;
       let rec invs_to_cinvs invs cinvs new_inv_id =
         match invs with
         | [] -> (cinvs, new_inv_id)
