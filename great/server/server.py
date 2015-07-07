@@ -56,6 +56,9 @@ def serv(conn, addr):
             pass
     cmd = data.split(',')
     res = None
+    if __verbose: 
+        sys.stdout.write(data[:10240])
+        sys.stdout.flush()
     if cmd[0] == COMPUTE_REACHABLE:
         """
         In this case, cmd should be [length, command, command_id, name, smv file content]
@@ -66,7 +69,7 @@ def serv(conn, addr):
         new_smv_file, smv_file = gen_smv_file(name, content)
         if new_smv_file or name not in smv_pool:
             if __verbose: print "Start to compute reachable set"
-            smv = SMV(SMV_PATH, smv_file, timeout=TIME_OUT)
+            smv = SMV(SMV_PATH, smv_file)
             if name in smv_pool: smv_pool[name].exit()
             smv_pool[name] = smv
             res = smv.go_and_compute_reachable()
@@ -114,7 +117,7 @@ def serv(conn, addr):
         res = smt2.check(cmd[3])
         conn.sendall(','.join([OK, res]))
     conn.close()
-    if __verbose: print data[:10240], res
+    if __verbose: print ': ', res
 
 if '-v' in sys.argv or '--verbose' in sys.argv:
     __verbose = True

@@ -10,7 +10,7 @@ Functions for checking invariants with NuSMV
 from pexpect import spawn, EOF, TIMEOUT
 
 class SMV(object):
-    def __init__(self, smv_path, smv_file, timeout=1):
+    def __init__(self, smv_path, smv_file, timeout=None):
         super(SMV, self).__init__()
         self.smv_path = smv_path
         self.process = spawn(smv_path + ' -dcx -int -old ' + smv_file)
