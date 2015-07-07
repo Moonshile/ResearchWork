@@ -54,8 +54,8 @@ def serv(conn, addr):
                 data += d
         except socket.timeout, e:
             pass
-    if __verbose: print data[:10240]
     cmd = data.split(',')
+    res = None
     if cmd[0] == COMPUTE_REACHABLE:
         """
         In this case, cmd should be [length, command, command_id, name, smv file content]
@@ -69,14 +69,14 @@ def serv(conn, addr):
             smv = SMV(SMV_PATH, smv_file, timeout=TIME_OUT)
             if name in smv_pool: smv_pool[name].exit()
             smv_pool[name] = smv
-            data = smv.go_and_compute_reachable()
+            res = smv.go_and_compute_reachable()
         conn.sendall(OK)
     elif cmd[0] == QUERY_REACHABLE:
         """
         In this case, cmd should be [length, command, command_id, name]
         """
-        data = smv_pool[cmd[2]].query_reachable()
-        conn.sendall(','.join([OK, data]) if data else WAITING)
+        res = smv_pool[cmd[2]].query_reachable()
+        conn.sendall(','.join([OK, res]) if res else WAITING)
     elif cmd[0] == CHECK_INV:
         """
         In this case, cmd should be [length, command, command_id, name, inv]
@@ -114,6 +114,7 @@ def serv(conn, addr):
         res = smt2.check(cmd[3])
         conn.sendall(','.join([OK, res]))
     conn.close()
+    if __verbose: print data[:10240], res
 
 if '-v' in sys.argv or '--verbose' in sys.argv:
     __verbose = True

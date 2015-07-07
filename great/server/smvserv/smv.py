@@ -14,12 +14,16 @@ class SMV(object):
         super(SMV, self).__init__()
         self.smv_path = smv_path
         self.process = spawn(smv_path + ' -dcx -int -old ' + smv_file)
-        self.process.expect(['NuSMV\s+>\s+', EOF, TIMEOUT])
         self.timeout = timeout
         self.diameter = None
         self.isComputing = False
+        self.clear()
+
+    def clear(self):
+        self.process.expect(['NuSMV\s+>\s+', EOF, TIMEOUT], timeout=.001)
 
     def go_and_compute_reachable(self):
+        self.clear()
         if not self.diameter and not self.isComputing:
             self.isComputing = True
             self.process.send('go\ncompute_reachable\n')
@@ -41,6 +45,7 @@ class SMV(object):
             return '-1'
 
     def check(self, invariant):
+        self.clear()
         self.process.send('check_invar -p \"' + invariant + '\"\n')
         self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT],
             timeout=self.timeout)

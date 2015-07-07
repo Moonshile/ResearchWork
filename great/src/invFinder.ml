@@ -374,6 +374,7 @@ module Choose = struct
       else begin
         dimen_0
         |> List.map ~f:assign_to_form
+        |> List.map ~f:neg
       end
     in
     let choosed_0_dimen = 
