@@ -525,7 +525,7 @@ let minify_inv_inc inv =
       );*)
       (* TODO *)
       (* 为了赶进度，先这样吧 *)
-      if List.length pfs <= 3 then
+      if List.length (List.filter pfs ~f:(fun (Paramfix(_, _, c)) -> not (c = intc 0))) <= 3 then
         if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then piece
         else begin wrapper components' end
       else begin 
