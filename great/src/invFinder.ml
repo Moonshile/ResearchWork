@@ -563,6 +563,7 @@ let tabular_rules_cinvs crules cinvs =
         let new_invs' =
           List.concat new_invs
           |> List.map ~f:simplify
+          |> List.filter ~f:(fun form -> not (form = chaos))
           |> List.map ~f:minify_inv_inc
           |> List.dedup ~compare:symmetry_form
         in
@@ -575,6 +576,7 @@ let tabular_rules_cinvs crules cinvs =
       let real_new_invs =
         List.concat new_invs
         |> List.map ~f:simplify
+        |> List.filter ~f:(fun form -> not (form = chaos))
         |> List.map ~f:minify_inv_inc
         |> List.dedup ~compare:symmetry_form
         |> List.map ~f:(normalize ~types:(!type_defs))
