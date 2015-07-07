@@ -50,7 +50,7 @@ class SMV(object):
         self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT],
             timeout=self.timeout)
         self.process.before
-        res = self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=self.timeout)
+        res = self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=None)
         if res == 0:
             return self.process.before.strip()
         return '0'
