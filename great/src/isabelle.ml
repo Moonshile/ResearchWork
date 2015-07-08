@@ -181,9 +181,8 @@ let statement_act statement =
         | [] -> raise Empty_exception
         | [Paramdef(name, tname)] ->
           let type_range = name2type ~tname ~types:(!types_ref) in
-          let num = List.length (List.filter type_range ~f:(fun c -> not (c = intc 0))) in
           let s_str = sprintf "(assign %s %s)" (var_act v) (exp_act e) in
-          sprintf "(forallSent (down %d) (\\<lambda>%s. %s))" num name s_str
+          sprintf "(forallSent (down N) (\\<lambda>%s. %s))" name s_str
         | _ -> raise (Unsupported "More than 1 paramters in exists are not supported yet")
       end
     | ForStatement(IfelseStatement(f, Assign(v, e1), Assign(_, e2)), pd) ->
@@ -192,10 +191,9 @@ let statement_act statement =
         | [] -> raise Empty_exception
         | [Paramdef(name, tname)] ->
           let type_range = name2type ~tname ~types:(!types_ref) in
-          let num = List.length (List.filter type_range ~f:(fun c -> not (c = intc 0))) in
           let s_str = sprintf "(assign %s (iteForm %s %s %s))"
             (var_act v) (formula_act f) (exp_act e1) (exp_act e2) in
-          sprintf "(forallSent (down %d) (\\<lambda>%s. %s))" num name s_str
+          sprintf "(forallSent (down N) (\\<lambda>%s. %s))" name s_str
         | _ -> raise (Unsupported "More than 1 paramters in exists are not supported yet")
       end
     | _ -> raise Empty_exception
@@ -263,7 +261,7 @@ let invs_act invs =
   let invs_no = up_to (List.length invs) in
   let invs_with_pd_count = List.map2_exn invs invs_no ~f:inv_act in
   let inv_strs = String.concat ~sep:"\n\n" (List.map invs_with_pd_count ~f:(fun (_, s) -> s)) in
-  let inv_insts_str =  String.concat ~sep:" \\<or>\n" (
+  let inv_insts_str = String.concat ~sep:" \\<or>\n" (
     List.map2_exn invs_no invs_with_pd_count ~f:(fun i (n, _) ->
       let tmp_vars = String.concat (List.map (gen_tmp_vars n) ~f:(fun t -> sprintf "%%%s." t)) in
       sprintf "ex%dP N (%% %s. f=inv%d %s)" i tmp_vars i tmp_vars
@@ -272,15 +270,61 @@ let invs_act invs =
   sprintf "%s\n\ndefinition invariants::\"nat \\<Rightarrow> formula set\" where [simp]:
 \"invariants N \\<equiv> {f.\n%s\n}\"" inv_strs inv_insts_str
 
+let init_act statement i =
+  let quant, body =
+    match statement with
+    | Assign(v, e) -> "", sprintf "(eqn %s %s)" (exp_act (var v)) (exp_act e)
+    | IfelseStatement(f, Assign(v, e1), Assign(_, e2)) ->
+      "", sprintf "(eqn %s (iteForm %s %s %s))" (exp_act (var v)) (formula_act f) (exp_act e1) (exp_act e2)
+    | ForStatement(Assign(v, e), pd) ->
+      begin
+        match pd with
+        | [] -> raise Empty_exception
+        | [Paramdef(name, tname)] ->
+          let type_range = name2type ~tname ~types:(!types_ref) in
+          let s_str = sprintf "(eqn %s %s)" (exp_act (var v)) (exp_act e) in
+          "N", sprintf "(forallForm (down N) (%% %s . %s))" name s_str
+        | _ -> raise (Unsupported "More than 1 paramters in exists are not supported yet")
+      end
+    | ForStatement(IfelseStatement(f, Assign(v, e1), Assign(_, e2)), pd) ->
+      begin
+        match pd with
+        | [] -> raise Empty_exception
+        | [Paramdef(name, tname)] ->
+          let type_range = name2type ~tname ~types:(!types_ref) in
+          let s_str = sprintf "(eqn %s (iteForm %s %s %s))"
+            (exp_act (var v)) (formula_act f) (exp_act e1) (exp_act e2) in
+          "N", sprintf "(forallForm (down N) (%% %s . %s))" name s_str
+        | _ -> raise (Unsupported "More than 1 paramters in exists are not supported yet")
+      end
+    | _ -> raise Empty_exception
+  in
+  let init_type_str = if quant = "" then "formula" else begin "nat \\<Rightarrow> formula" end in
+  quant, sprintf "definition initSpec%d::\"%s\" where [simp]:
+\"initSpec%d %s \\<equiv> %s\"" i init_type_str i quant body
 
+let inits_act statements =
+  let balanced = balance_ifstatement statements in
+  let init_no = up_to (List.length balanced) in
+  let init_strs_with_quant = List.map2_exn balanced init_no ~f:init_act in
+  let init_strs = String.concat ~sep:"\n\n" (List.map init_strs_with_quant ~f:(fun (_, s) -> s)) in
+  let init_insts_str = String.concat ~sep:",\n" (
+    List.map2_exn init_no (List.map init_strs_with_quant ~f:(fun (q, _) -> q)) ~f:(fun i q ->
+      sprintf "(initSpec%d %s)" i q
+    )
+  ) in
+  sprintf "%s\n\ndefinition allInitSpecs::\"nat \\<Rightarrow> formula list\" where [simp]:
+\"allInitSpecs N \\<equiv> [\n%s\n]\"" init_strs init_insts_str
 
 
 
 
 let protocol_act {name; types; vardefs; init; rules; properties} invs =
+  types_ref := types;
   let types_str = String.concat ~sep:"\n" (List.filter_map types ~f:type_act) in
   let rules_str = rules_act rules in
   let invs_str = invs_act invs in
+  let inits_str = inits_act init in
   sprintf "\
 theory %s imports localesDef\n\
 begin\n\
@@ -288,4 +332,5 @@ section{*Main definitions*}\n\
 %s\n\
 %s\n\
 %s\n\
-end\n" name types_str rules_str invs_str
+%s\n\
+end\n" name types_str rules_str invs_str inits_str
