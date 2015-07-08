@@ -148,6 +148,58 @@ let rec formEval form ~assigns =
 let preCond f statements = formEval f ~assigns:(statement_2_assigns statements)
 
 
+
+(* Minify inv by remove useless components one by one *)
+let minify_inv_desc inv =
+  let rec wrapper necessary parts =
+    match parts with
+    | [] ->
+      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList necessary))) then
+        necessary
+      else begin raise Empty_exception end
+    | p::parts' ->
+      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList (necessary@parts')))) then
+        wrapper necessary parts'
+      else begin
+        wrapper (p::necessary) parts'
+      end
+  in
+  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
+  andList (wrapper [] ls)
+
+(* Minify inv by add useful components gradually *)
+let minify_inv_inc inv =
+  let rec wrapper components =
+    match components with
+    | [] -> 
+      Prt.error ("Not invariant: "^ToStr.Smv.form_act inv);
+      raise Empty_exception
+    | parts::components' ->
+      let piece = normalize (andList parts) ~types:(!type_defs) in
+      let (_, pfs, _) = Generalize.form_act piece in
+      (*Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
+        "\nnormalized: "^ToStr.Smv.form_act piece^"Res: "^
+        (if List.length pfs <= 3 then
+          (if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then "true" else "false")
+          else begin "unknown" end
+        )
+      );*)
+      (* TODO *)
+      (* 为了赶进度，先这样吧 *)
+      if List.length (List.filter pfs ~f:(fun (Paramfix(_, _, c)) -> not (c = intc 0))) <= 3 then
+        if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then piece
+        else begin wrapper components' end
+      else begin 
+        Prt.error ("Paramter overflow: "^ToStr.Smv.form_act piece);
+        chaos(*raise Parameter_overflow*)
+      end
+  in
+  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
+  let components = combination_all ls in
+  wrapper components
+
+
+
 (********************************** Module Choose **************************************)
 
 (* Choose a true invariant *)
@@ -298,6 +350,7 @@ module Choose = struct
     if is_tautology inv then
       tautology inv
     else begin
+      let inv  = minify_inv_inc inv in
       let implied_by_old = inv_implied_by_old inv invs in
       match implied_by_old with
       | Some(old) -> implied inv old
@@ -488,65 +541,6 @@ let tabular_expans crule ~cinv ~old_invs =
 
 let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
-
-(* Minify inv by remove useless components one by one *)
-let minify_inv_desc inv =
-  let rec wrapper necessary parts =
-    match parts with
-    | [] ->
-      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList necessary))) then
-        necessary
-      else begin raise Empty_exception end
-    | p::parts' ->
-      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList (necessary@parts')))) then
-        wrapper necessary parts'
-      else begin
-        wrapper (p::necessary) parts'
-      end
-  in
-  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
-  andList (wrapper [] ls)
-
-(* Minify inv by add useful components gradually *)
-let minify_inv_inc inv =
-  let rec wrapper components =
-    match components with
-    | [] -> 
-      Prt.error ("Not invariant: "^ToStr.Smv.form_act inv);
-      raise Empty_exception
-    | parts::components' ->
-      let piece = normalize (andList parts) ~types:(!type_defs) in
-      let (_, pfs, _) = Generalize.form_act piece in
-      (*Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
-        "\nnormalized: "^ToStr.Smv.form_act piece^"Res: "^
-        (if List.length pfs <= 3 then
-          (if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then "true" else "false")
-          else begin "unknown" end
-        )
-      );*)
-      (* TODO *)
-      (* 为了赶进度，先这样吧 *)
-      if List.length (List.filter pfs ~f:(fun (Paramfix(_, _, c)) -> not (c = intc 0))) <= 3 then
-        if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then piece
-        else begin wrapper components' end
-      else begin 
-        Prt.error ("Paramter overflow: "^ToStr.Smv.form_act piece);
-        chaos(*raise Parameter_overflow*)
-      end
-  in
-  let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
-  let components = combination_all ls in
-  wrapper components
-
-
-
-
-
-
-
-
-
-
 (* Find new inv and relations with concrete rules and a concrete invariant *)
 let tabular_rules_cinvs crules cinvs =
   let rec wrapper cinvs new_inv_id old_invs relations =
@@ -586,7 +580,6 @@ let tabular_rules_cinvs crules cinvs =
           match Hashtbl.find inv_table key with 
           | None -> Hashtbl.replace inv_table ~key ~data:true; true
           | _ -> false)
-        |> List.filter ~f:(fun f -> all old_invs ~f:(fun old -> not (symmetry_form f old = 0)))
       in
       if real_new_invs = [] then () else begin
         print_endline (String.concat ~sep:"\n" (
