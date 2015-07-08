@@ -541,6 +541,35 @@ let tabular_expans crule ~cinv ~old_invs =
 
 let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
+let deduplicate_inv invs =
+  let rec inner_wrapper (new_r, invs_res) r invs =
+    match invs with
+    | [] -> (new_r, invs_res)
+    | i::invs' ->
+      let r_implies_i = not (Choose.can_imply r i = None) in
+      let i_implies_r = not (Choose.can_imply i r = None) in
+      if r_implies_i && i_implies_r then
+        if (String.length (ToStr.Smv.form_act r) < String.length (ToStr.Smv.form_act i)) then
+          inner_wrapper (r, invs_res) r invs'
+        else begin inner_wrapper (i, invs_res) i invs' end
+      else if r_implies_i then
+        inner_wrapper (r, invs_res) r invs'
+      else if i_implies_r then
+        inner_wrapper (i, invs_res) i invs'
+      else begin inner_wrapper (r, i::invs_res) r invs' end
+  in
+  let rec wrapper res invs =
+    match (res, invs) with
+    | (_, []) -> res
+    | ([], i::invs') -> wrapper [i] invs'
+    | (r::res', i::invs') ->
+      let (r', invs'') = inner_wrapper (r, []) r invs in
+      if List.length invs = List.length invs'' then
+        wrapper (i::res) invs'
+      else begin wrapper (r'::res') invs'' end
+  in
+  wrapper [] invs
+
 (* Find new inv and relations with concrete rules and a concrete invariant *)
 let tabular_rules_cinvs crules cinvs =
   let rec wrapper cinvs new_inv_id old_invs relations =
@@ -557,10 +586,8 @@ let tabular_rules_cinvs crules cinvs =
         *)
         let new_invs' =
           List.concat new_invs
-          |> List.map ~f:simplify
           |> List.filter ~f:(fun form -> not (form = chaos))
-          |> List.map ~f:minify_inv_inc
-          |> List.dedup ~compare:symmetry_form
+          |> deduplicate_inv
         in
         if new_invs' = [] then () else begin
           Prt.warning (String.concat ~sep:"\n" (
@@ -570,16 +597,9 @@ let tabular_rules_cinvs crules cinvs =
       else begin () end;
       let real_new_invs =
         List.concat new_invs
-        |> List.map ~f:simplify
         |> List.filter ~f:(fun form -> not (form = chaos))
-        |> List.map ~f:minify_inv_inc
-        |> List.dedup ~compare:symmetry_form
+        |> deduplicate_inv
         |> List.map ~f:(normalize ~types:(!type_defs))
-        |> List.filter ~f:(fun x ->
-          let key = ToStr.Smv.form_act x in
-          match Hashtbl.find inv_table key with 
-          | None -> Hashtbl.replace inv_table ~key ~data:true; true
-          | _ -> false)
       in
       if real_new_invs = [] then () else begin
         print_endline (String.concat ~sep:"\n" (
