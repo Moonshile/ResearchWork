@@ -21,6 +21,7 @@ exception Parameter_overflow
 *)
 type concrete_rule =
   | ConcreteRule of rule * paramref list
+with sexp
 
 val concrete_rule : rule -> paramref list -> concrete_rule
 
@@ -30,6 +31,7 @@ val concrete_rule : rule -> paramref list -> concrete_rule
 *)
 type concrete_prop =
   | ConcreteProp of prop * paramref list
+with sexp
 
 val concrete_prop : prop -> paramref list -> concrete_prop
 
@@ -43,6 +45,7 @@ type relation =
   | InvHoldForRule1
   | InvHoldForRule2
   | InvHoldForRule3 of concrete_prop
+with sexp
 
 val invHoldForRule1 : relation
 val invHoldForRule2 : relation
@@ -54,6 +57,7 @@ type t = {
   inv: concrete_prop;
   relation: relation;
 }
+with sexp
 
 
 val rule_2_concrete : rule -> paramref list list -> concrete_rule list

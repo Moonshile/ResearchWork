@@ -15,6 +15,7 @@ type const =
   | Intc of int
   | Strc of string
   | Boolc of bool
+with sexp
 
 let intc i = Intc i
 let strc s = Strc s
@@ -25,6 +26,7 @@ let boolc b = Boolc b
 *)
 type typedef =
   | Enum of string * const list
+with sexp
 
 let enum name letues = Enum(name, letues)
 
@@ -33,6 +35,7 @@ let enum name letues = Enum(name, letues)
 *)
 type paramdef =
   | Paramdef of string * string
+with sexp
 
 let paramdef name typename = Paramdef(name, typename)
 
@@ -43,6 +46,7 @@ let paramdef name typename = Paramdef(name, typename)
 type paramref =
   | Paramref of string
   | Paramfix of string * string * const
+with sexp
 
 let paramref name = Paramref name
 let paramfix vname tname value = Paramfix (vname, tname, value)
@@ -52,12 +56,14 @@ let paramfix vname tname value = Paramfix (vname, tname, value)
 *)
 type vardef =
   | Arrdef of string * paramdef list * string
+with sexp
 
 let arrdef name paramdef typename = Arrdef(name, paramdef, typename)
 
 (** Variable reference *)
 type var =
   | Arr of string * paramref list
+with sexp
 
 let arr name paramref = Arr(name, paramref)
 
@@ -70,6 +76,7 @@ type exp =
   | Const of const
   | Var of var
   | Param of paramref
+with sexp
 
 let const c = Const c
 let var v = Var v
@@ -89,6 +96,7 @@ type formula =
   | AndList of formula list
   | OrList of formula list
   | Imply of formula * formula
+with sexp
 
 let chaos = Chaos
 let miracle = Miracle
@@ -105,6 +113,7 @@ let imply f1 f2 = Imply(f1, f2)
 type statement =
   | Assign of var * exp
   | Parallel of statement list
+with sexp
 
 let assign v e = Assign(v, e)
 let parallel statements = Parallel statements
@@ -114,6 +123,7 @@ let parallel statements = Parallel statements
 *)
 type rule = 
   | Rule of string * paramdef list * formula * statement
+with sexp
 
 let rule name paramdef f s = Rule(name, paramdef, f, s)
 
@@ -122,6 +132,7 @@ let rule name paramdef f s = Rule(name, paramdef, f, s)
 *)
 type prop =
   | Prop of string * paramdef list * formula
+with sexp
 
 let prop name paramdef f = Prop(name, paramdef, f)
 
@@ -134,6 +145,7 @@ type protocol = {
   rules: rule list;
   properties: prop list;
 }
+with sexp
 
 (*----------------------------- Exceptions ----------------------------------*)
 

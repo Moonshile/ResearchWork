@@ -32,6 +32,7 @@ type formula =
   | Imply of formula * formula
   | ForallFormula of paramdef list * formula
   | ExistFormula of paramdef list * formula
+with sexp
 
 val chaos : formula
 val miracle : formula
@@ -54,6 +55,7 @@ type statement =
   | IfStatement of formula * statement
   | IfelseStatement of formula * statement * statement
   | ForStatement of statement * paramdef list
+with sexp
 
 val assign : var -> exp -> statement
 val parallel : statement list -> statement
@@ -63,11 +65,13 @@ val forStatement : statement -> paramdef list -> statement
 
 type prop =
   | Prop of string * paramdef list * formula
+with sexp
 
 val prop : string -> paramdef list -> formula -> prop
 
 type rule = 
   | Rule of string * paramdef list * formula * statement
+with sexp
 
 val rule : string -> paramdef list -> formula -> statement -> rule
 
@@ -80,6 +84,7 @@ type protocol = {
   rules: rule list;
   properties: prop list;
 }
+with sexp
 
 (*----------------------------- Exceptions ----------------------------------*)
 

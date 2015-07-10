@@ -26,6 +26,7 @@ exception Parameter_overflow
 *)
 type concrete_rule =
   | ConcreteRule of rule * paramref list
+with sexp
 
 let concrete_rule r ps = ConcreteRule(r, ps)
 
@@ -35,6 +36,7 @@ let concrete_rule r ps = ConcreteRule(r, ps)
 *)
 type concrete_prop =
   | ConcreteProp of prop * paramref list
+with sexp
 
 let concrete_prop property ps = ConcreteProp(property, ps)
 
@@ -48,6 +50,7 @@ type relation =
   | InvHoldForRule1
   | InvHoldForRule2
   | InvHoldForRule3 of concrete_prop
+with sexp
 
 let invHoldForRule1 = InvHoldForRule1
 let invHoldForRule2 = InvHoldForRule2
@@ -59,6 +62,7 @@ type t = {
   inv: concrete_prop;
   relation: relation;
 }
+with sexp
 
 let type_defs = ref []
 

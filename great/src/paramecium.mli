@@ -13,6 +13,7 @@ type const =
   | Intc of int
   | Strc of string
   | Boolc of bool
+with sexp
 
 val intc : int -> const
 val strc : string -> const
@@ -23,6 +24,7 @@ val boolc : bool -> const
 *)
 type typedef =
   | Enum of string * const list
+with sexp
 
 val enum : string -> const list -> typedef
 
@@ -31,6 +33,7 @@ val enum : string -> const list -> typedef
 *)
 type paramdef =
   | Paramdef of string * string
+with sexp
 
 val paramdef : string -> string -> paramdef
 
@@ -41,6 +44,7 @@ val paramdef : string -> string -> paramdef
 type paramref =
   | Paramref of string
   | Paramfix of string * string * const
+with sexp
 
 val paramref : string -> paramref
 val paramfix : string -> string -> const -> paramref
@@ -50,12 +54,14 @@ val paramfix : string -> string -> const -> paramref
 *)
 type vardef =
   | Arrdef of string * paramdef list * string
+with sexp
 
 val arrdef : string -> paramdef list -> string -> vardef
 
 (** Variable reference *)
 type var =
   | Arr of string * paramref list
+with sexp
 
 val arr : string -> paramref list -> var
 
@@ -68,6 +74,7 @@ type exp =
   | Const of const
   | Var of var
   | Param of paramref
+with sexp
 
 val const : const -> exp
 val var : var -> exp
@@ -87,6 +94,7 @@ type formula =
   | AndList of formula list
   | OrList of formula list
   | Imply of formula * formula
+with sexp
 
 val chaos : formula
 val miracle : formula
@@ -103,6 +111,7 @@ val imply : formula -> formula -> formula
 type statement =
   | Assign of var * exp
   | Parallel of statement list
+with sexp
 
 val assign : var -> exp -> statement
 val parallel : statement list -> statement
@@ -112,6 +121,7 @@ val parallel : statement list -> statement
 *)
 type rule = 
   | Rule of string * paramdef list * formula * statement
+with sexp
 
 val rule : string -> paramdef list -> formula -> statement -> rule
 
@@ -120,6 +130,7 @@ val rule : string -> paramdef list -> formula -> statement -> rule
 *)
 type prop =
   | Prop of string * paramdef list * formula
+with sexp
 
 val prop : string -> paramdef list -> formula -> prop
 
@@ -132,6 +143,7 @@ type protocol = {
   rules: rule list;
   properties: prop list;
 }
+with sexp
 
 (*----------------------------- Exceptions ----------------------------------*)
 

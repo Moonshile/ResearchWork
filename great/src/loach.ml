@@ -40,6 +40,7 @@ type formula =
   | Imply of formula * formula
   | ForallFormula of paramdef list * formula
   | ExistFormula of paramdef list * formula
+with sexp
 
 let chaos = Chaos
 let miracle = Miracle
@@ -58,6 +59,7 @@ type statement =
   | IfStatement of formula * statement
   | IfelseStatement of formula * statement * statement
   | ForStatement of statement * paramdef list
+with sexp
 
 let assign v e = Assign(v, e)
 let parallel statements = Parallel statements
@@ -70,11 +72,13 @@ let forStatement s paramdefs = ForStatement(s, paramdefs)
 *)
 type rule = 
   | Rule of string * paramdef list * formula * statement
+with sexp
 
 let rule name paramdef f s = Rule(name, paramdef, f, s)
 
 type prop =
   | Prop of string * paramdef list * formula
+with sexp
 
 let prop name paramdef f = Prop(name, paramdef, f)
 
@@ -87,6 +91,7 @@ type protocol = {
   rules: rule list;
   properties: prop list;
 }
+with sexp
 
 let rec apply_form f ~p =
   match f with
