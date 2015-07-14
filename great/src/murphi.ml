@@ -1,8 +1,3 @@
-(** Check a invariant with NuSMV
-
-    @author Yongjian Li <lyj238@gmail.com>
-    @author Kaiqiang Duan <duankq@ios.ac.cn>
-*)
 
 open Utils
 
@@ -15,15 +10,9 @@ let protocol_name = ref ""
 
 let table = Hashtbl.create ~hashable:String.hashable ()
 
-let set_context name smv_file_content =
+let set_context name mu_file_content =
   protocol_name := name;
-  let _res = Client.Smv.compute_reachable name smv_file_content in
-  let diameter = ref 0 in
-  while !diameter = 0 do
-    Unix.sleep 1;
-    diameter := Client.Smv.query_reachable name;
-  done;
-  !diameter
+  Client.Murphi.set_context name mu_file_content
 
 
 (** Judge if a given invariant is true invariant
@@ -38,6 +27,6 @@ let is_inv ?(quiet=true) inv =
   | None -> 
     if (!protocol_name) = "" then raise Protocol_name_not_set
     else begin
-      let r = Client.Smv.check_inv (!protocol_name) inv in
+      let r = Client.Murphi.check_inv (!protocol_name) inv in
       (Hashtbl.replace table ~key:inv ~data:r); r
     end

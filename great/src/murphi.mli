@@ -1,13 +1,8 @@
-(** Check a invariant with NuSMV
 
-    @author Yongjian Li <lyj238@gmail.com>
-    @author Kaiqiang Duan <duankq@ios.ac.cn>
-*)
 
-(* Raises when there are some errors in the NuSMV code *)
 exception Protocol_name_not_set
 
-val set_context : string -> string -> int
+val set_context : string -> string -> bool
 
 (** Judge if a given invariant is true invariant
 

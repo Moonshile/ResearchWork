@@ -228,11 +228,13 @@ end
 (** Translate to smv string *)
 module Smv = struct
 
+  let strc_to_lower = ref true
+
   (* Translate a const to smv const *)
   let const_act c =
     match c with
     | Intc(i) -> Int.to_string i
-    | Strc(s) -> String.lowercase s
+    | Strc(s) -> if (!strc_to_lower) then String.lowercase s else begin s end
     | Boolc(b) -> String.uppercase (Bool.to_string b)
 
   let type_act ~types name =
@@ -293,21 +295,22 @@ module Smv = struct
       @param form the formula to be translated
       @return the smv string
   *)
-  let rec form_act form =
+  let rec form_act ?(lower=true) form =
+    strc_to_lower := lower;
     match form with
     | Chaos -> "TRUE"
     | Miracle -> "FALSE"
     | Eqn(e1, e2) -> sprintf "(%s = %s)" (exp_act e1) (exp_act e2)
-    | Neg(form) -> sprintf "(!%s)" (form_act form)
+    | Neg(form) -> sprintf "(!%s)" (form_act ~lower form)
     | AndList(fl) ->
-      List.map fl ~f:form_act
+      List.map fl ~f:(form_act ~lower)
       |> reduce ~default:"TRUE" ~f:(fun res x -> sprintf "%s & %s" res x)
       |> sprintf "(%s)"
     | OrList(fl) ->
-      List.map fl ~f:form_act
+      List.map fl ~f:(form_act ~lower)
       |> reduce ~default:"FALSE" ~f:(fun res x -> sprintf "%s | %s" res x)
       |> sprintf "(%s)"
-    | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act f1) (form_act f2)
+    | Imply(f1, f2) -> sprintf "(%s -> %s)" (form_act ~lower f1) (form_act ~lower f2)
 
   let rec statement_act ?(is_init=false) s fstr =
     match s with

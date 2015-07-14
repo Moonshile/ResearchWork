@@ -15,7 +15,7 @@ let protocol_name = ref ""
 
 let table = Hashtbl.create ~hashable:String.hashable ()
 
-let set_smt_context name context =
+let set_context name context =
   protocol_name := name;
   Client.Smt2.set_context name context
 

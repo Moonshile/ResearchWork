@@ -42,7 +42,7 @@ module Smv : sig
       @param form the formula to be translated
       @return the smv string
   *)
-  val form_act : formula -> string
+  val form_act : ?lower:bool -> formula -> string
 
   val protocol_act : protocol -> string
   

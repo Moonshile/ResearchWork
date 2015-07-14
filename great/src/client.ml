@@ -20,6 +20,8 @@ type request_type =
   | SET_SMT2_CONTEXT
   | QUERY_SMT2
   | QUERY_STAND_SMT2
+  | SET_MU_CONTEXT
+  | CHECK_INV_BY_MU
 
 let request_type_to_str rt =
   match rt with
@@ -33,6 +35,8 @@ let request_type_to_str rt =
   | SET_SMT2_CONTEXT -> "4"
   | QUERY_SMT2 -> "5"
   | QUERY_STAND_SMT2 -> "6"
+  | SET_MU_CONTEXT -> "8"
+  | CHECK_INV_BY_MU -> "9"
 
 let str_to_request_type str =
   match str with
@@ -46,6 +50,8 @@ let str_to_request_type str =
   | "4" -> SET_SMT2_CONTEXT
   | "5" -> QUERY_SMT2
   | "6" -> QUERY_STAND_SMT2
+  | "8" -> SET_MU_CONTEXT
+  | "9" -> CHECK_INV_BY_MU
   | _ -> raise Empty_exception
 
 let make_request str host port =
@@ -73,7 +79,12 @@ let request cmd req_str host port =
     if s = ERROR then raise Server_exception
     else begin (s, res') end
 
+
+
+
 module Smv = struct
+
+  exception Cannot_check
 
   let host = ref (UnixLabels.inet_addr_of_string "127.0.0.1")
 
@@ -92,22 +103,47 @@ module Smv = struct
       | _ -> raise Server_exception
     else begin 0 end
 
-  let rec check_inv name inv =
-    let (_, res) = request CHECK_INV (sprintf "%s,%s" name inv) (!host) (!port) in
-    match res with
-    | r::[] -> 
-      if r = "true" || r = "false" then
-        Bool.of_string r
-      else begin
-        check_inv name inv
-      end
-    | _ -> raise Server_exception
+  let check_inv name inv =
+    let (status, res) = request CHECK_INV (sprintf "%s,%s" name inv) (!host) (!port) in
+    if status = OK then
+      match res with
+      | r::[] -> Bool.of_string r
+      | _ -> raise Server_exception
+    else begin raise Cannot_check end
 
   let quit name =
     let (s, _) = request SMV_QUIT name (!host) (!port) in
     s = OK
 
 end
+
+
+
+
+
+
+module Murphi = struct
+
+  let host = ref (UnixLabels.inet_addr_of_string "127.0.0.1")
+
+  let port = ref 50008
+
+  let set_context name context =
+    let (s, _) = request SET_MU_CONTEXT (sprintf "%s,%s" name context) (!host) (!port) in
+    s = OK
+
+  let check_inv name inv =
+    let (_, res) = request CHECK_INV_BY_MU (sprintf "%s,%s" name inv) (!host) (!port) in
+    match res with
+    | r::[] -> Bool.of_string r
+    | _ -> raise Server_exception
+
+end
+
+
+
+
+
 
 module Smt2 = struct
 

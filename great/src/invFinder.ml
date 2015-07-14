@@ -5,7 +5,6 @@
 *)
 
 open Utils
-open Smv
 open Formula
 open Paramecium
 
@@ -158,11 +157,11 @@ let minify_inv_desc inv =
   let rec wrapper necessary parts =
     match parts with
     | [] ->
-      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList necessary))) then
+      if Smv.is_inv (ToStr.Smv.form_act (neg (andList necessary))) then
         necessary
       else begin raise Empty_exception end
     | p::parts' ->
-      if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg (andList (necessary@parts')))) then
+      if Smv.is_inv (ToStr.Smv.form_act (neg (andList (necessary@parts')))) then
         wrapper necessary parts'
       else begin
         wrapper (p::necessary) parts'
@@ -184,14 +183,19 @@ let minify_inv_inc inv =
       (*Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
         "\nnormalized: "^ToStr.Smv.form_act piece^"Res: "^
         (if List.length pfs <= 3 then
-          (if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then "true" else "false")
+          (if Smv.is_inv (ToStr.Smv.form_act (neg piece)) then "true" else "false")
           else begin "unknown" end
         )
       );*)
       (* TODO *)
       (* 为了赶进度，先这样吧 *)
       if List.length (List.filter pfs ~f:(fun (Paramfix(_, _, c)) -> not (c = intc 0))) <= 3 then
-        if Smv.is_inv_by_smv (ToStr.Smv.form_act (neg piece)) then piece
+        let check_inv_res =
+          try Smv.is_inv (ToStr.Smv.form_act (neg piece)) with
+          | Client.Smv.Cannot_check -> 
+            Murphi.is_inv (ToStr.Smv.form_act ~lower:false (neg piece))
+        in
+        if check_inv_res then piece
         else begin wrapper components' end
       else begin 
         Prt.error ("Paramter overflow: "^ToStr.Smv.form_act piece);
@@ -360,7 +364,7 @@ module Choose = struct
       | Some(old) -> implied inv old
       | None ->
         let normalized = normalize inv ~types:(!type_defs) in
-        if must_new || is_inv_by_smv (ToStr.Smv.form_act (neg normalized)) then
+        if must_new || Smv.is_inv (ToStr.Smv.form_act (neg normalized)) then
           new_inv inv
         else begin
           not_inv
@@ -641,16 +645,17 @@ let result_to_str (_, invs, relations) =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol ?(smv="") () =
+let find ~protocol ?(smv="") ?(murphi="") () =
   let {name; types; vardefs; init=_init; rules; properties} = Loach.Trans.act protocol in
-  let _smt_context = Smt.set_smt_context name (ToStr.Smt2.context_of ~types ~vardefs) in
+  let _smt_context = Smt.set_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _smv_context =
     if smv = "" then
-      Smv.set_smv_context name (Loach.ToSmv.protocol_act protocol)
+      Smv.set_context name (Loach.ToSmv.protocol_act protocol)
     else begin
-      Smv.set_smv_context name smv
+      Smv.set_context name smv
     end
   in
+  let _mu_context = Murphi.set_context name murphi in
   type_defs := types;
   let cinvs = 
     List.concat (List.map properties ~f:simplify_prop)

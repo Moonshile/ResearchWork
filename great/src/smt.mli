@@ -6,7 +6,7 @@
 
 exception Protocol_name_not_set
 
-val set_smt_context : string -> string -> bool
+val set_context : string -> string -> bool
 
 (** Judge if a given formula is satisfiable
 
