@@ -17,6 +17,12 @@ let set_smt_server_host host () =
 let set_smt_server_port port () =
   Smt2.port := port
 
+let set_mu_server_host host () =
+  Murphi.host := UnixLabels.inet_addr_of_string host
+
+let set_mu_server_port port () =
+  Murphi.port := port
+
 let command program =
   Command.basic
     ~summary:"Find invariants of parameterized systems."
@@ -27,8 +33,10 @@ let command program =
       +> flag "-vp" (optional int) ~doc:"set Port of smV server"
       +> flag "-th" (optional string) ~doc:"set ip address as Host of smT server"
       +> flag "-tp" (optional int) ~doc:"set Port of smT server"
+      +> flag "-mh" (optional string) ~doc:"set ip address as Host of Murphi server"
+      +> flag "-mp" (optional int) ~doc:"set Port of Murphi server"
     )
-    (fun g vh vp th tp () ->
+    (fun g vh vp th tp mh mp () ->
       begin
         match g with
         | true -> open_debug ()
@@ -52,6 +60,16 @@ let command program =
       begin
         match tp with
         | Some port -> set_smt_server_port port ()
+        | None -> ()
+      end;
+      begin
+        match mh with
+        | Some host -> set_mu_server_host host ()
+        | None -> ()
+      end;
+      begin
+        match mp with
+        | Some port -> set_mu_server_port port ()
         | None -> ()
       end;
       program ()
