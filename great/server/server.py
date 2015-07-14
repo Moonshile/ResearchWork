@@ -5,23 +5,31 @@ import time, os, socket, hashlib, sys
 from simpserv import start_server
 from smvserv import SMV
 from z3serv import SMT2
+from muserv import Murphi
 
 from settings import MAX_SLEEP_TIME, TIME_OUT, SMV_PATH, SMV_FILE_DIR, HOST, PORT
+from settings import MU_PATH, MU_INCLUDE, GXX_PATH, MU_FILE_DIR, MU_CHECK_TIMEOUT, MU_CHECK_MEMORY
 
 ERROR = '-2'
 WAITING = '-1'
 OK = '0'
+
 COMPUTE_REACHABLE = '1'
 QUERY_REACHABLE = '2'
 CHECK_INV = '3'
 SMV_QUIT = '7'
+
 SET_SMT2_CONTEXT = '4'
 QUERY_SMT2 = '5'
 QUERY_STAND_SMT2 = '6'
 
+SET_MU_CONTEXT = '8'
+CHECK_INV_BY_MU = '9'
+
 
 smt2_pool = {}
 smv_pool = {}
+mu_pool = {}
 
 __verbose = False
 
@@ -78,21 +86,30 @@ def serv(conn, addr):
         """
         In this case, cmd should be [length, command, command_id, name]
         """
-        res = smv_pool[cmd[2]].query_reachable()
-        conn.sendall(','.join([OK, res]) if res else WAITING)
+        if cmd[2] in smv_pool:
+            res = smv_pool[cmd[2]].query_reachable()
+            conn.sendall(','.join([OK, res]) if res else WAITING)
+        else:
+            conn.sendall(ERROR)
     elif cmd[0] == CHECK_INV:
         """
         In this case, cmd should be [length, command, command_id, name, inv]
         """
-        res = smv_pool[cmd[2]].check(cmd[3])
-        conn.sendall(','.join([OK, res]))
+        if cmd[2] in smv_pool:
+            res = smv_pool[cmd[2]].check(cmd[3])
+            conn.sendall(','.join([OK, res]))
+        else:
+            conn.sendall(ERROR)
     elif cmd[0] == SMV_QUIT:
         """
         In this case, cmd should be [length, command, command_id, name]
         """
-        smv_pool[cmd[2]].exit()
-        del smv_pool[cmd[2]]
-        conn.sendall(OK)
+        if cmd[2] in smv_pool:
+            smv_pool[cmd[2]].exit()
+            del smv_pool[cmd[2]]
+            conn.sendall(OK)
+        else:
+            conn.sendall(ERROR)
     elif cmd[0] == SET_SMT2_CONTEXT:
         """
         In this case, cmd should be [length, command, command_id, name, context]
@@ -116,8 +133,30 @@ def serv(conn, addr):
         smt2 = SMT2(cmd[2])
         res = smt2.check(cmd[3])
         conn.sendall(','.join([OK, res]))
+    elif cmd[0] == SET_MU_CONTEXT:
+        """
+        In this case, cmd should be [length, command, command_id, name, context]
+        """
+        mu = Murphi(cmd[2], MU_PATH, MU_INCLUDE, GXX_PATH, MU_FILE_DIR, cmd[3], 
+            memory=MU_CHECK_MEMORY, timeout=MU_CHECK_TIMEOUT)
+        mu_pool[cmd[2]] = mu
+        conn.sendall(OK)
+    elif cmd[0] == CHECK_INV_BY_MU:
+        """
+        In this case, cmd should be [length, command, command_id, name, inv]
+        """
+        if cmd[2] in mu_pool:
+            res = mu_pool[cmd[2]].check(cmd[3])
+            conn.sendall(','.join([OK, res]))
+        else:
+            conn.sendall(ERROR)
+
+
     conn.close()
     if __verbose: print ': ', res
+
+
+
 
 if '-v' in sys.argv or '--verbose' in sys.argv:
     __verbose = True

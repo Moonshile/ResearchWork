@@ -47,10 +47,9 @@ class SMV(object):
     def check(self, invariant):
         self.clear()
         self.process.send('check_invar -p \"' + invariant + '\"\n')
-        self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT],
-            timeout=self.timeout)
-        self.process.before
-        res = self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=None)
+        res = self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT],
+            timeout=None)
+        self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=self.timeout)
         if res == 0:
             return self.process.before.strip()
         return '0'
@@ -61,12 +60,12 @@ class SMV(object):
         self.process.terminate(force=True)
         return res == 0
 
-"""
-smv = SMV('/home/duan/Downloads/NuSMV/bin/NuSMV', '/tmp/NuSMV/20ca85cec23c961fd6aa03f2a85db182.smv')
-print smv.process.before
-print smv.go_and_compute_reachable()
-print smv.check('af')
-print smv.check('n[1] = i')
-print smv.check('n[1] = c -> n[2] != c')
-print smv.exit()
-"""
+if __name__ == '__main__':
+    smv = SMV('/home/duan/Downloads/NuSMV/bin/NuSMV', 'mutualEx.smv')
+    print smv.process.before
+    print smv.go_and_compute_reachable()
+    print smv.check('af')
+    print smv.check('n[1] = i')
+    print smv.check('n[1] = c -> n[2] != c')
+    print smv.exit()
+
