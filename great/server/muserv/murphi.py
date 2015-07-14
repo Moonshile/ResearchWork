@@ -46,6 +46,10 @@ class Murphi(object):
     def expect_fail(self, filename):
         process = spawn(filename + ' -pn -m %d'%self.memory)
         res = process.expect(['Invariant\s+".*?"\s+failed.', EOF, TIMEOUT], timeout=self.timeout)
+        process.terminate(force=True)
+        os.remove(os.path.join(self.mu_file_dir, self.name + '.m'))
+        os.remove(os.path.join(self.mu_file_dir, self.name + '.cpp'))
+        os.remove(os.path.join(self.mu_file_dir, self.name))
         return res == 0
 
 

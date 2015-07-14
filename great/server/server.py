@@ -137,7 +137,7 @@ def serv(conn, addr):
         """
         In this case, cmd should be [length, command, command_id, name, context]
         """
-        mu = Murphi(cmd[2], MU_PATH, MU_INCLUDE, GXX_PATH, MU_FILE_DIR, cmd[3], 
+        mu = Murphi(cmd[2], MU_PATH, MU_INCLUDE, GXX_PATH, MU_FILE_DIR, ','.join(cmd[3:]), 
             memory=MU_CHECK_MEMORY, timeout=MU_CHECK_TIMEOUT)
         mu_pool[cmd[2]] = mu
         conn.sendall(OK)
