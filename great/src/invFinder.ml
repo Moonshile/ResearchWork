@@ -414,7 +414,9 @@ module Choose = struct
 
   (* Assignments on 0 dimension variables *)
   let assigns_on_0_dimen assigns =
-    List.filter assigns ~f:(fun (Arr(_, paramrefs), _) -> List.is_empty paramrefs)
+    List.filter assigns ~f:(fun (Arr(ls), _) -> List.is_empty (
+      List.concat (List.map ls ~f:(fun (_, params) -> params))
+    ))
   
   (* choose new inv about 0 dimension variables *)
   let choose_with_0_dimen_var guards ants_0_dimen cons invs =

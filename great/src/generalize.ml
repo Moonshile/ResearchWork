@@ -45,9 +45,16 @@ let components_act components pds pfs ~f =
   wrapper components [] pds pfs
 
 (** Convert var *)
-let var_act (Arr(name, prs)) pds pfs =
-  let (pds', pfs', prs') = components_act prs pds pfs ~f:paramref_act in
-  (pds', pfs', arr name prs')
+let var_act (Arr(ls)) pds pfs =
+  let rec wrapper ls pds pfs res =
+    match ls with
+    | [] -> (pds, pfs, res)
+    | (n, prs)::ls' ->
+      let (pds', pfs', prs') = components_act prs pds pfs ~f:paramref_act in
+      wrapper ls' pds' pfs' (res@[(n, prs')])
+  in
+  let (pds', pfs', ls') = wrapper ls pds pfs [] in
+  (pds', pfs', arr ls')
 
 (** Convert exp *)
 let exp_act e pds pfs =

@@ -52,8 +52,14 @@ ruleset j: NODE do
 endrule; endruleset;
 
 ruleset i: NODE do
- rule "SendReqE"
-      (Cache[i].State = I | Cache[i].State = S) & Chan1[i].Cmd = Empty ==> 
+ rule "SendReqEI"
+      (Cache[i].State = I) & Chan1[i].Cmd = Empty ==> 
+        begin Chan1[i].Cmd := ReqE;
+endrule; endruleset;
+
+ruleset i: NODE do
+ rule "SendReqES"
+      (Cache[i].State = S) & Chan1[i].Cmd = Empty ==> 
         begin Chan1[i].Cmd := ReqE;
 endrule; endruleset;
 
@@ -69,8 +75,17 @@ ruleset i: NODE do
 endrule; endruleset;
   
 ruleset i: NODE do
- rule "SendInv"
-      (CurCmd = ReqE | CurCmd = ReqS & ExGntd)
+ rule "SendInvE"
+      (CurCmd = ReqE)
+      & InvSet[i] & Chan2[i].Cmd = Empty ==>
+       begin
+        Chan2[i].Cmd := Inv;
+        InvSet[i] := false;
+endrule; endruleset;
+  
+ruleset i: NODE do
+ rule "SendInvS"
+      (CurCmd = ReqS & ExGntd)
       & InvSet[i] & Chan2[i].Cmd = Empty ==>
        begin
         Chan2[i].Cmd := Inv;

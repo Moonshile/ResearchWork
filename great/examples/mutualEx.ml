@@ -112,4 +112,4 @@ let protocol = {
 
 (*find ~protocol ();;*)
 
-print_endline (Isabelle.protocol_act protocol);;
+print_endline (Isabelle.protocol_act protocol []);;

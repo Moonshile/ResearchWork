@@ -55,17 +55,17 @@ let paramfix vname tname value = Paramfix (vname, tname, value)
     + Array var: name, param definitions, type name
 *)
 type vardef =
-  | Arrdef of string * paramdef list * string
+  | Arrdef of (string * paramdef list) list * string
 with sexp
 
-let arrdef name paramdef typename = Arrdef(name, paramdef, typename)
+let arrdef ls typename = Arrdef(ls, typename)
 
 (** Variable reference *)
 type var =
-  | Arr of string * paramref list
+  | Arr of (string * paramref list) list
 with sexp
 
-let arr name paramref = Arr(name, paramref)
+let arr ls = Arr(ls)
 
 (** Represents expressions, including
     + Constants
@@ -257,8 +257,10 @@ let apply_paramref pr ~p =
   | Paramfix(_) -> pr
 
 (** Apply array with param *)
-let apply_array (Arr(name, params)) ~p =
-  arr name (List.map params ~f:(apply_paramref ~p))
+let apply_array (Arr(ls)) ~p =
+  arr (List.map ls ~f:(fun (name, params) ->
+    name, List.map params ~f:(apply_paramref ~p)
+  ))
 
 (** Apply exp with param *)
 let apply_exp exp ~p =
@@ -344,8 +346,8 @@ module VarNames = struct
 
   (** Names of var *)
   let of_var v =
-    let Arr(name, _) = v in
-    of_list [name]
+    let Arr(ls) = v in
+    of_list (List.map ls ~f:(fun (n, _) -> n))
 
   (** Names of exp *)
   let of_exp e =

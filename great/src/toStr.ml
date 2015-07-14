@@ -33,13 +33,14 @@ module Debug = struct
 
   (* Translate a variable to Debug variable *)
   let var_act v =
-    let Arr(name, params) = v in
-    if params = [] then
-      name
-    else begin
-      let actual_ps = List.map params ~f:paramref_act in
-      sprintf "%s%s" name (String.concat actual_ps)
-    end
+    let Arr(ls) = v in
+    String.concat ~sep:"." (List.map ls ~f:(fun (n, prs) ->
+      match prs with
+      | [] -> n
+      | _ ->
+        let actual_ps = List.map prs ~f:paramref_act in
+        sprintf "%s%s" n (String.concat actual_ps)
+    ))
 
   (* Translate an exp to Debug exp *)
   let exp_act exp =
@@ -125,7 +126,10 @@ module Smt2 = struct
   
   (* Translate a variable definition to smt2 function definition *)
   let vardef_act vd ~types =
-    let Arrdef(name, paramdefs, tname) = vd in
+    let Arrdef(ls, tname) = vd in
+    let (names, paramdefs_list) = List.unzip ls in
+    let name = String.concat ~sep:"." names in
+    let paramdefs = List.concat paramdefs_list in
     let type_name tname =
       let consts = name2type ~tname ~types in
       if all consts ~f:const_is_strc then
@@ -147,7 +151,10 @@ module Smt2 = struct
 
   (* Translate a variable to smt2 function call *)
   let var_act v =
-    let Arr(name, params) = v in
+    let Arr(ls) = v in
+    let (names, paramrefs_list) = List.unzip ls in
+    let name = String.concat ~sep:"." names in
+    let params = List.concat paramrefs_list in
     if params = [] then
       name
     else begin
@@ -244,29 +251,31 @@ module Smv = struct
     | Paramref(_) -> raise Unexhausted_inst
 
   let vardef_act ~types vd =
-    let Arrdef(name, pds, t) = vd in
+    let Arrdef(ls, t) = vd in
     let type_str = type_act ~types t in
-    if pds = [] then
-      sprintf "%s : %s;" name type_str
-    else begin
-      let ps = cart_product_with_paramfix pds types in
-      let const_strs = List.map ps ~f:(fun group -> 
-        List.map group ~f:(fun pr -> paramref_act pr)
-        |> String.concat
-      ) in
-      List.map const_strs ~f:(fun cstr -> sprintf "%s%s : %s;" name cstr type_str)
-      |> String.concat ~sep:"\n"
-    end
+    let parts = List.map ls ~f:(fun (n, pds) ->
+      match pds with
+      | [] -> [n]
+      | _ ->
+        let ps = cart_product_with_paramfix pds types in
+        let const_strs = List.map ps ~f:(fun group -> 
+          List.map group ~f:(fun pr -> paramref_act pr)
+          |> String.concat
+        ) in
+        List.map const_strs ~f:(fun cstr -> sprintf "%s%s" n cstr)
+    ) in
+    let full_parts = cartesian_product parts in
+    let full_names = List.map full_parts ~f:(fun parts -> String.concat ~sep:"." parts) in
+    String.concat ~sep:"\n" (List.map full_names ~f:(fun n -> sprintf "%s : %s;" n type_str))
 
   (* Translate a variable to smv variable *)
   let var_act v =
-    let Arr(name, params) = v in
-    if params = [] then
-      name
-    else begin
-      let actual_ps = List.map params ~f:paramref_act in
-      sprintf "%s%s" name (String.concat actual_ps)
-    end
+    let Arr(ls) = v in
+    String.concat ~sep:"." (List.map ls ~f:(fun (n, prs) ->
+      match prs with
+      | [] -> n
+      | _ -> sprintf "%s%s" n (String.concat (List.map prs ~f:paramref_act))
+    ))
 
   (* Translate an exp to smv exp *)
   let exp_act exp =

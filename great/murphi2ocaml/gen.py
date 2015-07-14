@@ -72,7 +72,7 @@ class Record(object):
 
     def judgeRecord(self, n, p, v):
         if v in self.typenames:
-            return '  [arrdef \"%s\" %s \"%s\"]'%(n, p, v)
+            return '  [arrdef [(\"%s\", %s)] \"%s\"]'%(n, p, v)
         else:
             return '  record_def \"%s\" %s _%s'%(n, p, v)
 
@@ -121,7 +121,7 @@ class Vardef(object):
 
     def judgeRecord(self, n, p, v):
         if v in self.typenames:
-            return '  [arrdef \"%s\" %s \"%s\"]'%(n, p, v)
+            return '  [arrdef [(\"%s\", %s)] \"%s\"]'%(n, p, v)
         else:
             return '  record_def \"%s\" %s _%s'%(n, p, v)
 
@@ -263,7 +263,7 @@ class Formula(object):
         )
         variables = map(
             lambda parts: 'global \"%s\"'%parts[0] if len(parts) == 1 else\
-                'arr \"%s\" [%s]' %(
+                'arr [(\"%s\", [%s])]' %(
                     parts[0], 
                     '; '.join(map(lambda p: 'paramref \"%s\"'%p, parts[1:]))
                 ),
@@ -398,7 +398,7 @@ class Statement(object):
         )
         variables = map(
             lambda parts: 'global \"%s\"'%parts[0] if len(parts) == 1 else\
-                'arr \"%s\" [%s]' %(
+                'arr [(\"%s\", [%s])]' %(
                     parts[0], 
                     '; '.join(map(lambda p: 'paramref \"%s\"'%p, parts[1:]))
                 ),

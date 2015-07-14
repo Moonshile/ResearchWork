@@ -16,19 +16,18 @@ open Paramecium
 exception Unexhausted_inst
 
 (** Global variable *)
-let global name = arr name []
+let global name = arr [(name, [])]
 
 (** Record definition *)
 let record_def name paramdefs vardefs =
-    List.map vardefs ~f:(fun (Arrdef(n, pds, t)) ->
-      arrdef (sprintf "%s.%s" name n) (List.concat [paramdefs; pds]) t
-    )
+  List.map vardefs ~f:(fun vardef ->
+    let Arrdef(ls, t) = vardef in
+    arrdef ((name, paramdefs)::ls) t
+  )
 
 (** Record *)
 let record vars =
-  let named_vars = List.map vars ~f:(fun (Arr(name, prs)) -> (name, prs)) in
-  let names, prs = List.unzip named_vars in
-  arr (String.concat names ~sep:".") (List.concat prs)
+  arr (List.concat (List.map vars ~f:(fun (Arr(ls)) -> ls)))
 
 type formula =
   | Chaos

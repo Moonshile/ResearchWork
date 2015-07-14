@@ -53,17 +53,17 @@ val paramfix : string -> string -> const -> paramref
     + Array var: name, param definitions, type name
 *)
 type vardef =
-  | Arrdef of string * paramdef list * string
+  | Arrdef of (string * paramdef list) list * string
 with sexp
 
-val arrdef : string -> paramdef list -> string -> vardef
+val arrdef : (string * paramdef list) list -> string -> vardef
 
 (** Variable reference *)
 type var =
-  | Arr of string * paramref list
+  | Arr of (string * paramref list) list
 with sexp
 
-val arr : string -> paramref list -> var
+val arr : (string * paramref list) list -> var
 
 (** Represents expressions, including
     + Constants
