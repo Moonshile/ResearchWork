@@ -94,7 +94,9 @@ startstate "Init"
   Sta.Dir.HeadPtr := h;
   Sta.Dir.ShrVld := false;
   Sta.WbMsg.Cmd := WB_None;
+  Sta.WbMsg.Proc := h;
   Sta.ShWbMsg.Cmd := SHWB_None;
+  Sta.ShWbMsg.Proc := h;
   Sta.NakcMsg.Cmd := NAKC_None;
   for p : NODE do
     Sta.Proc[p].ProcCmd := NODE_None;
@@ -103,6 +105,7 @@ startstate "Init"
     Sta.Dir.ShrSet[p] := false;
     Sta.Dir.InvSet[p] := false;
     Sta.UniMsg[p].Cmd := UNI_None;
+    Sta.UniMsg[p].Proc := h;
     Sta.InvMsg[p].Cmd := INV_None;
     Sta.RpMsg[p].Cmd := RP_None;
   end;
