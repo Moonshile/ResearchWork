@@ -730,7 +730,11 @@ let protocol = {
   init;
   rules;
   properties;
-}\n\nlet () = run_with_cmdline (find ~protocol)\n'''%(types.value, records.value, vardefs.value, init.value, rulesets.value, invs.value, self.name)
+}\n\nlet () = run_with_cmdline (\
+find ~protocol ~murphi:(In_channel.read_all "%s.m")\
+)\n'''%(
+    types.value, records.value, vardefs.value, init.value, 
+    rulesets.value, invs.value, self.name, self.name)
 
 
 

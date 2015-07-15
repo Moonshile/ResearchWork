@@ -250,7 +250,7 @@ module Smv = struct
   let paramref_act pr =
     match pr with
     | Paramfix(_, _, c) -> sprintf "[%s]" (const_act c)
-    | Paramref(_) -> raise Unexhausted_inst
+    | Paramref(name) -> Prt.error ("Unexhausted_inst param: "^name);raise Unexhausted_inst
 
   let vardef_act ~types vd =
     let Arrdef(ls, t) = vd in

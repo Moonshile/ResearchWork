@@ -187,20 +187,13 @@ let minify_inv_inc inv =
           else begin "unknown" end
         )
       );*)
-      (* TODO *)
-      (* 为了赶进度，先这样吧 *)
-      if List.length (List.filter pfs ~f:(fun (Paramfix(_, _, c)) -> not (c = intc 0))) <= 3 then
-        let check_inv_res =
-          try Smv.is_inv (ToStr.Smv.form_act (neg piece)) with
-          | Client.Smv.Cannot_check -> 
-            Murphi.is_inv (ToStr.Smv.form_act ~lower:false (neg piece))
-        in
-        if check_inv_res then piece
-        else begin wrapper components' end
-      else begin 
-        Prt.error ("Paramter overflow: "^ToStr.Smv.form_act piece);
-        chaos(*raise Parameter_overflow*)
-      end
+      let check_inv_res =
+        try Smv.is_inv (ToStr.Smv.form_act (neg piece)) with
+        | Client.Smv.Cannot_check -> 
+          Murphi.is_inv (ToStr.Smv.form_act ~lower:false (neg piece))
+      in
+      if check_inv_res then piece
+      else begin wrapper components' end
   in
   let ls = match inv with | AndList(fl) -> fl | _ -> [inv] in
   let components = combination_all ls in
