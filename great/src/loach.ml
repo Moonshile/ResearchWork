@@ -306,7 +306,7 @@ module Trans = struct
       in
       let indice = up_to (List.length guarded_s) in
       List.map2_exn guarded_s indice ~f:(fun (g, s) i -> 
-        Paramecium.rule (sprintf "%s_%d" n i) p (Paramecium.andList [trans_formula ~types f; g]) s)
+        Paramecium.rule (sprintf "%s__ifpart__%d" n i) p (Paramecium.andList [trans_formula ~types f; g]) s)
 
   (** Translate language of Loach to Paramecium
 
