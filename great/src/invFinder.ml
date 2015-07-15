@@ -179,8 +179,8 @@ let minify_inv_inc inv =
       raise Empty_exception
     | parts::components' ->
       let piece = normalize (andList parts) ~types:(!type_defs) in
-      let (_, pfs, _) = Generalize.form_act piece in
-      (*Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
+      (*let (_, pfs, _) = Generalize.form_act piece in
+      Prt.info ("parts: "^ToStr.Smv.form_act (andList parts)^
         "\nnormalized: "^ToStr.Smv.form_act piece^"Res: "^
         (if List.length pfs <= 3 then
           (if Smv.is_inv (ToStr.Smv.form_act (neg piece)) then "true" else "false")
@@ -460,6 +460,112 @@ module Choose = struct
     end*)
 
 end
+
+
+
+
+
+
+
+
+let get_rule_inst_name rname pfs =
+  let const_act c =
+    match c with
+    | Intc(i) -> Int.to_string i
+    | Strc(s) -> String.lowercase s
+    | Boolc(b) -> String.uppercase (Bool.to_string b)
+  in
+  let paramref_act pr =
+    match pr with
+    | Paramfix(_, _, c) -> sprintf "[%s]" (const_act c)
+    | Paramref(_) -> raise Unexhausted_inst
+  in
+  sprintf "%s%s" rname (String.concat (List.map pfs ~f:paramref_act))
+
+let sort_pfs pds pfs = List.map pds ~f:(fun (Paramdef(name, _)) ->
+  List.find_exn pfs ~f:(fun (Paramfix(n, _, _)) -> n = name)
+)
+
+module SemiPerm = struct
+
+  let semi_table = Hashtbl.create ~hashable:String.hashable ()
+
+  let equal_int a b m n = not ((a <= m - n) && (not (a = b)))
+
+  let equal_list ls1 ls2 m n =
+    if List.length ls1 = List.length ls2 && List.length ls1 > 0 then
+      let flags = List.map (List.zip_exn ls1 ls2) ~f:(fun (x, y) -> equal_int x y m n) in
+      all flags ~f:(fun flag -> flag = true)
+    else begin false end
+
+  let equal ls1 ls2 m n =
+    (equal_list ls1 ls2 m n) || (equal_list (List.rev ls1) (List.rev ls2) m n)
+
+  let rec semi ls m n =
+    match ls with
+    | [] -> []
+    | ele::ls' ->
+      let not_equal = List.filter ls' ~f:(fun x -> not (equal ele x m n)) in
+      ele::(semi not_equal m n)
+
+  let semi_perm m n =
+    match (m, n) with
+    | (m, 0) -> [[]]
+    | (0, n) -> []
+    | _ -> 
+      let nums = List.map (up_to m) ~f:(fun x -> x + 1) in
+      semi (combination_permutation nums n) m n
+
+  let gen_of_a_type inv_pds rule_pds =
+    match rule_pds with
+    | [] -> raise Empty_exception
+    | (Paramdef(_, tname))::_ ->
+      let trange = name2type ~tname ~types:(!type_defs) in
+      let n_inv = List.length inv_pds in
+      let n_rule = List.length rule_pds in
+      let semi_list = semi_perm (n_inv + n_rule) n_rule in
+      let semi_consts = List.map semi_list ~f:(fun ls -> List.map ls ~f:(fun x -> intc x)) in
+      let valid_consts = List.filter semi_consts ~f:(fun ls ->
+        all ls ~f:(fun x -> List.exists trange ~f:(fun t -> t = x))
+      ) in
+      List.map valid_consts ~f:(fun ls ->
+        List.map2_exn ls rule_pds ~f:(fun c (Paramdef(name, _)) -> paramfix name tname c)
+      )
+
+
+  let gen_paramfixes inv_pds rule_pds =
+    let key = String.concat ~sep:";" (List.map (inv_pds@rule_pds) ~f:(fun (Paramdef(name, tname)) ->
+      sprintf "%s:%s" name tname
+    )) in
+    match Hashtbl.find semi_table key with
+    | None ->
+      let inv_parts = partition_with_label inv_pds ~f:(fun (Paramdef(_, tname)) -> tname) in
+      let rule_parts = partition_with_label rule_pds ~f:(fun (Paramdef(_, tname)) -> tname) in
+      let paramfixes = 
+        List.map rule_parts ~f:(fun (tname, rpds) ->
+          let ipds = 
+            match List.Assoc.find inv_parts tname with
+            | None -> []
+            | Some(ls) -> ls
+          in
+          gen_of_a_type ipds rpds
+        )
+        |> cartesian_product
+        |> List.map ~f:List.concat
+      in
+      let res = List.map paramfixes ~f:(sort_pfs rule_pds) in
+      Hashtbl.replace semi_table ~key ~data:res; res
+    | Some(res) -> res
+
+end
+
+let inv_table = Hashtbl.create ~hashable:String.hashable ()
+
+(* Map rule_name[p1][p2][p3] to its actual rule instant *)
+let rule_insts_table = Hashtbl.create ~hashable:String.hashable ()
+
+
+
   
 
 
@@ -541,16 +647,32 @@ let tabular_expans crule ~cinv ~old_invs =
   end
 
 
+let compute_rule_inst_names rname_paraminfo_pairs prop_pds =
+  List.concat (List.map rname_paraminfo_pairs ~f:(fun (rname, rpds) ->
+    match rpds with
+    | [] -> [rname]
+    | _ ->
+      SemiPerm.gen_paramfixes prop_pds rpds
+      |> List.map ~f:(fun pfs -> 
+        get_rule_inst_name rname pfs
+      )
+  ))
 
-let inv_table = Hashtbl.create ~hashable:String.hashable ()
 
 (* Find new inv and relations with concrete rules and a concrete invariant *)
-let tabular_rules_cinvs crules cinvs =
+let tabular_rules_cinvs rname_paraminfo_pairs cinvs =
   let rec wrapper cinvs new_inv_id old_invs relations =
     match cinvs with
     | [] -> (new_inv_id, old_invs, relations)
     | cinv::cinvs' ->
       let (new_invs, new_relation) =
+        let (ConcreteProp(Prop(_, prop_pds, _), _)) = cinv in
+        let rule_inst_names = compute_rule_inst_names rname_paraminfo_pairs prop_pds in
+        let crules = List.map rule_inst_names ~f:(fun n -> 
+          match Hashtbl.find rule_insts_table n with
+          | None -> Prt.error n; raise Empty_exception
+          | Some(cr) -> cr
+        ) in
         List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
       in
@@ -607,6 +729,8 @@ let tabular_rules_cinvs crules cinvs =
   ));
   wrapper cinvs 0 init_lib []
 
+
+
 let simplify_prop property =
   let Prop(_, pds, f) = property in
   let orList_items =
@@ -654,22 +778,36 @@ let find ~protocol ?(smv="") ?(murphi="") () =
     List.concat (List.map properties ~f:simplify_prop)
     |> List.map ~f:form_2_concreate_prop
   in
-  let inst_rule r =
-    let Paramecium.Rule(_, paramdefs, _, _) = r in
+  let get_rulename_nparam_pair r =
+    let Paramecium.Rule(rname, paramdefs, _, _) = r in
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
-    rule_2_concrete r ps
-    |> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
-      let simplified_g = simplify f in
-      match simplified_g with
-      | OrList(fl) ->
-        let indice = up_to (List.length fl) in
-        let gen_new_name name i = sprintf "%s_part_%d" name i in
-        List.map2_exn fl indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
-      | _ -> [concrete_rule (rule n pd simplified_g s) p]
-    )
-    |> List.concat
-    |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)
+    let insts = 
+      rule_2_concrete r ps
+      |> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
+        let simplified_g = simplify f in
+        match simplified_g with
+        | OrList(fl) ->
+          let indice = up_to (List.length fl) in
+          let gen_new_name name i = sprintf "%s_part_%d" name i in
+          List.map2_exn fl indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
+        | _ -> [concrete_rule (rule n pd simplified_g s) p]
+      )
+      |> List.concat
+      |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)
+    in
+    let rec store_table insts () =
+      match insts with
+      | [] -> ()
+      | ri::insts' ->
+        let (ConcreteRule(Rule(n, pds, _, _), pfs)) = ri in
+        let pfs = sort_pfs pds pfs in
+        let key = get_rule_inst_name n pfs in
+        (*Prt.info key;*)
+        Hashtbl.replace rule_insts_table ~key ~data:ri;
+        store_table insts' ()
+    in
+    store_table insts (); (rname, paramdefs)
   in
-  let crules = List.concat (List.map rules ~f:inst_rule) in
-  let result = tabular_rules_cinvs crules cinvs in
+  let rname_paraminfo_pairs = List.map rules ~f:get_rulename_nparam_pair in
+  let result = tabular_rules_cinvs rname_paraminfo_pairs cinvs in
   printf "%s\n" (result_to_str result);
