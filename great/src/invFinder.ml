@@ -626,25 +626,28 @@ let symmetry_form f1 f2 =
 
 
 (* Find new inv and relations with concrete rule and a concrete invariant *)
-let tabular_expans crule ~cinv ~old_invs =
-  let Rule(_name, _, form, statement) = concrete_rule_2_rule_inst crule in
-  let inv_inst = simplify (concrete_prop_2_form cinv) in
-  (* preCond *)
-  let obligation =
-    preCond inv_inst statement
-    |> simplify
-  in
-  (*Prt.warning (_name^": "^ToStr.Smv.form_act obligation^", "^ToStr.Smv.form_act inv_inst^"\n");*)
-  (* case 2 *)
-  if obligation = inv_inst || symmetry_form obligation inv_inst = 0 then
-    ([], deal_with_case_2 crule cinv)
-  (* case 1 *)
-  else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
-    ([], deal_with_case_1 crule cinv)
-  (* case 3 *)
-  else begin
-    deal_with_case_3 crule cinv obligation old_invs
-  end
+let tabular_expans crule_opt ~cinv ~old_invs =
+  match crule_opt with
+  | (None, crule) -> ([], deal_with_case_1 crule cinv)
+  | (_, crule) ->
+    let Rule(_name, _, form, statement) = concrete_rule_2_rule_inst crule in
+    let inv_inst = simplify (concrete_prop_2_form cinv) in
+    (* preCond *)
+    let obligation =
+      preCond inv_inst statement
+      |> simplify
+    in
+    (*Prt.warning (_name^": "^ToStr.Smv.form_act obligation^", "^ToStr.Smv.form_act inv_inst^"\n");*)
+    (* case 2 *)
+    if obligation = inv_inst || symmetry_form obligation inv_inst = 0 then
+      ([], deal_with_case_2 crule cinv)
+    (* case 1 *)
+    else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
+      ([], deal_with_case_1 crule cinv)
+    (* case 3 *)
+    else begin
+      deal_with_case_3 crule cinv obligation old_invs
+    end
 
 
 let compute_rule_inst_names rname_paraminfo_pairs prop_pds =
@@ -792,18 +795,19 @@ let find ~protocol ?(smv="") ?(murphi="") () =
           List.map2_exn fl indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
         | _ -> [concrete_rule (rule n pd simplified_g s) p]
       )
-      |> List.concat*)
-      |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)
+      |> List.concat
+      |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)*)
     in
     let rec store_table insts () =
       match insts with
       | [] -> ()
       | ri::insts' ->
-        let (ConcreteRule(Rule(n, pds, _, _), pfs)) = ri in
+        let (ConcreteRule(Rule(n, pds, f, _), pfs)) = ri in
         let pfs = sort_pfs pds pfs in
         let key = get_rule_inst_name n pfs in
+        let data = if is_satisfiable f then (Some 1, ri) else (None, ri) in
         (*Prt.info key;*)
-        Hashtbl.replace rule_insts_table ~key ~data:ri;
+        Hashtbl.replace rule_insts_table ~key ~data;
         store_table insts' ()
     in
     store_table insts (); if List.is_empty insts then None else Some (rname, paramdefs)

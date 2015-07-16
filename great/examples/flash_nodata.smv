@@ -123,13 +123,13 @@ n_NI_Local_Get_Get__2 : process Proc__n_NI_Local_Get_Get__2(Sta.Dir.Dirty, Sta.D
 
 n_NI_Local_Get_Get__3 : process Proc__n_NI_Local_Get_Get__3(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.Local, Sta.Dir.Pending, Sta.RpMsg[3].Cmd, Sta.UniMsg[3].Cmd, Sta.UniMsg[3].Proc);
 
-n_NI_Local_Get_Put1__0 : process Proc__n_NI_Local_Get_Put1__0(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[0], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[0].Cmd, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+n_NI_Local_Get_Put1__0 : process Proc__n_NI_Local_Get_Put1__0(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[0], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[0], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[0].Cmd, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
 
-n_NI_Local_Get_Put1__1 : process Proc__n_NI_Local_Get_Put1__1(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[1], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[1].Cmd, Sta.UniMsg[1].Cmd, Sta.UniMsg[1].Proc);
+n_NI_Local_Get_Put1__1 : process Proc__n_NI_Local_Get_Put1__1(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[1], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[1], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[1].Cmd, Sta.UniMsg[1].Cmd, Sta.UniMsg[1].Proc);
 
-n_NI_Local_Get_Put1__2 : process Proc__n_NI_Local_Get_Put1__2(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[2], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[2].Cmd, Sta.UniMsg[2].Cmd, Sta.UniMsg[2].Proc);
+n_NI_Local_Get_Put1__2 : process Proc__n_NI_Local_Get_Put1__2(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[2], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[2], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[2].Cmd, Sta.UniMsg[2].Cmd, Sta.UniMsg[2].Proc);
 
-n_NI_Local_Get_Put1__3 : process Proc__n_NI_Local_Get_Put1__3(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[3], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[3].Cmd, Sta.UniMsg[3].Cmd, Sta.UniMsg[3].Proc);
+n_NI_Local_Get_Put1__3 : process Proc__n_NI_Local_Get_Put1__3(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[3], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[3].Cmd, Sta.UniMsg[3].Cmd, Sta.UniMsg[3].Proc);
 
 n_NI_Local_Get_Put2__0 : process Proc__n_NI_Local_Get_Put2__0(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.HeadVld, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.Dir.ShrSet[0], Sta.Dir.ShrSet[1], Sta.Dir.ShrSet[2], Sta.Dir.ShrSet[3], Sta.Dir.ShrVld, Sta.Proc[0].CacheState, Sta.RpMsg[0].Cmd, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
 
@@ -355,21 +355,45 @@ n_NI_Inv__2 : process Proc__n_NI_Inv__2(Sta.InvMsg[2].Cmd, Sta.Proc[2].CacheStat
 
 n_NI_Inv__3 : process Proc__n_NI_Inv__3(Sta.InvMsg[3].Cmd, Sta.Proc[3].CacheState, Sta.Proc[3].InvMarked, Sta.Proc[3].ProcCmd);
 
-n_NI_InvAck1__0 : process Proc__n_NI_InvAck1__0(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[0].Cmd);
+n_NI_InvAck1__0__0 : process Proc__n_NI_InvAck1__0__0(Sta.Dir.InvSet[0], Sta.Dir.Pending, Sta.InvMsg[0].Cmd);
 
-n_NI_InvAck1__1 : process Proc__n_NI_InvAck1__1(Sta.Dir.Dirty, Sta.Dir.InvSet[1], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[1].Cmd);
+n_NI_InvAck1__1__0 : process Proc__n_NI_InvAck1__1__0(Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.Pending, Sta.InvMsg[1].Cmd);
 
-n_NI_InvAck1__2 : process Proc__n_NI_InvAck1__2(Sta.Dir.Dirty, Sta.Dir.InvSet[2], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[2].Cmd);
+n_NI_InvAck1__2__0 : process Proc__n_NI_InvAck1__2__0(Sta.Dir.InvSet[0], Sta.Dir.InvSet[2], Sta.Dir.Pending, Sta.InvMsg[2].Cmd);
 
-n_NI_InvAck1__3 : process Proc__n_NI_InvAck1__3(Sta.Dir.Dirty, Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[3].Cmd);
+n_NI_InvAck1__3__0 : process Proc__n_NI_InvAck1__3__0(Sta.Dir.InvSet[0], Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.InvMsg[3].Cmd);
 
-n_NI_InvAck2__0 : process Proc__n_NI_InvAck2__0(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[0].Cmd);
+n_NI_InvAck1__0__1 : process Proc__n_NI_InvAck1__0__1(Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.Pending, Sta.InvMsg[0].Cmd);
 
-n_NI_InvAck2__1 : process Proc__n_NI_InvAck2__1(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[1].Cmd);
+n_NI_InvAck1__1__1 : process Proc__n_NI_InvAck1__1__1(Sta.Dir.InvSet[1], Sta.Dir.Pending, Sta.InvMsg[1].Cmd);
 
-n_NI_InvAck2__2 : process Proc__n_NI_InvAck2__2(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[2].Cmd);
+n_NI_InvAck1__2__1 : process Proc__n_NI_InvAck1__2__1(Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.Pending, Sta.InvMsg[2].Cmd);
 
-n_NI_InvAck2__3 : process Proc__n_NI_InvAck2__3(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[3].Cmd);
+n_NI_InvAck1__3__1 : process Proc__n_NI_InvAck1__3__1(Sta.Dir.InvSet[1], Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.InvMsg[3].Cmd);
+
+n_NI_InvAck1__0__2 : process Proc__n_NI_InvAck1__0__2(Sta.Dir.InvSet[0], Sta.Dir.InvSet[2], Sta.Dir.Pending, Sta.InvMsg[0].Cmd);
+
+n_NI_InvAck1__1__2 : process Proc__n_NI_InvAck1__1__2(Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.Pending, Sta.InvMsg[1].Cmd);
+
+n_NI_InvAck1__2__2 : process Proc__n_NI_InvAck1__2__2(Sta.Dir.InvSet[2], Sta.Dir.Pending, Sta.InvMsg[2].Cmd);
+
+n_NI_InvAck1__3__2 : process Proc__n_NI_InvAck1__3__2(Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.InvMsg[3].Cmd);
+
+n_NI_InvAck1__0__3 : process Proc__n_NI_InvAck1__0__3(Sta.Dir.InvSet[0], Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.InvMsg[0].Cmd);
+
+n_NI_InvAck1__1__3 : process Proc__n_NI_InvAck1__1__3(Sta.Dir.InvSet[1], Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.InvMsg[1].Cmd);
+
+n_NI_InvAck1__2__3 : process Proc__n_NI_InvAck1__2__3(Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.InvMsg[2].Cmd);
+
+n_NI_InvAck1__3__3 : process Proc__n_NI_InvAck1__3__3(Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.InvMsg[3].Cmd);
+
+n_NI_InvAck2__0 : process Proc__n_NI_InvAck2__0(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[0].Cmd);
+
+n_NI_InvAck2__1 : process Proc__n_NI_InvAck2__1(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[1].Cmd);
+
+n_NI_InvAck2__2 : process Proc__n_NI_InvAck2__2(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[2], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[2].Cmd);
+
+n_NI_InvAck2__3 : process Proc__n_NI_InvAck2__3(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[3], Sta.Dir.Local, Sta.Dir.Pending, Sta.InvMsg[3].Cmd);
 
 n_NI_Replace__0 : process Proc__n_NI_Replace__0(Sta.Dir.InvSet[0], Sta.Dir.ShrSet[0], Sta.Dir.ShrVld, Sta.RpMsg[0].Cmd);
 
@@ -1083,7 +1107,7 @@ esac;
 
 ---------
 
-MODULE Proc__n_NI_Local_Get_Put1__0(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__0, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__0__Cmd, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+MODULE Proc__n_NI_Local_Get_Put1__0(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__0, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__0, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__0__Cmd, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__Dir__Dirty) := case
 TRUE : Sta__Dir__Dirty;
@@ -1096,15 +1120,6 @@ TRUE : Sta__Dir__HeadVld;
 esac;
 next(Sta__Dir__InvSet__0) := case
 TRUE : Sta__Dir__InvSet__0;
-esac;
-next(Sta__Dir__InvSet__1) := case
-TRUE : Sta__Dir__InvSet__1;
-esac;
-next(Sta__Dir__InvSet__2) := case
-TRUE : Sta__Dir__InvSet__2;
-esac;
-next(Sta__Dir__InvSet__3) := case
-TRUE : Sta__Dir__InvSet__3;
 esac;
 next(Sta__Dir__ShrSet__0) := case
 TRUE : Sta__Dir__ShrSet__0;
@@ -1124,7 +1139,7 @@ esac;
 
 ---------
 
-MODULE Proc__n_NI_Local_Get_Put1__1(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__1, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__1__Cmd, Sta__UniMsg__1__Cmd, Sta__UniMsg__1__Proc)
+MODULE Proc__n_NI_Local_Get_Put1__1(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__1, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__1, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__1__Cmd, Sta__UniMsg__1__Cmd, Sta__UniMsg__1__Proc)
 ASSIGN
 next(Sta__Dir__Dirty) := case
 (((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : FALSE;
@@ -1140,18 +1155,9 @@ next(Sta__Dir__HeadVld) := case
 (((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
 TRUE : Sta__Dir__HeadVld;
 esac;
-next(Sta__Dir__InvSet__0) := case
-TRUE : Sta__Dir__InvSet__0;
-esac;
 next(Sta__Dir__InvSet__1) := case
 (((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
 TRUE : Sta__Dir__InvSet__1;
-esac;
-next(Sta__Dir__InvSet__2) := case
-TRUE : Sta__Dir__InvSet__2;
-esac;
-next(Sta__Dir__InvSet__3) := case
-TRUE : Sta__Dir__InvSet__3;
 esac;
 next(Sta__Dir__ShrSet__1) := case
 (((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__1__Cmd = uni_get) & (Sta__UniMsg__1__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__1__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
@@ -1178,7 +1184,7 @@ esac;
 
 ---------
 
-MODULE Proc__n_NI_Local_Get_Put1__2(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__2, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__2__Cmd, Sta__UniMsg__2__Cmd, Sta__UniMsg__2__Proc)
+MODULE Proc__n_NI_Local_Get_Put1__2(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__2, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__2, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__2__Cmd, Sta__UniMsg__2__Cmd, Sta__UniMsg__2__Proc)
 ASSIGN
 next(Sta__Dir__Dirty) := case
 (((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : FALSE;
@@ -1194,18 +1200,9 @@ next(Sta__Dir__HeadVld) := case
 (((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
 TRUE : Sta__Dir__HeadVld;
 esac;
-next(Sta__Dir__InvSet__0) := case
-TRUE : Sta__Dir__InvSet__0;
-esac;
-next(Sta__Dir__InvSet__1) := case
-TRUE : Sta__Dir__InvSet__1;
-esac;
 next(Sta__Dir__InvSet__2) := case
 (((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
 TRUE : Sta__Dir__InvSet__2;
-esac;
-next(Sta__Dir__InvSet__3) := case
-TRUE : Sta__Dir__InvSet__3;
 esac;
 next(Sta__Dir__ShrSet__2) := case
 (((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__2__Cmd = uni_get) & (Sta__UniMsg__2__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__2__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
@@ -1232,7 +1229,7 @@ esac;
 
 ---------
 
-MODULE Proc__n_NI_Local_Get_Put1__3(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__3, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__3__Cmd, Sta__UniMsg__3__Cmd, Sta__UniMsg__3__Proc)
+MODULE Proc__n_NI_Local_Get_Put1__3(Sta__Dir__Dirty, Sta__Dir__HeadPtr, Sta__Dir__HeadVld, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__Dir__ShrSet__3, Sta__Dir__ShrVld, Sta__Proc__0__CacheState, Sta__RpMsg__3__Cmd, Sta__UniMsg__3__Cmd, Sta__UniMsg__3__Proc)
 ASSIGN
 next(Sta__Dir__Dirty) := case
 (((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : FALSE;
@@ -1247,15 +1244,6 @@ next(Sta__Dir__HeadVld) := case
 (((Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__Dir__HeadVld = TRUE)) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__Dir__HeadVld = TRUE)) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
 (((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__Dirty = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
 TRUE : Sta__Dir__HeadVld;
-esac;
-next(Sta__Dir__InvSet__0) := case
-TRUE : Sta__Dir__InvSet__0;
-esac;
-next(Sta__Dir__InvSet__1) := case
-TRUE : Sta__Dir__InvSet__1;
-esac;
-next(Sta__Dir__InvSet__2) := case
-TRUE : Sta__Dir__InvSet__2;
 esac;
 next(Sta__Dir__InvSet__3) := case
 (((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & (!(Sta__Dir__Dirty = TRUE))) | ((Sta__Dir__HeadVld = TRUE) & (Sta__Dir__Pending = FALSE) & (Sta__UniMsg__3__Cmd = uni_get) & (Sta__UniMsg__3__Proc = 0) & (!(Sta__Dir__Dirty = TRUE)) & (!(Sta__RpMsg__3__Cmd = rp_replace)) & ((Sta__Dir__Local = TRUE) & (Sta__Proc__0__CacheState = cache_e)))) : TRUE;
@@ -4690,16 +4678,10 @@ esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck1__0(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__0__Cmd)
+MODULE Proc__n_NI_InvAck1__0__0(Sta__Dir__InvSet__0, Sta__Dir__Pending, Sta__InvMsg__0__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__0) := case
 TRUE : Sta__Dir__InvSet__0;
-esac;
-next(Sta__Dir__Local) := case
-TRUE : Sta__Dir__Local;
-esac;
-next(Sta__Dir__Pending) := case
-TRUE : Sta__Dir__Pending;
 esac;
 next(Sta__InvMsg__0__Cmd) := case
 TRUE : Sta__InvMsg__0__Cmd;
@@ -4707,64 +4689,190 @@ esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck1__1(Sta__Dir__Dirty, Sta__Dir__InvSet__1, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__1__Cmd)
+MODULE Proc__n_NI_InvAck1__1__0(Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__Pending, Sta__InvMsg__1__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__1) := case
-((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : FALSE;
+((Sta__Dir__InvSet__0 = TRUE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__InvSet__1;
 esac;
-next(Sta__Dir__Local) := case
-TRUE : Sta__Dir__Local;
-esac;
-next(Sta__Dir__Pending) := case
-TRUE : Sta__Dir__Pending;
-esac;
 next(Sta__InvMsg__1__Cmd) := case
-((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : inv_none;
+((Sta__Dir__InvSet__0 = TRUE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : inv_none;
 TRUE : Sta__InvMsg__1__Cmd;
 esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck1__2(Sta__Dir__Dirty, Sta__Dir__InvSet__2, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__2__Cmd)
+MODULE Proc__n_NI_InvAck1__2__0(Sta__Dir__InvSet__0, Sta__Dir__InvSet__2, Sta__Dir__Pending, Sta__InvMsg__2__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__2) := case
-((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : FALSE;
+((Sta__Dir__InvSet__0 = TRUE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__InvSet__2;
 esac;
-next(Sta__Dir__Local) := case
-TRUE : Sta__Dir__Local;
-esac;
-next(Sta__Dir__Pending) := case
-TRUE : Sta__Dir__Pending;
-esac;
 next(Sta__InvMsg__2__Cmd) := case
-((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : inv_none;
+((Sta__Dir__InvSet__0 = TRUE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : inv_none;
 TRUE : Sta__InvMsg__2__Cmd;
 esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck1__3(Sta__Dir__Dirty, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__3__Cmd)
+MODULE Proc__n_NI_InvAck1__3__0(Sta__Dir__InvSet__0, Sta__Dir__InvSet__3, Sta__Dir__Pending, Sta__InvMsg__3__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__3) := case
-((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : FALSE;
+((Sta__Dir__InvSet__0 = TRUE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__InvSet__3;
 esac;
-next(Sta__Dir__Local) := case
-TRUE : Sta__Dir__Local;
-esac;
-next(Sta__Dir__Pending) := case
-TRUE : Sta__Dir__Pending;
-esac;
 next(Sta__InvMsg__3__Cmd) := case
-((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : inv_none;
+((Sta__Dir__InvSet__0 = TRUE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : inv_none;
 TRUE : Sta__InvMsg__3__Cmd;
 esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck2__0(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__0__Cmd)
+MODULE Proc__n_NI_InvAck1__0__1(Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__Pending, Sta__InvMsg__0__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__0) := case
+TRUE : Sta__Dir__InvSet__0;
+esac;
+next(Sta__InvMsg__0__Cmd) := case
+TRUE : Sta__InvMsg__0__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__1__1(Sta__Dir__InvSet__1, Sta__Dir__Pending, Sta__InvMsg__1__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__1) := case
+TRUE : Sta__Dir__InvSet__1;
+esac;
+next(Sta__InvMsg__1__Cmd) := case
+TRUE : Sta__InvMsg__1__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__2__1(Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__Pending, Sta__InvMsg__2__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__2) := case
+((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : FALSE;
+TRUE : Sta__Dir__InvSet__2;
+esac;
+next(Sta__InvMsg__2__Cmd) := case
+((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : inv_none;
+TRUE : Sta__InvMsg__2__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__3__1(Sta__Dir__InvSet__1, Sta__Dir__InvSet__3, Sta__Dir__Pending, Sta__InvMsg__3__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__3) := case
+((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : FALSE;
+TRUE : Sta__Dir__InvSet__3;
+esac;
+next(Sta__InvMsg__3__Cmd) := case
+((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : inv_none;
+TRUE : Sta__InvMsg__3__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__0__2(Sta__Dir__InvSet__0, Sta__Dir__InvSet__2, Sta__Dir__Pending, Sta__InvMsg__0__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__0) := case
+TRUE : Sta__Dir__InvSet__0;
+esac;
+next(Sta__InvMsg__0__Cmd) := case
+TRUE : Sta__InvMsg__0__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__1__2(Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__Pending, Sta__InvMsg__1__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__1) := case
+((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : FALSE;
+TRUE : Sta__Dir__InvSet__1;
+esac;
+next(Sta__InvMsg__1__Cmd) := case
+((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : inv_none;
+TRUE : Sta__InvMsg__1__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__2__2(Sta__Dir__InvSet__2, Sta__Dir__Pending, Sta__InvMsg__2__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__2) := case
+TRUE : Sta__Dir__InvSet__2;
+esac;
+next(Sta__InvMsg__2__Cmd) := case
+TRUE : Sta__InvMsg__2__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__3__2(Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Pending, Sta__InvMsg__3__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__3) := case
+((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : FALSE;
+TRUE : Sta__Dir__InvSet__3;
+esac;
+next(Sta__InvMsg__3__Cmd) := case
+((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : inv_none;
+TRUE : Sta__InvMsg__3__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__0__3(Sta__Dir__InvSet__0, Sta__Dir__InvSet__3, Sta__Dir__Pending, Sta__InvMsg__0__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__0) := case
+TRUE : Sta__Dir__InvSet__0;
+esac;
+next(Sta__InvMsg__0__Cmd) := case
+TRUE : Sta__InvMsg__0__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__1__3(Sta__Dir__InvSet__1, Sta__Dir__InvSet__3, Sta__Dir__Pending, Sta__InvMsg__1__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__1) := case
+((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : FALSE;
+TRUE : Sta__Dir__InvSet__1;
+esac;
+next(Sta__InvMsg__1__Cmd) := case
+((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : inv_none;
+TRUE : Sta__InvMsg__1__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__2__3(Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Pending, Sta__InvMsg__2__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__2) := case
+((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : FALSE;
+TRUE : Sta__Dir__InvSet__2;
+esac;
+next(Sta__InvMsg__2__Cmd) := case
+((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : inv_none;
+TRUE : Sta__InvMsg__2__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck1__3__3(Sta__Dir__InvSet__3, Sta__Dir__Pending, Sta__InvMsg__3__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__3) := case
+TRUE : Sta__Dir__InvSet__3;
+esac;
+next(Sta__InvMsg__3__Cmd) := case
+TRUE : Sta__InvMsg__3__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_InvAck2__0(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__0__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__0) := case
 TRUE : Sta__Dir__InvSet__0;
@@ -4781,64 +4889,52 @@ esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck2__1(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__1__Cmd)
+MODULE Proc__n_NI_InvAck2__1(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__1__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__1) := case
-((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__InvSet__1;
 esac;
 next(Sta__Dir__Local) := case
-((Sta__Dir__Dirty = FALSE) & (Sta__Dir__InvSet__0 = FALSE) & (Sta__Dir__InvSet__1 = FALSE) & (Sta__Dir__InvSet__2 = FALSE) & (Sta__Dir__InvSet__3 = FALSE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Local = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__Local;
 esac;
 next(Sta__Dir__Pending) := case
-((Sta__Dir__InvSet__0 = FALSE) & (Sta__Dir__InvSet__1 = FALSE) & (Sta__Dir__InvSet__2 = FALSE) & (Sta__Dir__InvSet__3 = FALSE) & (Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__Pending;
 esac;
 next(Sta__InvMsg__1__Cmd) := case
-((Sta__Dir__InvSet__1 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__1__Cmd = inv_invack)) : inv_none;
 TRUE : Sta__InvMsg__1__Cmd;
 esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck2__2(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__2__Cmd)
+MODULE Proc__n_NI_InvAck2__2(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__InvSet__2, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__2__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__2) := case
-((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__InvSet__2;
 esac;
 next(Sta__Dir__Local) := case
-((Sta__Dir__Dirty = FALSE) & (Sta__Dir__InvSet__0 = FALSE) & (Sta__Dir__InvSet__1 = FALSE) & (Sta__Dir__InvSet__2 = FALSE) & (Sta__Dir__InvSet__3 = FALSE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Local = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__Local;
 esac;
 next(Sta__Dir__Pending) := case
-((Sta__Dir__InvSet__0 = FALSE) & (Sta__Dir__InvSet__1 = FALSE) & (Sta__Dir__InvSet__2 = FALSE) & (Sta__Dir__InvSet__3 = FALSE) & (Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__Pending;
 esac;
 next(Sta__InvMsg__2__Cmd) := case
-((Sta__Dir__InvSet__2 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__2__Cmd = inv_invack)) : inv_none;
 TRUE : Sta__InvMsg__2__Cmd;
 esac;
 
 ---------
 
-MODULE Proc__n_NI_InvAck2__3(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__InvSet__1, Sta__Dir__InvSet__2, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__3__Cmd)
+MODULE Proc__n_NI_InvAck2__3(Sta__Dir__Dirty, Sta__Dir__InvSet__0, Sta__Dir__InvSet__3, Sta__Dir__Local, Sta__Dir__Pending, Sta__InvMsg__3__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__3) := case
-((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__InvSet__3;
 esac;
 next(Sta__Dir__Local) := case
-((Sta__Dir__Dirty = FALSE) & (Sta__Dir__InvSet__0 = FALSE) & (Sta__Dir__InvSet__1 = FALSE) & (Sta__Dir__InvSet__2 = FALSE) & (Sta__Dir__InvSet__3 = FALSE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Local = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__Local;
 esac;
 next(Sta__Dir__Pending) := case
-((Sta__Dir__InvSet__0 = FALSE) & (Sta__Dir__InvSet__1 = FALSE) & (Sta__Dir__InvSet__2 = FALSE) & (Sta__Dir__InvSet__3 = FALSE) & (Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : FALSE;
 TRUE : Sta__Dir__Pending;
 esac;
 next(Sta__InvMsg__3__Cmd) := case
-((Sta__Dir__InvSet__3 = TRUE) & (Sta__Dir__Pending = TRUE) & (Sta__InvMsg__3__Cmd = inv_invack)) : inv_none;
 TRUE : Sta__InvMsg__3__Cmd;
 esac;
 
