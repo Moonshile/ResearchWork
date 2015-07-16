@@ -636,7 +636,7 @@ let tabular_expans crule ~cinv ~old_invs =
   in
   (*Prt.warning (_name^": "^ToStr.Smv.form_act obligation^", "^ToStr.Smv.form_act inv_inst^"\n");*)
   (* case 2 *)
-  if symmetry_form obligation inv_inst = 0 then
+  if obligation = inv_inst || symmetry_form obligation inv_inst = 0 then
     ([], deal_with_case_2 crule cinv)
   (* case 1 *)
   else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
@@ -783,7 +783,7 @@ let find ~protocol ?(smv="") ?(murphi="") () =
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
     let insts = 
       rule_2_concrete r ps
-      |> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
+      (*|> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
         let simplified_g = simplify f in
         match simplified_g with
         | OrList(fl) ->
@@ -792,7 +792,7 @@ let find ~protocol ?(smv="") ?(murphi="") () =
           List.map2_exn fl indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
         | _ -> [concrete_rule (rule n pd simplified_g s) p]
       )
-      |> List.concat
+      |> List.concat*)
       |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)
     in
     let rec store_table insts () =
@@ -806,8 +806,8 @@ let find ~protocol ?(smv="") ?(murphi="") () =
         Hashtbl.replace rule_insts_table ~key ~data:ri;
         store_table insts' ()
     in
-    store_table insts (); (rname, paramdefs)
+    store_table insts (); if List.is_empty insts then None else Some (rname, paramdefs)
   in
-  let rname_paraminfo_pairs = List.map rules ~f:get_rulename_nparam_pair in
+  let rname_paraminfo_pairs = List.filter_map rules ~f:get_rulename_nparam_pair in
   let result = tabular_rules_cinvs rname_paraminfo_pairs cinvs in
   printf "%s\n" (result_to_str result);
