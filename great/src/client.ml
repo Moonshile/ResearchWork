@@ -107,9 +107,10 @@ module Smv = struct
     let (status, res) = request CHECK_INV (sprintf "%s,%s" name inv) (!host) (!port) in
     if status = OK then
       match res with
+      | "0"::[] -> raise Cannot_check
       | r::[] -> Bool.of_string r
       | _ -> raise Server_exception
-    else begin raise Cannot_check end
+    else begin raise Server_exception end
 
   let quit name =
     let (s, _) = request SMV_QUIT name (!host) (!port) in
