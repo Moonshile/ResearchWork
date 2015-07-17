@@ -788,9 +788,6 @@ let find ~protocol ?(smv="") ?(murphi="") () =
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
     let insts = 
       rule_2_concrete r ps
-      |> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
-        concrete_rule (rule n pd (simplify f) s) p
-      )
       (*|> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
         let simplified_g = simplify f in
         match simplified_g with
@@ -807,10 +804,12 @@ let find ~protocol ?(smv="") ?(murphi="") () =
       match insts with
       | [] -> ()
       | ri::insts' ->
-        let (ConcreteRule(Rule(n, pds, f, _), pfs)) = ri in
+        let (ConcreteRule(Rule(n, pds, f, s), pfs)) = ri in
+        let simplified_g = simplify f in
+        let ri' = concrete_rule (rule n pds simplified_g s) pfs in
         let pfs = sort_pfs pds pfs in
         let key = get_rule_inst_name n pfs in
-        let data = if is_satisfiable f then (Some 1, ri) else (None, ri) in
+        let data = if is_satisfiable f then (Some 1, ri') else (None, ri') in
         (*Prt.info key;*)
         Hashtbl.replace rule_insts_table ~key ~data;
         store_table insts' ()
