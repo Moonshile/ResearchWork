@@ -189,8 +189,10 @@ let minify_inv_inc inv =
       );*)
       let check_inv_res =
         try Smv.is_inv (ToStr.Smv.form_act (neg piece)) with
-        | Client.Smv.Cannot_check -> 
-          Murphi.is_inv (ToStr.Smv.form_act ~lower:false (neg piece))
+        | Client.Smv.Cannot_check ->
+          let form_str = ToStr.Smv.form_act ~lower:false (neg piece) in
+          print_endline ("Check by mu:"^form_str);
+          Murphi.is_inv form_str
       in
       if check_inv_res then piece
       else begin wrapper components' end
@@ -786,6 +788,9 @@ let find ~protocol ?(smv="") ?(murphi="") () =
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
     let insts = 
       rule_2_concrete r ps
+      |> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
+        concrete_rule (rule n pd (simplify f) s) p
+      )
       (*|> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
         let simplified_g = simplify f in
         match simplified_g with
