@@ -635,7 +635,7 @@ rule "NI_InvAck"
 begin
   Sta.InvMsg[src].Cmd := INV_None;
   Sta.Dir.InvSet[src] := false;
-  if (forall p : NODE do p = src | !Sta.Dir.InvSet[p] end) then
+  if !(exists p : NODE do p != src & Sta.Dir.InvSet[p] end) then
     Sta.Dir.Pending := false;
     if (Sta.Dir.Local & !Sta.Dir.Dirty) then
       Sta.Dir.Local := false;

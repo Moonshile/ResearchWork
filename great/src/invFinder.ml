@@ -82,7 +82,7 @@ let concrete_rule_2_rule_inst cr =
 let concrete_prop_2_form cprop =
   let ConcreteProp(property, pfs) = cprop in
   let Prop(_, _, form) = property in
-  apply_form form pfs
+  apply_form form ~p:pfs
 
 (* Convert formula to concrete property *)
 let form_2_concreate_prop ?(id=0) form =
@@ -485,7 +485,11 @@ let get_rule_inst_name rname pfs =
   sprintf "%s%s" rname (String.concat (List.map pfs ~f:paramref_act))
 
 let sort_pfs pds pfs = List.map pds ~f:(fun (Paramdef(name, _)) ->
-  List.find_exn pfs ~f:(fun (Paramfix(n, _, _)) -> n = name)
+  List.find_exn pfs ~f:(fun pr ->
+    match pr with
+    | Paramfix(n, _, _) -> n = name
+    | _ -> raise Empty_exception
+  )
 )
 
 module SemiPerm = struct
@@ -555,7 +559,17 @@ module SemiPerm = struct
         |> cartesian_product
         |> List.map ~f:List.concat
       in
-      let res = List.map paramfixes ~f:(sort_pfs rule_pds) in
+      let pf_unsym =
+        let all_pfs = cart_product_with_paramfix rule_pds (!type_defs) in
+        (* TODO *)
+        let has_unsym pfs = List.exists pfs ~f:(fun pr -> 
+          match pr with 
+          | Paramfix(_, _, c) -> c = intc 0
+          | _ -> raise Empty_exception
+        ) in
+        List.filter all_pfs ~f:has_unsym
+      in
+      let res = List.map (paramfixes@pf_unsym) ~f:(sort_pfs rule_pds) in
       Hashtbl.replace semi_table ~key ~data:res; res
     | Some(res) -> res
 
@@ -628,28 +642,25 @@ let symmetry_form f1 f2 =
 
 
 (* Find new inv and relations with concrete rule and a concrete invariant *)
-let tabular_expans crule_opt ~cinv ~old_invs =
-  match crule_opt with
-  | (None, crule) -> ([], deal_with_case_1 crule cinv)
-  | (_, crule) ->
-    let Rule(_name, _, form, statement) = concrete_rule_2_rule_inst crule in
-    let inv_inst = simplify (concrete_prop_2_form cinv) in
-    (* preCond *)
-    let obligation =
-      preCond inv_inst statement
-      |> simplify
-    in
-    (*Prt.warning (_name^": "^ToStr.Smv.form_act obligation^", "^ToStr.Smv.form_act inv_inst^"\n");*)
-    (* case 2 *)
-    if obligation = inv_inst || symmetry_form obligation inv_inst = 0 then
-      ([], deal_with_case_2 crule cinv)
-    (* case 1 *)
-    else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
-      ([], deal_with_case_1 crule cinv)
-    (* case 3 *)
-    else begin
-      deal_with_case_3 crule cinv obligation old_invs
-    end
+let tabular_expans crule ~cinv ~old_invs =
+  let Rule(_name, _, form, statement) = concrete_rule_2_rule_inst crule in
+  let inv_inst = simplify (concrete_prop_2_form cinv) in
+  (* preCond *)
+  let obligation =
+    preCond inv_inst statement
+    |> simplify
+  in
+  (*Prt.warning (_name^": "^ToStr.Smv.form_act obligation^", "^ToStr.Smv.form_act inv_inst^"\n");*)
+  (* case 2 *)
+  if obligation = inv_inst || symmetry_form obligation inv_inst = 0 then
+    ([], deal_with_case_2 crule cinv)
+  (* case 1 *)
+  else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
+    ([], deal_with_case_1 crule cinv)
+  (* case 3 *)
+  else begin
+    deal_with_case_3 crule cinv obligation old_invs
+  end
 
 
 let compute_rule_inst_names rname_paraminfo_pairs prop_pds =
@@ -673,11 +684,14 @@ let tabular_rules_cinvs rname_paraminfo_pairs cinvs =
       let (new_invs, new_relation) =
         let (ConcreteProp(Prop(_, prop_pds, _), _)) = cinv in
         let rule_inst_names = compute_rule_inst_names rname_paraminfo_pairs prop_pds in
-        let crules = List.map rule_inst_names ~f:(fun n -> 
-          match Hashtbl.find rule_insts_table n with
-          | None -> Prt.error n; raise Empty_exception
-          | Some(cr) -> cr
-        ) in
+        let crules = 
+          List.map rule_inst_names ~f:(fun n -> 
+            match Hashtbl.find rule_insts_table n with
+            | None -> Prt.error n; raise Empty_exception
+            | Some(cr) -> cr
+          )
+          |> List.concat
+        in
         List.map crules ~f:(tabular_expans ~cinv ~old_invs)
         |> List.unzip
       in
@@ -768,54 +782,45 @@ let result_to_str (_, invs, relations) =
     @return causal relation table
 *)
 let find ~protocol ?(smv="") ?(murphi="") () =
-  let {name; types; vardefs; init=_init; rules; properties} = Loach.Trans.act protocol in
+  let {name; types; vardefs; init=_init; rules; properties} = Loach.Trans.act ~loach:protocol in
   let _smt_context = Smt.set_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _smv_context =
-    if smv = "" then
-      Smv.set_context name (Loach.ToSmv.protocol_act protocol)
-    else begin
-      Smv.set_context name smv
-    end
+    if smv = "" then Smv.set_context name (Loach.ToSmv.protocol_act protocol)
+    else begin Smv.set_context name smv end
   in
   let _mu_context = Murphi.set_context name murphi in
   type_defs := types;
-  let cinvs = 
+  let cinvs =
     List.concat (List.map properties ~f:simplify_prop)
     |> List.map ~f:form_2_concreate_prop
   in
   let get_rulename_nparam_pair r =
-    let Paramecium.Rule(rname, paramdefs, _, _) = r in
-    let ps = cart_product_with_paramfix paramdefs (!type_defs) in
-    let insts = 
-      rule_2_concrete r ps
-      (*|> List.map ~f:(fun (ConcreteRule(Rule(n, pd, f, s), p)) ->
-        let simplified_g = simplify f in
-        match simplified_g with
-        | OrList(fl) ->
-          let indice = up_to (List.length fl) in
-          let gen_new_name name i = sprintf "%s_part_%d" name i in
-          List.map2_exn fl indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
-        | _ -> [concrete_rule (rule n pd simplified_g s) p]
-      )
-      |> List.concat
-      |> List.filter ~f:(fun (ConcreteRule(Rule(_, _, f, _), _)) -> is_satisfiable f)*)
+    let simplify_inst_guard (ConcreteRule(Rule(n, pd, f, s), p)) =
+      let gs = match simplify f with
+        | OrList(fl) -> fl
+        | _ as g -> [g]
+      in
+      let sat_gs = List.filter gs ~f:is_satisfiable in
+      let indice = up_to (List.length sat_gs) in
+      let gen_new_name name i = sprintf "%s__part__%d" name i in
+      List.map2_exn sat_gs indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
     in
     let rec store_table insts () =
       match insts with
       | [] -> ()
-      | ri::insts' ->
-        let (ConcreteRule(Rule(n, pds, f, s), pfs)) = ri in
-        let simplified_g = simplify f in
-        let ri' = concrete_rule (rule n pds simplified_g s) pfs in
-        let pfs = sort_pfs pds pfs in
-        let key = get_rule_inst_name n pfs in
-        let data = if is_satisfiable f then (Some 1, ri') else (None, ri') in
-        (*Prt.info key;*)
-        Hashtbl.replace rule_insts_table ~key ~data;
+      | r_inst::insts' ->
+        let (ConcreteRule(Rule(n, _, _, _), _)) = r_inst in
+        let data = simplify_inst_guard r_inst in
+        (*Prt.info n;*)
+        Hashtbl.replace rule_insts_table ~key:n ~data;
         store_table insts' ()
     in
-    store_table insts (); if List.is_empty insts then None else Some (rname, paramdefs)
+    let Paramecium.Rule(rname, paramdefs, _, _) = r in
+    let ps = cart_product_with_paramfix paramdefs (!type_defs) in
+    let raw_insts = rule_2_concrete r ps in
+    store_table raw_insts ();
+    (rname, paramdefs)
   in
-  let rname_paraminfo_pairs = List.filter_map rules ~f:get_rulename_nparam_pair in
+  let rname_paraminfo_pairs = List.map rules ~f:get_rulename_nparam_pair in
   let result = tabular_rules_cinvs rname_paraminfo_pairs cinvs in
   printf "%s\n" (result_to_str result);
