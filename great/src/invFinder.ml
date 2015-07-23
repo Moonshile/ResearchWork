@@ -64,6 +64,7 @@ type t = {
 with sexp
 
 let type_defs = ref []
+let protocol_name = ref ""
 
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ps =
@@ -674,57 +675,118 @@ let compute_rule_inst_names rname_paraminfo_pairs prop_pds =
       )
   ))
 
+let get_res_of_cinv cinv rname_paraminfo_pairs old_invs =
+  let (ConcreteProp(Prop(_, prop_pds, _), _)) = cinv in
+  let rule_inst_names = compute_rule_inst_names rname_paraminfo_pairs prop_pds in
+  let crules = 
+    List.map rule_inst_names ~f:(fun n -> 
+      match Hashtbl.find rule_insts_table n with
+      | None -> Prt.error n; raise Empty_exception
+      | Some(cr) -> cr
+    )
+    |> List.concat
+  in
+  List.map crules ~f:(tabular_expans ~cinv ~old_invs)
+  |> List.unzip
+
+let get_real_new_invs new_invs =
+  if (!debug_switch) then
+    (* This debug block is to check whether function normalize
+        could work correctly or not
+    *)
+    let new_invs' =
+      List.concat new_invs
+      |> List.map ~f:simplify
+      |> List.filter ~f:(fun form -> not (form = chaos))
+      |> List.map ~f:minify_inv_inc
+      |> List.dedup ~compare:symmetry_form
+    in
+    if new_invs' = [] then () else begin
+      Prt.warning (String.concat ~sep:"\n" (
+        List.map new_invs' ~f:(fun f -> ToStr.Debug.form_act f)
+      ))
+    end
+  else begin () end;
+  List.concat new_invs
+  |> List.map ~f:simplify
+  |> List.filter ~f:(fun form -> not (form = chaos))
+  |> List.map ~f:minify_inv_inc
+  |> List.dedup ~compare:symmetry_form
+  |> List.map ~f:(normalize ~types:(!type_defs))
+  |> List.filter ~f:(fun x ->
+    let key = ToStr.Smv.form_act x in
+    match Hashtbl.find inv_table key with 
+    | None -> Hashtbl.replace inv_table ~key ~data:true; true
+    | _ -> false)
+
+let read_res_cache cinvs =
+  let cinv_file_name = sprintf "%s.cinvs.cache" (!protocol_name) in
+  let all_cinv_file_name = sprintf "%s.all.cinvs.cache" (!protocol_name) in
+  let invlib_file_name = sprintf "%s.inv.lib.cache" (!protocol_name) in
+  let rel_file_name = sprintf "%s.relations.cache" (!protocol_name) in
+  let id_file_name = sprintf "%s.id.cache" (!protocol_name) in
+  let try_with_default filename convertor default =
+    try
+      In_channel.read_lines filename
+      |> List.map ~f:Sexp.of_string
+      |> List.map ~f:convertor
+    with
+    | Sys_error(_) -> default
+    | e -> raise e
+  in
+  let cinvs' = try_with_default cinv_file_name (concrete_prop_of_sexp) cinvs in
+  let cinvs_all = try_with_default all_cinv_file_name (concrete_prop_of_sexp) [] in
+  let init_lib =
+    let default = List.map cinvs ~f:(fun cinv -> concrete_prop_2_form cinv) in
+    try_with_default invlib_file_name (formula_of_sexp) default
+  in
+  let relations = try_with_default rel_file_name (t_of_sexp) [] in
+  let new_inv_id = try Int.of_string (In_channel.read_all id_file_name) with | _ -> 0 in 
+  cinvs', cinvs_all, init_lib, relations, new_inv_id
+
+let write_res_cache cinvs cinv real_new_invs relations new_inv_id () =
+  let cinv_file_name = sprintf "%s.cinvs.cache" (!protocol_name) in
+  let all_cinv_file_name = sprintf "%s.all.cinvs.cache" (!protocol_name) in
+  let invlib_file_name = sprintf "%s.inv.lib.cache" (!protocol_name) in
+  let rel_file_name = sprintf "%s.relations.cache" (!protocol_name) in
+  let id_file_name = sprintf "%s.id.cache" (!protocol_name) in
+  let cinvs_sexp_str = 
+    cinvs
+    |> List.map ~f:sexp_of_concrete_prop
+    |> List.map ~f:Sexp.to_string
+  in
+  let all_cinv_sexp_str = Sexp.to_string (sexp_of_concrete_prop cinv) in
+  let real_new_inv_sexp_str =
+    real_new_invs
+    |> List.map ~f:sexp_of_formula
+    |> List.map ~f:Sexp.to_string
+  in
+  let relations_sexp_str =
+    relations
+    |> List.map ~f:sexp_of_t
+    |> List.map ~f:Sexp.to_string
+  in
+  let id_sexp_str = sprintf "%d" new_inv_id in
+  let append_file fn lines () =
+    let f = Out_channel.create fn ~append:true in
+    (Out_channel.output_lines f lines; Out_channel.close f);
+  in (
+    Out_channel.write_lines cinv_file_name cinvs_sexp_str;
+    append_file all_cinv_file_name [all_cinv_sexp_str] ();
+    append_file invlib_file_name real_new_inv_sexp_str ();
+    append_file rel_file_name relations_sexp_str ();
+    Out_channel.write_all id_file_name ~data:id_sexp_str
+  )
+
 
 (* Find new inv and relations with concrete rules and a concrete invariant *)
 let tabular_rules_cinvs rname_paraminfo_pairs cinvs =
-  let rec wrapper cinvs new_inv_id old_invs relations =
+  let rec wrapper cinvs cinvs_all new_inv_id old_invs relations =
     match cinvs with
-    | [] -> (new_inv_id, old_invs, relations)
+    | [] -> (cinvs_all, relations)
     | cinv::cinvs' ->
-      let (new_invs, new_relation) =
-        let (ConcreteProp(Prop(_, prop_pds, _), _)) = cinv in
-        let rule_inst_names = compute_rule_inst_names rname_paraminfo_pairs prop_pds in
-        let crules = 
-          List.map rule_inst_names ~f:(fun n -> 
-            match Hashtbl.find rule_insts_table n with
-            | None -> Prt.error n; raise Empty_exception
-            | Some(cr) -> cr
-          )
-          |> List.concat
-        in
-        List.map crules ~f:(tabular_expans ~cinv ~old_invs)
-        |> List.unzip
-      in
-      if (!debug_switch) then
-        (* This debug block is to check whether function normalize
-            could work correctly or not
-        *)
-        let new_invs' =
-          List.concat new_invs
-          |> List.map ~f:simplify
-          |> List.filter ~f:(fun form -> not (form = chaos))
-          |> List.map ~f:minify_inv_inc
-          |> List.dedup ~compare:symmetry_form
-        in
-        if new_invs' = [] then () else begin
-          Prt.warning (String.concat ~sep:"\n" (
-            List.map new_invs' ~f:(fun f -> ToStr.Debug.form_act f)
-          ))
-        end
-      else begin () end;
-      let real_new_invs =
-        List.concat new_invs
-        |> List.map ~f:simplify
-        |> List.filter ~f:(fun form -> not (form = chaos))
-        |> List.map ~f:minify_inv_inc
-        |> List.dedup ~compare:symmetry_form
-        |> List.map ~f:(normalize ~types:(!type_defs))
-        |> List.filter ~f:(fun x ->
-          let key = ToStr.Smv.form_act x in
-          match Hashtbl.find inv_table key with 
-          | None -> Hashtbl.replace inv_table ~key ~data:true; true
-          | _ -> false)
-      in
+      let (new_invs, new_relation) = get_res_of_cinv cinv rname_paraminfo_pairs old_invs in
+      let real_new_invs = get_real_new_invs new_invs in
       if real_new_invs = [] then () else begin
         print_endline (String.concat ~sep:"\n" (
           List.map real_new_invs ~f:(fun f -> "NewInv: "^ToStr.Smv.form_act f)
@@ -739,14 +801,17 @@ let tabular_rules_cinvs rname_paraminfo_pairs cinvs =
           invs_to_cinvs invs' (cinv::cinvs) (new_inv_id + 1)
       in
       let (new_cinvs, new_inv_id') = invs_to_cinvs real_new_invs [] new_inv_id in
-      let cinvs'' = List.dedup (cinvs'@new_cinvs) in
-      wrapper cinvs'' new_inv_id' old_invs' (new_relation@relations)
+      let cinvs'' = cinvs'@new_cinvs in
+      write_res_cache cinvs'' cinv real_new_invs relations new_inv_id' ();
+      wrapper cinvs'' (cinvs_all@[cinv]) new_inv_id' (old_invs@real_new_invs) (relations@new_relation)
   in
-  let init_lib = List.map cinvs ~f:(fun cinv -> concrete_prop_2_form cinv) in
-  Prt.warning ("initial invs:\n"^String.concat ~sep:"\n" (
-    List.map init_lib ~f:(fun f -> ToStr.Smv.form_act f)
-  ));
-  wrapper cinvs 0 init_lib []
+  let cinvs, cinvs_all, init_lib, relations, new_inv_id = read_res_cache cinvs in
+  if (!debug_switch) then
+    Prt.warning ("initial invs:\n"^String.concat ~sep:"\n" (
+      List.map init_lib ~f:(fun f -> ToStr.Smv.form_act f)
+    ))
+  else begin () end;
+  wrapper cinvs cinvs_all new_inv_id init_lib relations
 
 
 
@@ -766,9 +831,10 @@ let simplify_prop property =
   |> List.filter ~f:(fun x -> match x with | Miracle -> false | _ -> true)
   |> List.dedup ~compare:symmetry_form
 
-let result_to_str (_, invs, relations) =
+let result_to_str (cinvs, relations) =
   let invs_str =
-    invs
+    cinvs
+    |> List.map ~f:concrete_prop_2_form
     |> List.map ~f:simplify
     |> List.map ~f:ToStr.Smv.form_act
   in
@@ -789,7 +855,7 @@ let find ~protocol ?(smv="") ?(murphi="") () =
     else begin Smv.set_context name smv end
   in
   let _mu_context = Murphi.set_context name murphi in
-  type_defs := types;
+  (type_defs := types; protocol_name := name);
   let cinvs =
     List.concat (List.map properties ~f:simplify_prop)
     |> List.map ~f:form_2_concreate_prop
