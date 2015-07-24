@@ -354,17 +354,20 @@ module Choose = struct
     if is_tautology inv then
       tautology inv
     else begin
-      let inv  = minify_inv_inc inv in
-      let implied_by_old = inv_implied_by_old inv invs in
-      match implied_by_old with
-      | Some(old) -> implied inv old
-      | None ->
-        let normalized = normalize inv ~types:(!type_defs) in
-        if must_new || Smv.is_inv (ToStr.Smv.form_act (neg normalized)) then
-          new_inv inv
-        else begin
-          not_inv
-        end
+      try 
+        let inv  = minify_inv_inc inv in
+        let implied_by_old = inv_implied_by_old inv invs in
+        match implied_by_old with
+        | Some(old) -> implied inv old
+        | None ->
+          let normalized = normalize inv ~types:(!type_defs) in
+          if must_new || Smv.is_inv (ToStr.Smv.form_act (neg normalized)) then
+            new_inv inv
+          else begin
+            not_inv
+          end
+      with
+      | _ -> not_inv
     end
 
   (* choose one pre in pres such that (imply pre cons) is an new inv *)
@@ -690,23 +693,6 @@ let get_res_of_cinv cinv rname_paraminfo_pairs old_invs =
   |> List.unzip
 
 let get_real_new_invs new_invs =
-  if (!debug_switch) then
-    (* This debug block is to check whether function normalize
-        could work correctly or not
-    *)
-    let new_invs' =
-      List.concat new_invs
-      |> List.map ~f:simplify
-      |> List.filter ~f:(fun form -> not (form = chaos))
-      |> List.map ~f:minify_inv_inc
-      |> List.dedup ~compare:symmetry_form
-    in
-    if new_invs' = [] then () else begin
-      Prt.warning (String.concat ~sep:"\n" (
-        List.map new_invs' ~f:(fun f -> ToStr.Debug.form_act f)
-      ))
-    end
-  else begin () end;
   List.concat new_invs
   |> List.map ~f:simplify
   |> List.filter ~f:(fun form -> not (form = chaos))
