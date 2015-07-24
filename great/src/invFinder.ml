@@ -761,11 +761,11 @@ let write_res_cache cinvs cinv real_new_invs relations new_inv_id () =
     |> List.map ~f:sexp_of_formula
     |> List.map ~f:Sexp.to_string
   in
-  let relations_sexp_str =
+  (*let relations_sexp_str =
     relations
     |> List.map ~f:sexp_of_t
     |> List.map ~f:Sexp.to_string
-  in
+  in*)
   let id_sexp_str = sprintf "%d" new_inv_id in
   let append_file fn lines () =
     let f = Out_channel.create fn ~append:true in
@@ -774,7 +774,7 @@ let write_res_cache cinvs cinv real_new_invs relations new_inv_id () =
     Out_channel.write_lines cinv_file_name cinvs_sexp_str;
     append_file all_cinv_file_name [all_cinv_sexp_str] ();
     append_file invlib_file_name real_new_inv_sexp_str ();
-    append_file rel_file_name relations_sexp_str ();
+    (*append_file rel_file_name relations_sexp_str ();*)
     Out_channel.write_all id_file_name ~data:id_sexp_str
   )
 
