@@ -11,6 +11,12 @@ let set_smv_server_host host () =
 let set_smv_server_port port () =
   Smv.port := port
 
+let set_smv_bmc_server_host host () =
+  SmvBMC.host := UnixLabels.inet_addr_of_string host
+
+let set_smv_bmc_server_port port () =
+  SmvBMC.port := port
+
 let set_smt_server_host host () =
   Smt2.host := UnixLabels.inet_addr_of_string host
 
@@ -31,12 +37,14 @@ let command program =
       +> flag "-g" no_arg ~doc:"open debuG mode"
       +> flag "-vh" (optional string) ~doc:"set ip address as Host of smV server"
       +> flag "-vp" (optional int) ~doc:"set Port of smV server"
+      +> flag "-vbh" (optional string) ~doc:"set ip address as Host of smV Bmc server"
+      +> flag "-vbp" (optional int) ~doc:"set Port of smV Bmc server"
       +> flag "-th" (optional string) ~doc:"set ip address as Host of smT server"
       +> flag "-tp" (optional int) ~doc:"set Port of smT server"
       +> flag "-mh" (optional string) ~doc:"set ip address as Host of Murphi server"
       +> flag "-mp" (optional int) ~doc:"set Port of Murphi server"
     )
-    (fun g vh vp th tp mh mp () ->
+    (fun g vh vp vbh vbp th tp mh mp () ->
       begin
         match g with
         | true -> open_debug ()
@@ -50,6 +58,16 @@ let command program =
       begin
         match vp with
         | Some port -> set_smv_server_port port ()
+        | None -> ()
+      end;
+      begin
+        match vbh with
+        | Some host -> set_smv_bmc_server_host host ()
+        | None -> ()
+      end;
+      begin
+        match vbp with
+        | Some port -> set_smv_bmc_server_port port ()
         | None -> ()
       end;
       begin

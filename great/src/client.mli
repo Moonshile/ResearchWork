@@ -16,6 +16,15 @@ module Smv : sig
   val quit : string -> bool
 end
 
+module SmvBMC : sig
+  exception Cannot_check
+  val host : UnixLabels.inet_addr ref
+  val port : int ref
+  val go_bmc : string -> string -> bool
+  val check_inv : string -> string -> bool
+  val quit : string -> bool
+end
+
 module Murphi : sig
   val host : UnixLabels.inet_addr ref
   val port : int ref

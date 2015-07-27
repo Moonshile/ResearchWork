@@ -17,6 +17,9 @@ type request_type =
   | QUERY_REACHABLE
   | CHECK_INV
   | SMV_QUIT
+  | GO_BMC
+  | CHECK_INV_BMC
+  | SMV_BMC_QUIT
   | SET_SMT2_CONTEXT
   | QUERY_SMT2
   | QUERY_STAND_SMT2
@@ -32,6 +35,9 @@ let request_type_to_str rt =
   | QUERY_REACHABLE -> "2"
   | CHECK_INV -> "3"
   | SMV_QUIT -> "7"
+  | GO_BMC -> "10"
+  | CHECK_INV_BMC -> "11"
+  | SMV_BMC_QUIT -> "12"
   | SET_SMT2_CONTEXT -> "4"
   | QUERY_SMT2 -> "5"
   | QUERY_STAND_SMT2 -> "6"
@@ -47,6 +53,9 @@ let str_to_request_type str =
   | "2" -> QUERY_REACHABLE
   | "3" -> CHECK_INV
   | "7" -> SMV_QUIT
+  | "10" -> GO_BMC
+  | "11" -> CHECK_INV_BMC
+  | "12" -> SMV_BMC_QUIT
   | "4" -> SET_SMT2_CONTEXT
   | "5" -> QUERY_SMT2
   | "6" -> QUERY_STAND_SMT2
@@ -119,6 +128,32 @@ module Smv = struct
 end
 
 
+module SmvBMC = struct
+
+  exception Cannot_check
+
+  let host = ref (UnixLabels.inet_addr_of_string "127.0.0.1")
+
+  let port = ref 50008
+  
+  let go_bmc name content =
+    let (status, _) = request GO_BMC (sprintf "%s,%s" name content) (!host) (!port) in
+    status = OK
+
+  let check_inv name inv =
+    let (status, res) = request CHECK_INV_BMC (sprintf "%s,%s" name inv) (!host) (!port) in
+    if status = OK then
+      match res with
+      | "0"::[] -> raise Cannot_check
+      | r::[] -> Bool.of_string r
+      | _ -> raise Server_exception
+    else begin raise Server_exception end
+
+  let quit name =
+    let (s, _) = request SMV_BMC_QUIT name (!host) (!port) in
+    s = OK
+
+end
 
 
 

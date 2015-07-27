@@ -484,8 +484,8 @@ module ToSmv = struct
 
 
 
-  let protocol_act {name=_; types; vardefs; init; rules; properties} =
-    let types  = List.map types ~f:limit_params_in_typedef in
+  let protocol_act ?(limit_param=true) {name=_; types; vardefs; init; rules; properties} =
+    let types = if limit_param then List.map types ~f:limit_params_in_typedef else types in
     types_ref := types;
     let property_strs = [""] (* List.map properties ~f:prop_act *) in
     let rule_insts = List.concat (List.map rules ~f:(rule_to_insts ~types)) in

@@ -355,7 +355,7 @@ module Choose = struct
       tautology inv
     else begin
       try 
-        let inv  = minify_inv_inc inv in
+        let inv = minify_inv_inc inv in
         let implied_by_old = inv_implied_by_old inv invs in
         match implied_by_old with
         | Some(old) -> implied inv old
@@ -778,7 +778,6 @@ let tabular_rules_cinvs rname_paraminfo_pairs cinvs =
           List.map real_new_invs ~f:(fun f -> "NewInv: "^ToStr.Smv.form_act f)
         ))
       end;
-      let old_invs' = real_new_invs@old_invs in
       let rec invs_to_cinvs invs cinvs new_inv_id =
         match invs with
         | [] -> (cinvs, new_inv_id)
@@ -833,14 +832,19 @@ let result_to_str (cinvs, relations) =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol ?(smv="") ?(murphi="") () =
+let find ~protocol ?(smv="") ?(smv_bmc="") ?(murphi="") () =
   let {name; types; vardefs; init=_init; rules; properties} = Loach.Trans.act ~loach:protocol in
   let _smt_context = Smt.set_context name (ToStr.Smt2.context_of ~types ~vardefs) in
+  let _mu_context = Murphi.set_context name murphi in
+  let _smv_bmc_context =
+    if smv_bmc = "" then
+      SmvBmc.set_context name (Loach.ToSmv.protocol_act ~limit_param:false protocol)
+    else begin SmvBmc.set_context name smv_bmc end
+  in
   let _smv_context =
     if smv = "" then Smv.set_context name (Loach.ToSmv.protocol_act protocol)
     else begin Smv.set_context name smv end
   in
-  let _mu_context = Murphi.set_context name murphi in
   (type_defs := types; protocol_name := name);
   let cinvs =
     List.concat (List.map properties ~f:simplify_prop)

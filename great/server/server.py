@@ -18,6 +18,9 @@ COMPUTE_REACHABLE = '1'
 QUERY_REACHABLE = '2'
 CHECK_INV = '3'
 SMV_QUIT = '7'
+GO_BMC = '10'
+CHECK_INV_BMC = '11'
+SMV_BMC_QUIT = '12'
 
 SET_SMT2_CONTEXT = '4'
 QUERY_SMT2 = '5'
@@ -29,12 +32,13 @@ CHECK_INV_BY_MU = '9'
 
 smt2_pool = {}
 smv_pool = {}
+smv_bmc_pool = {}
 mu_pool = {}
 
 __verbose = False
 
-def gen_smv_file(name, content):
-    smv_file = SMV_FILE_DIR + hashlib.md5(name).hexdigest() + '.smv'
+def gen_smv_file(name, content, name_add=""):
+    smv_file = SMV_FILE_DIR + hashlib.md5(name).hexdigest() + name_add + '.smv'
     new_smv_file = True
     if os.path.isfile(smv_file):
         with open(smv_file, 'r') as f:
@@ -107,6 +111,40 @@ def serv(conn, addr):
         if cmd[2] in smv_pool:
             smv_pool[cmd[2]].exit()
             del smv_pool[cmd[2]]
+            conn.sendall(OK)
+        else:
+            conn.sendall(ERROR)
+    elif cmd[0] == GO_BMC:
+        """
+        In this case, cmd should be [length, command, command_id, name, smv file content]
+        """
+        # There are many ',' in smv file, so should concat the parts splited
+        name = cmd[2]
+        content = ','.join(cmd[3:])
+        new_smv_file, smv_file = gen_smv_file(name, content, name_add='.bmc')
+        if new_smv_file or name not in smv_bmc_pool:
+            if __verbose: print "Go to bmc checking of NuSMV"
+            smv = SMV(SMV_PATH, smv_file, timeout=TIME_OUT)
+            if name in smv_bmc_pool: smv_bmc_pool[name].exit()
+            smv_bmc_pool[name] = smv
+            res = smv.go_bmc()
+        conn.sendall(OK)
+    elif cmd[0] == CHECK_INV_BMC:
+        """
+        In this case, cmd should be [length, command, command_id, name, inv]
+        """
+        if cmd[2] in smv_bmc_pool:
+            res = smv_bmc_pool[cmd[2]].check_bmc(cmd[3])
+            conn.sendall(','.join([OK, res]))
+        else:
+            conn.sendall(ERROR)
+    elif cmd[0] == SMV_BMC_QUIT:
+        """
+        In this case, cmd should be [length, command, command_id, name]
+        """
+        if cmd[2] in smv_bmc_pool:
+            smv_bmc_pool[cmd[2]].exit()
+            del smv_bmc_pool[cmd[2]]
             conn.sendall(OK)
         else:
             conn.sendall(ERROR)

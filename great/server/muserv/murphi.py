@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+from subprocess import PIPE
 import hashlib
 
 from pexpect import spawn, EOF, TIMEOUT
@@ -35,12 +36,13 @@ class Murphi(object):
         return filename
 
     def mu_compile(self, filename):
-        subprocess.call([self.mu_path, filename])
+        subprocess.call([self.mu_path, filename], stderr=PIPE, stdout=PIPE)
         return os.path.join(self.mu_file_dir, self.name + '.cpp')
 
     def cpp_compile(self, filename):
         exe_file = os.path.join(self.mu_file_dir, self.name)
-        subprocess.call([self.gxx_path, filename, '-I', self.mu_include, '-o', exe_file])
+        subprocess.call([self.gxx_path, filename, '-I', self.mu_include, '-o', exe_file],
+            stderr=PIPE, stdout=PIPE)
         return exe_file
 
     def expect_fail(self, filename):

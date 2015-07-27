@@ -7,6 +7,7 @@ Functions for checking invariants with NuSMV
 @author Kaiqiang Duan <duankq@ios.ac.cn>
 """
 
+import re
 from pexpect import spawn, EOF, TIMEOUT
 
 class SMV(object):
@@ -20,25 +21,29 @@ class SMV(object):
         self.clear()
 
     def clear(self):
-        self.process.expect(['NuSMV\s+>\s+', EOF, TIMEOUT], timeout=.001)
+        self.process.expect([r'.*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=.001)
 
     def go_and_compute_reachable(self):
         self.clear()
         if not self.diameter and not self.isComputing:
             self.isComputing = True
             self.process.send('go\ncompute_reachable\n')
+    
+    def go_bmc(self):
+        self.clear()
+        self.process.send('go_bmc\nset bmc_length 15\n')
 
     def query_reachable(self):
         if self.diameter:
             return self.diameter
         computed = self.process.expect(
-            ['The\s+diameter\s+of\s+the\s+FSM\s+is ', EOF, TIMEOUT], 
+            [r'The\s+diameter\s+of\s+the\s+FSM\s+is ', EOF, TIMEOUT], 
             timeout=0
         )
         if computed == 2:
             return None
         elif computed == 0:
-            res = self.process.expect(['\.\s+NuSMV\s+>\s+', EOF, TIMEOUT])
+            res = self.process.expect([r'\.\s+NuSMV\s+>\s+', EOF, TIMEOUT])
             if res == 0:
                 self.diameter = self.process.before
                 return self.diameter
@@ -47,11 +52,29 @@ class SMV(object):
     def check(self, invariant):
         self.clear()
         self.process.send('check_invar -p \"' + invariant + '\"\n')
-        res = self.process.expect(['--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT],
+        res = self.process.expect([r'--\s+invariant\s+.*\s+is\s+', 'ERROR:\s+', EOF, TIMEOUT],
             timeout=None)
-        self.process.expect(['\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=self.timeout)
+        self.process.expect([r'\s*NuSMV\s+>\s+', EOF, TIMEOUT], timeout=self.timeout)
         if res == 0:
             return self.process.before.strip()
+        return '0'
+    
+    def check_bmc(self, invariant):
+        self.clear()
+        self.process.send('check_ltlspec_bmc -p "G %s"\n'%invariant)
+        res = self.process.expect([
+                r'NuSMV\s+>\s+',
+                r'ERROR:\s+', EOF, TIMEOUT
+            ],
+            timeout=None)
+        import sys
+        sys.stdout.write(', res, %s'%res)
+        if res == 0:
+            output = self.process.before.strip().split('\n')
+            for o in output:
+                if o.startswith('-- specification'):
+                    return o.strip().split(' ')[-1]
+            return "true"
         return '0'
 
     def exit(self):

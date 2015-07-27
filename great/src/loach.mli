@@ -115,6 +115,6 @@ end
 
 
 module ToSmv : sig
-  val protocol_act : protocol -> string
+  val protocol_act : ?limit_param:bool -> protocol -> string
 end
 
