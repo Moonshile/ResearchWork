@@ -192,8 +192,8 @@ let minify_inv_inc inv =
         try Smv.is_inv (ToStr.Smv.form_act (neg piece)) with
         | Client.Smv.Cannot_check ->
           let form_str = ToStr.Smv.form_act ~lower:false (neg piece) in
-          print_endline ("Check by mu:"^form_str);
-          Murphi.is_inv form_str
+          let res = Murphi.is_inv form_str in
+          print_endline (sprintf "Check by mu: %s, %b" form_str res); res
       in
       if check_inv_res then piece
       else begin wrapper components' end
