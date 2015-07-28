@@ -30,7 +30,7 @@ let paramref_act pr pds pfs =
       Hashtbl.replace table ~key ~data:new_pd;
       (new_pd::pds, paramfix new_name tname c::pfs, paramref new_name)
     | Some(Paramdef(vn, _)) ->
-      (paramdef vn tname::pds, paramfix vn tname c::pfs, paramref vn)
+      (pds, pfs, paramref vn)
   )
 
 (** Convert a list of components *)
