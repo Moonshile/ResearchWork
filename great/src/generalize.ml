@@ -30,7 +30,10 @@ let paramref_act pr pds pfs =
       Hashtbl.replace table ~key ~data:new_pd;
       (new_pd::pds, paramfix new_name tname c::pfs, paramref new_name)
     | Some(Paramdef(vn, _)) ->
-      (pds, pfs, paramref vn)
+      let has = List.exists pds ~f:(fun (Paramdef(n, _)) -> n = vn) in
+      let pds' = if has then pds else paramdef vn tname::pds in
+      let pfs' = if has then pfs else paramfix vn tname c::pfs in
+      (pds', pfs', paramref vn)
   )
 
 (** Convert a list of components *)
