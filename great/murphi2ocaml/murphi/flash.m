@@ -101,15 +101,15 @@ var
   Sta : STATE;
 
 
-ruleset h : NODE; d : DATA do
+ruleset d : DATA do
 startstate "Init"
-  Home := h;
+  Home := 0;
   Sta.MemData := d;
   Sta.Dir.Pending := false;
   Sta.Dir.Local := false;
   Sta.Dir.Dirty := false;
   Sta.Dir.HeadVld := false;
-  Sta.Dir.HeadPtr := h;
+  Sta.Dir.HeadPtr := 0;
   Sta.Dir.ShrVld := false;
   Sta.WbMsg.Cmd := WB_None;
   Sta.ShWbMsg.Cmd := SHWB_None;

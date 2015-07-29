@@ -284,6 +284,7 @@ endrule;
 
 ruleset dst : NODE do
 rule "NI_Nak"
+  dst != Home &
   Sta.UniMsg[dst].Cmd = UNI_Nak
 ==>
 begin
@@ -292,6 +293,15 @@ begin
   Sta.Proc[dst].InvMarked := false;
 endrule;
 endruleset;
+
+rule "NI_Nak_Home"
+  Sta.UniMsg[Home].Cmd = UNI_Nak
+==>
+begin
+  Sta.UniMsg[Home].Cmd := UNI_None;
+  Sta.Proc[Home].ProcCmd := NODE_None;
+  Sta.Proc[Home].InvMarked := false;
+endrule;
 
 rule "NI_Nak_Clear"
   Sta.NakcMsg.Cmd = NAKC_Nakc
@@ -375,7 +385,7 @@ endruleset;
 
 ruleset src : NODE; dst : NODE do
 rule "NI_Remote_Get_Nak"
-  src != dst & dst != Home &
+  src != Home & src != dst & dst != Home &
   Sta.UniMsg[src].Cmd = UNI_Get &
   Sta.UniMsg[src].Proc = dst &
   Sta.Proc[dst].CacheState != CACHE_E
@@ -387,9 +397,23 @@ begin
 endrule;
 endruleset;
 
+ruleset dst : NODE do
+rule "NI_Remote_Get_Nak_Home"
+  dst != Home &
+  Sta.UniMsg[Home].Cmd = UNI_Get &
+  Sta.UniMsg[Home].Proc = dst &
+  Sta.Proc[dst].CacheState != CACHE_E
+==>
+begin
+  Sta.UniMsg[Home].Cmd := UNI_Nak;
+  Sta.UniMsg[Home].Proc := dst;
+  Sta.NakcMsg.Cmd := NAKC_Nakc;
+endrule;
+endruleset;
+
 ruleset src : NODE; dst : NODE do
 rule "NI_Remote_Get_Put"
-  src != dst & dst != Home &
+  src != Home & src != dst & dst != Home &
   Sta.UniMsg[src].Cmd = UNI_Get &
   Sta.UniMsg[src].Proc = dst &
   Sta.Proc[dst].CacheState = CACHE_E
@@ -399,11 +423,24 @@ begin
   Sta.UniMsg[src].Cmd := UNI_Put;
   Sta.UniMsg[src].Proc := dst;
   Sta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
-  if (src != Home) then
-    Sta.ShWbMsg.Cmd := SHWB_ShWb;
-    Sta.ShWbMsg.Proc := src;
-    Sta.ShWbMsg.Data := Sta.Proc[dst].CacheData;
-  end;
+  Sta.ShWbMsg.Cmd := SHWB_ShWb;
+  Sta.ShWbMsg.Proc := src;
+  Sta.ShWbMsg.Data := Sta.Proc[dst].CacheData;
+endrule;
+endruleset;
+
+ruleset dst : NODE do
+rule "NI_Remote_Get_Put_Home"
+  dst != Home &
+  Sta.UniMsg[Home].Cmd = UNI_Get &
+  Sta.UniMsg[Home].Proc = dst &
+  Sta.Proc[dst].CacheState = CACHE_E
+==>
+begin
+  Sta.Proc[dst].CacheState := CACHE_S;
+  Sta.UniMsg[Home].Cmd := UNI_Put;
+  Sta.UniMsg[Home].Proc := dst;
+  Sta.UniMsg[Home].Data := Sta.Proc[dst].CacheData;
 endrule;
 endruleset;
 
@@ -515,7 +552,7 @@ endruleset;
 
 ruleset src : NODE; dst : NODE do
 rule "NI_Remote_GetX_Nak"
-  src != dst & dst != Home &
+  src != Home & src != dst & dst != Home &
   Sta.UniMsg[src].Cmd = UNI_GetX &
   Sta.UniMsg[src].Proc = dst &
   Sta.Proc[dst].CacheState != CACHE_E
@@ -527,9 +564,23 @@ begin
 endrule;
 endruleset;
 
+ruleset dst : NODE do
+rule "NI_Remote_GetX_Nak_Home"
+  dst != Home &
+  Sta.UniMsg[Home].Cmd = UNI_GetX &
+  Sta.UniMsg[Home].Proc = dst &
+  Sta.Proc[dst].CacheState != CACHE_E
+==>
+begin
+  Sta.UniMsg[Home].Cmd := UNI_Nak;
+  Sta.UniMsg[Home].Proc := dst;
+  Sta.NakcMsg.Cmd := NAKC_Nakc;
+endrule;
+endruleset;
+
 ruleset src : NODE; dst : NODE do
 rule "NI_Remote_GetX_PutX"
-  src != dst & dst != Home &
+  src != Home & src != dst & dst != Home &
   Sta.UniMsg[src].Cmd = UNI_GetX &
   Sta.UniMsg[src].Proc = dst &
   Sta.Proc[dst].CacheState = CACHE_E
@@ -539,10 +590,23 @@ begin
   Sta.UniMsg[src].Cmd := UNI_PutX;
   Sta.UniMsg[src].Proc := dst;
   Sta.UniMsg[src].Data := Sta.Proc[dst].CacheData;
-  if (src != Home) then
-    Sta.ShWbMsg.Cmd := SHWB_FAck;
-    Sta.ShWbMsg.Proc := src;
-  end;
+  Sta.ShWbMsg.Cmd := SHWB_FAck;
+  Sta.ShWbMsg.Proc := src;
+endrule;
+endruleset;
+
+ruleset dst : NODE do
+rule "NI_Remote_GetX_PutX_Home"
+  dst != Home &
+  Sta.UniMsg[Home].Cmd = UNI_GetX &
+  Sta.UniMsg[Home].Proc = dst &
+  Sta.Proc[dst].CacheState = CACHE_E
+==>
+begin
+  Sta.Proc[dst].CacheState := CACHE_I;
+  Sta.UniMsg[Home].Cmd := UNI_PutX;
+  Sta.UniMsg[Home].Proc := dst;
+  Sta.UniMsg[Home].Data := Sta.Proc[dst].CacheData;
 endrule;
 endruleset;
 
@@ -687,6 +751,7 @@ endrule;
 
 ruleset src : NODE do
 rule "NI_Replace"
+  src != Home &
   Sta.RpMsg[src].Cmd = RP_Replace
 ==>
 begin
@@ -697,6 +762,17 @@ begin
   end;
 endrule;
 endruleset;
+
+rule "NI_Replace_Home"
+  Sta.RpMsg[Home].Cmd = RP_Replace
+==>
+begin
+  Sta.RpMsg[Home].Cmd := RP_None;
+  if (Sta.Dir.ShrVld) then
+    Sta.Dir.ShrSet[Home] := false;
+    Sta.Dir.InvSet[Home] := false;
+  end;
+endrule;
 
 
 invariant "CacheStateProp"

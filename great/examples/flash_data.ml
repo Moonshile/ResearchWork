@@ -158,7 +158,7 @@ let n_PI_Remote_Replace =
 let n_NI_Nak =
   let name = "n_NI_Nak" in
   let params = [paramdef "dst" "NODE"] in
-  let formula = (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "dst"])]; global "Cmd"])) (const _UNI_Nak)) in
+  let formula = (andList [(neg (eqn (param (paramref "dst")) (param _Home))); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "dst"])]; global "Cmd"])) (const _UNI_Nak))]) in
   let statement = (parallel [(assign (record [global "Sta"; arr [("UniMsg", [paramref "dst"])]; global "Cmd"]) (const _UNI_None)); (assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "ProcCmd"]) (const _NODE_None)); (assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "InvMarked"]) (const (boolc false)))]) in
   rule name params formula statement
 
@@ -186,15 +186,29 @@ let n_NI_Local_Get_Put =
 let n_NI_Remote_Get_Nak =
   let name = "n_NI_Remote_Get_Nak" in
   let params = [paramdef "src" "NODE"; paramdef "dst" "NODE"] in
-  let formula = (andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param (paramref "dst")))); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_Get))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (neg (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E)))]) in
+  let formula = (andList [(andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param _Home))); (neg (eqn (param (paramref "src")) (param (paramref "dst"))))]); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_Get))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (neg (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E)))]) in
   let statement = (parallel [(assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"]) (const _UNI_Nak)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; global "NakcMsg"; global "Cmd"]) (const _NAKC_Nakc))]) in
+  rule name params formula statement
+
+let n_NI_Remote_Get_Nak_Home =
+  let name = "n_NI_Remote_Get_Nak_Home" in
+  let params = [paramdef "dst" "NODE"] in
+  let formula = (andList [(andList [(andList [(neg (eqn (param (paramref "dst")) (param _Home))); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"])) (const _UNI_Get))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"])) (param (paramref "dst")))]); (neg (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E)))]) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"]) (const _UNI_Nak)); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; global "NakcMsg"; global "Cmd"]) (const _NAKC_Nakc))]) in
   rule name params formula statement
 
 let n_NI_Remote_Get_Put =
   let name = "n_NI_Remote_Get_Put" in
   let params = [paramdef "src" "NODE"; paramdef "dst" "NODE"] in
-  let formula = (andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param (paramref "dst")))); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_Get))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E))]) in
-  let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"]) (const _CACHE_S)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"]) (const _UNI_Put)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"]))); (ifStatement (neg (eqn (param (paramref "src")) (param _Home))) (parallel [(assign (record [global "Sta"; global "ShWbMsg"; global "Cmd"]) (const _SHWB_ShWb)); (assign (record [global "Sta"; global "ShWbMsg"; global "Proc"]) (param (paramref "src"))); (assign (record [global "Sta"; global "ShWbMsg"; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"])))]))]) in
+  let formula = (andList [(andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param _Home))); (neg (eqn (param (paramref "src")) (param (paramref "dst"))))]); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_Get))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E))]) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"]) (const _CACHE_S)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"]) (const _UNI_Put)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"]))); (assign (record [global "Sta"; global "ShWbMsg"; global "Cmd"]) (const _SHWB_ShWb)); (assign (record [global "Sta"; global "ShWbMsg"; global "Proc"]) (param (paramref "src"))); (assign (record [global "Sta"; global "ShWbMsg"; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"])))]) in
+  rule name params formula statement
+
+let n_NI_Remote_Get_Put_Home =
+  let name = "n_NI_Remote_Get_Put_Home" in
+  let params = [paramdef "dst" "NODE"] in
+  let formula = (andList [(andList [(andList [(neg (eqn (param (paramref "dst")) (param _Home))); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"])) (const _UNI_Get))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"])) (param (paramref "dst")))]); (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E))]) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"]) (const _CACHE_S)); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"]) (const _UNI_Put)); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"])))]) in
   rule name params formula statement
 
 let n_NI_Local_GetX_Nak =
@@ -221,15 +235,29 @@ let n_NI_Local_GetX_PutX =
 let n_NI_Remote_GetX_Nak =
   let name = "n_NI_Remote_GetX_Nak" in
   let params = [paramdef "src" "NODE"; paramdef "dst" "NODE"] in
-  let formula = (andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param (paramref "dst")))); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_GetX))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (neg (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E)))]) in
+  let formula = (andList [(andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param _Home))); (neg (eqn (param (paramref "src")) (param (paramref "dst"))))]); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_GetX))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (neg (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E)))]) in
   let statement = (parallel [(assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"]) (const _UNI_Nak)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; global "NakcMsg"; global "Cmd"]) (const _NAKC_Nakc))]) in
+  rule name params formula statement
+
+let n_NI_Remote_GetX_Nak_Home =
+  let name = "n_NI_Remote_GetX_Nak_Home" in
+  let params = [paramdef "dst" "NODE"] in
+  let formula = (andList [(andList [(andList [(neg (eqn (param (paramref "dst")) (param _Home))); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"])) (const _UNI_GetX))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"])) (param (paramref "dst")))]); (neg (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E)))]) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"]) (const _UNI_Nak)); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; global "NakcMsg"; global "Cmd"]) (const _NAKC_Nakc))]) in
   rule name params formula statement
 
 let n_NI_Remote_GetX_PutX =
   let name = "n_NI_Remote_GetX_PutX" in
   let params = [paramdef "src" "NODE"; paramdef "dst" "NODE"] in
-  let formula = (andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param (paramref "dst")))); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_GetX))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E))]) in
-  let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"]) (const _CACHE_I)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"]) (const _UNI_PutX)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"]))); (ifStatement (neg (eqn (param (paramref "src")) (param _Home))) (parallel [(assign (record [global "Sta"; global "ShWbMsg"; global "Cmd"]) (const _SHWB_FAck)); (assign (record [global "Sta"; global "ShWbMsg"; global "Proc"]) (param (paramref "src")))]))]) in
+  let formula = (andList [(andList [(andList [(andList [(andList [(neg (eqn (param (paramref "src")) (param _Home))); (neg (eqn (param (paramref "src")) (param (paramref "dst"))))]); (neg (eqn (param (paramref "dst")) (param _Home)))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"])) (const _UNI_GetX))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"])) (param (paramref "dst")))]); (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E))]) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"]) (const _CACHE_I)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Cmd"]) (const _UNI_PutX)); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; arr [("UniMsg", [paramref "src"])]; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"]))); (assign (record [global "Sta"; global "ShWbMsg"; global "Cmd"]) (const _SHWB_FAck)); (assign (record [global "Sta"; global "ShWbMsg"; global "Proc"]) (param (paramref "src")))]) in
+  rule name params formula statement
+
+let n_NI_Remote_GetX_PutX_Home =
+  let name = "n_NI_Remote_GetX_PutX_Home" in
+  let params = [paramdef "dst" "NODE"] in
+  let formula = (andList [(andList [(andList [(neg (eqn (param (paramref "dst")) (param _Home))); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"])) (const _UNI_GetX))]); (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"])) (param (paramref "dst")))]); (eqn (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"])) (const _CACHE_E))]) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheState"]) (const _CACHE_I)); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"]) (const _UNI_PutX)); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Proc"]) (param (paramref "dst"))); (assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Data"]) (var (record [global "Sta"; arr [("Proc", [paramref "dst"])]; global "CacheData"])))]) in
   rule name params formula statement
 
 let n_NI_Remote_Put =
@@ -263,7 +291,7 @@ let n_NI_InvAck =
 let n_NI_Replace =
   let name = "n_NI_Replace" in
   let params = [paramdef "src" "NODE"] in
-  let formula = (eqn (var (record [global "Sta"; arr [("RpMsg", [paramref "src"])]; global "Cmd"])) (const _RP_Replace)) in
+  let formula = (andList [(neg (eqn (param (paramref "src")) (param _Home))); (eqn (var (record [global "Sta"; arr [("RpMsg", [paramref "src"])]; global "Cmd"])) (const _RP_Replace))]) in
   let statement = (parallel [(assign (record [global "Sta"; arr [("RpMsg", [paramref "src"])]; global "Cmd"]) (const _RP_None)); (ifStatement (eqn (var (record [global "Sta"; global "Dir"; global "ShrVld"])) (const _True)) (parallel [(assign (record [global "Sta"; global "Dir"; arr [("ShrSet", [paramref "src"])]]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; arr [("InvSet", [paramref "src"])]]) (const (boolc false)))]))]) in
   rule name params formula statement
 
@@ -309,6 +337,13 @@ let n_PI_Local_Replace =
   let statement = (parallel [(assign (record [global "Sta"; global "Dir"; global "Local"]) (const (boolc false))); (assign (record [global "Sta"; arr [("Proc", [_Home])]; global "CacheState"]) (const _CACHE_I))]) in
   rule name params formula statement
 
+let n_NI_Nak_Home =
+  let name = "n_NI_Nak_Home" in
+  let params = [] in
+  let formula = (eqn (var (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"])) (const _UNI_Nak)) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("UniMsg", [_Home])]; global "Cmd"]) (const _UNI_None)); (assign (record [global "Sta"; arr [("Proc", [_Home])]; global "ProcCmd"]) (const _NODE_None)); (assign (record [global "Sta"; arr [("Proc", [_Home])]; global "InvMarked"]) (const (boolc false)))]) in
+  rule name params formula statement
+
 let n_NI_Nak_Clear =
   let name = "n_NI_Nak_Clear" in
   let params = [] in
@@ -351,7 +386,14 @@ let n_NI_ShWb =
   let statement = (parallel [(assign (record [global "Sta"; global "ShWbMsg"; global "Cmd"]) (const _SHWB_None)); (assign (record [global "Sta"; global "Dir"; global "Pending"]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; global "Dirty"]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; global "ShrVld"]) (const (boolc true))); (forStatement (ifelseStatement (orList [(eqn (param (paramref "p")) (var (record [global "Sta"; global "ShWbMsg"; global "Proc"]))); (eqn (var (record [global "Sta"; global "Dir"; arr [("ShrSet", [paramref "p"])]])) (const _True))]) (parallel [(assign (record [global "Sta"; global "Dir"; arr [("ShrSet", [paramref "p"])]]) (const (boolc true))); (assign (record [global "Sta"; global "Dir"; arr [("InvSet", [paramref "p"])]]) (const (boolc true)))]) (parallel [(assign (record [global "Sta"; global "Dir"; arr [("ShrSet", [paramref "p"])]]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; arr [("InvSet", [paramref "p"])]]) (const (boolc false)))])) [paramdef "p" "NODE"]); (assign (record [global "Sta"; global "MemData"]) (var (record [global "Sta"; global "ShWbMsg"; global "Data"])))]) in
   rule name params formula statement
 
-let rules = [n_Store; n_PI_Remote_Get; n_PI_Remote_GetX; n_PI_Remote_PutX; n_PI_Remote_Replace; n_NI_Nak; n_NI_Local_Get_Nak; n_NI_Local_Get_Get; n_NI_Local_Get_Put; n_NI_Remote_Get_Nak; n_NI_Remote_Get_Put; n_NI_Local_GetX_Nak; n_NI_Local_GetX_GetX; n_NI_Local_GetX_PutX; n_NI_Remote_GetX_Nak; n_NI_Remote_GetX_PutX; n_NI_Remote_Put; n_NI_Remote_PutX; n_NI_Inv; n_NI_InvAck; n_NI_Replace; n_PI_Local_Get_Get; n_PI_Local_Get_Put; n_PI_Local_GetX_GetX; n_PI_Local_GetX_PutX; n_PI_Local_PutX; n_PI_Local_Replace; n_NI_Nak_Clear; n_NI_Local_Put; n_NI_Local_PutXAcksDone; n_NI_Wb; n_NI_FAck; n_NI_ShWb]
+let n_NI_Replace_Home =
+  let name = "n_NI_Replace_Home" in
+  let params = [] in
+  let formula = (eqn (var (record [global "Sta"; arr [("RpMsg", [_Home])]; global "Cmd"])) (const _RP_Replace)) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("RpMsg", [_Home])]; global "Cmd"]) (const _RP_None)); (ifStatement (eqn (var (record [global "Sta"; global "Dir"; global "ShrVld"])) (const _True)) (parallel [(assign (record [global "Sta"; global "Dir"; arr [("ShrSet", [_Home])]]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; arr [("InvSet", [_Home])]]) (const (boolc false)))]))]) in
+  rule name params formula statement
+
+let rules = [n_Store; n_PI_Remote_Get; n_PI_Remote_GetX; n_PI_Remote_PutX; n_PI_Remote_Replace; n_NI_Nak; n_NI_Local_Get_Nak; n_NI_Local_Get_Get; n_NI_Local_Get_Put; n_NI_Remote_Get_Nak; n_NI_Remote_Get_Nak_Home; n_NI_Remote_Get_Put; n_NI_Remote_Get_Put_Home; n_NI_Local_GetX_Nak; n_NI_Local_GetX_GetX; n_NI_Local_GetX_PutX; n_NI_Remote_GetX_Nak; n_NI_Remote_GetX_Nak_Home; n_NI_Remote_GetX_PutX; n_NI_Remote_GetX_PutX_Home; n_NI_Remote_Put; n_NI_Remote_PutX; n_NI_Inv; n_NI_InvAck; n_NI_Replace; n_PI_Local_Get_Get; n_PI_Local_Get_Put; n_PI_Local_GetX_GetX; n_PI_Local_GetX_PutX; n_PI_Local_PutX; n_PI_Local_Replace; n_NI_Nak_Home; n_NI_Nak_Clear; n_NI_Local_Put; n_NI_Local_PutXAcksDone; n_NI_Wb; n_NI_FAck; n_NI_ShWb; n_NI_Replace_Home]
 
 let n_CacheStateProp =
   let name = "n_CacheStateProp" in
