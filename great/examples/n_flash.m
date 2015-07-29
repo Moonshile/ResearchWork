@@ -101,21 +101,21 @@ var
   Sta : STATE;
 
 
-ruleset h : NODE; d : DATA do
+ruleset d : DATA do
 startstate "Init"
-  Home := h;
+  Home := 0;
   Sta.MemData := d;
   Sta.Dir.Pending := false;
   Sta.Dir.Local := false;
   Sta.Dir.Dirty := false;
   Sta.Dir.HeadVld := false;
-  Sta.Dir.HeadPtr := h;
+  Sta.Dir.HeadPtr := 0;
   Sta.Dir.ShrVld := false;
   Sta.WbMsg.Cmd := WB_None;
-  Sta.WbMsg.Proc := h;
+  Sta.WbMsg.Proc := 0;
   Sta.WbMsg.Data := d;
   Sta.ShWbMsg.Cmd := SHWB_None;
-  Sta.ShWbMsg.Proc := h;
+  Sta.ShWbMsg.Proc := 0;
   Sta.ShWbMsg.Data := d;
   Sta.NakcMsg.Cmd := NAKC_None;
   for p : NODE do
@@ -125,7 +125,7 @@ startstate "Init"
     Sta.Dir.ShrSet[p] := false;
     Sta.Dir.InvSet[p] := false;
     Sta.UniMsg[p].Cmd := UNI_None;
-    Sta.UniMsg[p].Proc := h;
+    Sta.UniMsg[p].Proc := 0;
     Sta.UniMsg[p].Data := d;
     Sta.InvMsg[p].Cmd := INV_None;
     Sta.RpMsg[p].Cmd := RP_None;
