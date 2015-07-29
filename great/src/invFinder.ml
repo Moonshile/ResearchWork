@@ -437,7 +437,7 @@ module Choose = struct
   (* choose new inv *)
   let choose guards assigns cons invs =
     (* It seems that if we simplify invs increasingly, then we should check big inv directly *)
-    let dimen_0 = assigns_on_0_dimen assigns in
+    (* let dimen_0 = assigns_on_0_dimen assigns in
     let ants_0_dimen = 
       if dimen_0 = [] then
         []
@@ -446,8 +446,8 @@ module Choose = struct
         |> List.map ~f:assign_to_form
         |> List.map ~f:neg
       end
-    in
-    check_level ~must_new:true (simplify (andList (cons::(guards@ants_0_dimen)))) invs
+    in *)
+    check_level ~must_new:true (simplify (andList (cons::guards))) invs
     (*let choosed_0_dimen = 
       if not (ants_0_dimen = []) then
         choose_with_0_dimen_var guards ants_0_dimen cons invs
