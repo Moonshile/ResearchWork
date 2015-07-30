@@ -419,7 +419,11 @@ let protocol = {
   properties;
 }
 
-let () = run_with_cmdline (find ~protocol
-  ~smv:(In_channel.read_all "flash_nodata.smv")
-  ~murphi:(In_channel.read_all "n_flash_data.m"))
+let () = run_with_cmdline (fun () ->
+  let cinvs, relations = find protocol
+    ~smv:(In_channel.read_all "flash_nodata.smv")
+    ~murphi:(In_channel.read_all "n_flash_data.m")
+  in
+  ()
+)
 

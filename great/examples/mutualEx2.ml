@@ -79,5 +79,8 @@ let protocol = {
   properties;
 }
 
-let () = run_with_cmdline (find ~protocol ~murphi:(In_channel.read_all "n_mutualEx.m"))
+let () = run_with_cmdline (fun () ->
+  let cinvs, relations = find ~murphi:(In_channel.read_all "n_mutualEx.m") protocol in
+  ()
+)
 

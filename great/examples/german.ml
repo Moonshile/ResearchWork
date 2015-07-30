@@ -166,5 +166,8 @@ let protocol = {
   properties;
 }
 
-let () = run_with_cmdline (find ~protocol)
+let () = run_with_cmdline (fun () -> 
+  let cinvs, relations = find protocol in
+  ()
+)
 

@@ -399,5 +399,8 @@ let protocol = {
   properties;
 }
 
-let () = run_with_cmdline (find ~protocol ~murphi:(In_channel.read_all "n_flash_nodata.m"))
+let () = run_with_cmdline (fun () ->
+  let cinvs, relations = find ~murphi:(In_channel.read_all "n_flash_nodata.m") protocol in
+  ()
+)
 
