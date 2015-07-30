@@ -147,6 +147,14 @@ n_NI_Remote_Get_Nak__2__3 : process Proc__n_NI_Remote_Get_Nak__2__3(Sta.NakcMsg.
 
 n_NI_Remote_Get_Nak__3__3 : process Proc__n_NI_Remote_Get_Nak__3__3(Sta.NakcMsg.Cmd, Sta.Proc[3].CacheState, Sta.UniMsg[3].Cmd, Sta.UniMsg[3].Proc);
 
+n_NI_Remote_Get_Nak_Home__0 : process Proc__n_NI_Remote_Get_Nak_Home__0(Sta.NakcMsg.Cmd, Sta.Proc[0].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_Get_Nak_Home__1 : process Proc__n_NI_Remote_Get_Nak_Home__1(Sta.NakcMsg.Cmd, Sta.Proc[1].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_Get_Nak_Home__2 : process Proc__n_NI_Remote_Get_Nak_Home__2(Sta.NakcMsg.Cmd, Sta.Proc[2].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_Get_Nak_Home__3 : process Proc__n_NI_Remote_Get_Nak_Home__3(Sta.NakcMsg.Cmd, Sta.Proc[3].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
 n_NI_Remote_Get_Put__0__0 : process Proc__n_NI_Remote_Get_Put__0__0(Sta.Proc[0].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
 
 n_NI_Remote_Get_Put__1__0 : process Proc__n_NI_Remote_Get_Put__1__0(Sta.Proc[0].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[1].Cmd, Sta.UniMsg[1].Proc);
@@ -178,6 +186,14 @@ n_NI_Remote_Get_Put__1__3 : process Proc__n_NI_Remote_Get_Put__1__3(Sta.Proc[3].
 n_NI_Remote_Get_Put__2__3 : process Proc__n_NI_Remote_Get_Put__2__3(Sta.Proc[3].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[2].Cmd, Sta.UniMsg[2].Proc);
 
 n_NI_Remote_Get_Put__3__3 : process Proc__n_NI_Remote_Get_Put__3__3(Sta.Proc[3].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[3].Cmd, Sta.UniMsg[3].Proc);
+
+n_NI_Remote_Get_Put_Home__0 : process Proc__n_NI_Remote_Get_Put_Home__0(Sta.Proc[0].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_Get_Put_Home__1 : process Proc__n_NI_Remote_Get_Put_Home__1(Sta.Proc[1].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_Get_Put_Home__2 : process Proc__n_NI_Remote_Get_Put_Home__2(Sta.Proc[2].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_Get_Put_Home__3 : process Proc__n_NI_Remote_Get_Put_Home__3(Sta.Proc[3].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
 
 n_NI_Local_GetX_Nak__0 : process Proc__n_NI_Local_GetX_Nak__0(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.Local, Sta.Dir.Pending, Sta.Proc[0].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
 
@@ -235,6 +251,14 @@ n_NI_Remote_GetX_Nak__2__3 : process Proc__n_NI_Remote_GetX_Nak__2__3(Sta.NakcMs
 
 n_NI_Remote_GetX_Nak__3__3 : process Proc__n_NI_Remote_GetX_Nak__3__3(Sta.NakcMsg.Cmd, Sta.Proc[3].CacheState, Sta.UniMsg[3].Cmd, Sta.UniMsg[3].Proc);
 
+n_NI_Remote_GetX_Nak_Home__0 : process Proc__n_NI_Remote_GetX_Nak_Home__0(Sta.NakcMsg.Cmd, Sta.Proc[0].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_GetX_Nak_Home__1 : process Proc__n_NI_Remote_GetX_Nak_Home__1(Sta.NakcMsg.Cmd, Sta.Proc[1].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_GetX_Nak_Home__2 : process Proc__n_NI_Remote_GetX_Nak_Home__2(Sta.NakcMsg.Cmd, Sta.Proc[2].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_GetX_Nak_Home__3 : process Proc__n_NI_Remote_GetX_Nak_Home__3(Sta.NakcMsg.Cmd, Sta.Proc[3].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
 n_NI_Remote_GetX_PutX__0__0 : process Proc__n_NI_Remote_GetX_PutX__0__0(Sta.Proc[0].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
 
 n_NI_Remote_GetX_PutX__1__0 : process Proc__n_NI_Remote_GetX_PutX__1__0(Sta.Proc[0].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[1].Cmd, Sta.UniMsg[1].Proc);
@@ -266,6 +290,14 @@ n_NI_Remote_GetX_PutX__1__3 : process Proc__n_NI_Remote_GetX_PutX__1__3(Sta.Proc
 n_NI_Remote_GetX_PutX__2__3 : process Proc__n_NI_Remote_GetX_PutX__2__3(Sta.Proc[3].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[2].Cmd, Sta.UniMsg[2].Proc);
 
 n_NI_Remote_GetX_PutX__3__3 : process Proc__n_NI_Remote_GetX_PutX__3__3(Sta.Proc[3].CacheState, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc, Sta.UniMsg[3].Cmd, Sta.UniMsg[3].Proc);
+
+n_NI_Remote_GetX_PutX_Home__0 : process Proc__n_NI_Remote_GetX_PutX_Home__0(Sta.Proc[0].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_GetX_PutX_Home__1 : process Proc__n_NI_Remote_GetX_PutX_Home__1(Sta.Proc[1].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_GetX_PutX_Home__2 : process Proc__n_NI_Remote_GetX_PutX_Home__2(Sta.Proc[2].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
+
+n_NI_Remote_GetX_PutX_Home__3 : process Proc__n_NI_Remote_GetX_PutX_Home__3(Sta.Proc[3].CacheState, Sta.UniMsg[0].Cmd, Sta.UniMsg[0].Proc);
 
 n_NI_Remote_Put__0 : process Proc__n_NI_Remote_Put__0(Sta.Proc[0].CacheState, Sta.Proc[0].InvMarked, Sta.Proc[0].ProcCmd, Sta.UniMsg[0].Cmd);
 
@@ -319,6 +351,8 @@ n_PI_Local_PutX : process Proc__n_PI_Local_PutX(Sta.Dir.Dirty, Sta.Dir.Local, St
 
 n_PI_Local_Replace : process Proc__n_PI_Local_Replace(Sta.Dir.Local, Sta.Proc[0].CacheState, Sta.Proc[0].ProcCmd);
 
+n_NI_Nak_Home : process Proc__n_NI_Nak_Home(Sta.Proc[0].InvMarked, Sta.Proc[0].ProcCmd, Sta.UniMsg[0].Cmd);
+
 n_NI_Nak_Clear : process Proc__n_NI_Nak_Clear(Sta.Dir.Pending, Sta.NakcMsg.Cmd);
 
 n_NI_Local_Put : process Proc__n_NI_Local_Put(Sta.Dir.Dirty, Sta.Dir.Local, Sta.Dir.Pending, Sta.Proc[0].CacheState, Sta.Proc[0].InvMarked, Sta.Proc[0].ProcCmd, Sta.UniMsg[0].Cmd);
@@ -330,6 +364,8 @@ n_NI_Wb : process Proc__n_NI_Wb(Sta.Dir.Dirty, Sta.Dir.HeadVld, Sta.WbMsg.Cmd);
 n_NI_FAck : process Proc__n_NI_FAck(Sta.Dir.Dirty, Sta.Dir.HeadPtr, Sta.Dir.Pending, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc);
 
 n_NI_ShWb : process Proc__n_NI_ShWb(Sta.Dir.Dirty, Sta.Dir.InvSet[0], Sta.Dir.InvSet[1], Sta.Dir.InvSet[2], Sta.Dir.InvSet[3], Sta.Dir.Pending, Sta.Dir.ShrSet[0], Sta.Dir.ShrSet[1], Sta.Dir.ShrSet[2], Sta.Dir.ShrSet[3], Sta.Dir.ShrVld, Sta.ShWbMsg.Cmd, Sta.ShWbMsg.Proc);
+
+n_NI_Replace_Home : process Proc__n_NI_Replace_Home(Sta.Dir.InvSet[0], Sta.Dir.ShrSet[0], Sta.Dir.ShrVld, Sta.RpMsg[0].Cmd);
 
 --------------------
 
@@ -715,15 +751,12 @@ esac;
 MODULE Proc__n_NI_Nak__0(Sta__Proc__0__InvMarked, Sta__Proc__0__ProcCmd, Sta__UniMsg__0__Cmd)
 ASSIGN
 next(Sta__Proc__0__InvMarked) := case
-(Sta__UniMsg__0__Cmd = uni_nak) : FALSE;
 TRUE : Sta__Proc__0__InvMarked;
 esac;
 next(Sta__Proc__0__ProcCmd) := case
-(Sta__UniMsg__0__Cmd = uni_nak) : node_none;
 TRUE : Sta__Proc__0__ProcCmd;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-(Sta__UniMsg__0__Cmd = uni_nak) : uni_none;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 
@@ -1175,15 +1208,12 @@ esac;
 MODULE Proc__n_NI_Remote_Get_Nak__0__1(Sta__NakcMsg__Cmd, Sta__Proc__1__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__NakcMsg__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : nakc_nakc;
 TRUE : Sta__NakcMsg__Cmd;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : uni_nak;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : 1;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -1240,15 +1270,12 @@ esac;
 MODULE Proc__n_NI_Remote_Get_Nak__0__2(Sta__NakcMsg__Cmd, Sta__Proc__2__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__NakcMsg__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : nakc_nakc;
 TRUE : Sta__NakcMsg__Cmd;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : uni_nak;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : 2;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -1305,15 +1332,12 @@ esac;
 MODULE Proc__n_NI_Remote_Get_Nak__0__3(Sta__NakcMsg__Cmd, Sta__Proc__3__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__NakcMsg__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : nakc_nakc;
 TRUE : Sta__NakcMsg__Cmd;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : uni_nak;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : 3;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -1363,6 +1387,71 @@ TRUE : Sta__UniMsg__3__Cmd;
 esac;
 next(Sta__UniMsg__3__Proc) := case
 TRUE : Sta__UniMsg__3__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Nak_Home__0(Sta__NakcMsg__Cmd, Sta__Proc__0__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Nak_Home__1(Sta__NakcMsg__Cmd, Sta__Proc__1__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : nakc_nakc;
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : uni_nak;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : 1;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Nak_Home__2(Sta__NakcMsg__Cmd, Sta__Proc__2__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : nakc_nakc;
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : uni_nak;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : 2;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Nak_Home__3(Sta__NakcMsg__Cmd, Sta__Proc__3__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : nakc_nakc;
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : uni_nak;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : 3;
+TRUE : Sta__UniMsg__0__Proc;
 esac;
 
 ---------
@@ -1450,7 +1539,6 @@ esac;
 MODULE Proc__n_NI_Remote_Get_Put__0__1(Sta__Proc__1__CacheState, Sta__ShWbMsg__Cmd, Sta__ShWbMsg__Proc, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__Proc__1__CacheState) := case
-((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1)) : cache_s;
 TRUE : Sta__Proc__1__CacheState;
 esac;
 next(Sta__ShWbMsg__Cmd) := case
@@ -1460,11 +1548,9 @@ next(Sta__ShWbMsg__Proc) := case
 TRUE : Sta__ShWbMsg__Proc;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1)) : uni_put;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1)) : 1;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -1543,7 +1629,6 @@ esac;
 MODULE Proc__n_NI_Remote_Get_Put__0__2(Sta__Proc__2__CacheState, Sta__ShWbMsg__Cmd, Sta__ShWbMsg__Proc, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__Proc__2__CacheState) := case
-((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2)) : cache_s;
 TRUE : Sta__Proc__2__CacheState;
 esac;
 next(Sta__ShWbMsg__Cmd) := case
@@ -1553,11 +1638,9 @@ next(Sta__ShWbMsg__Proc) := case
 TRUE : Sta__ShWbMsg__Proc;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2)) : uni_put;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2)) : 2;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -1636,7 +1719,6 @@ esac;
 MODULE Proc__n_NI_Remote_Get_Put__0__3(Sta__Proc__3__CacheState, Sta__ShWbMsg__Cmd, Sta__ShWbMsg__Proc, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__Proc__3__CacheState) := case
-((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3)) : cache_s;
 TRUE : Sta__Proc__3__CacheState;
 esac;
 next(Sta__ShWbMsg__Cmd) := case
@@ -1646,11 +1728,9 @@ next(Sta__ShWbMsg__Proc) := case
 TRUE : Sta__ShWbMsg__Proc;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3)) : uni_put;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3)) : 3;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -1722,6 +1802,71 @@ TRUE : Sta__UniMsg__3__Cmd;
 esac;
 next(Sta__UniMsg__3__Proc) := case
 TRUE : Sta__UniMsg__3__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Put_Home__0(Sta__Proc__0__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__0__CacheState) := case
+TRUE : Sta__Proc__0__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Put_Home__1(Sta__Proc__1__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__1__CacheState) := case
+((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1)) : cache_s;
+TRUE : Sta__Proc__1__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1)) : uni_put;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 1)) : 1;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Put_Home__2(Sta__Proc__2__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__2__CacheState) := case
+((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2)) : cache_s;
+TRUE : Sta__Proc__2__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2)) : uni_put;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 2)) : 2;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_Get_Put_Home__3(Sta__Proc__3__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__3__CacheState) := case
+((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3)) : cache_s;
+TRUE : Sta__Proc__3__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3)) : uni_put;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_get) & (Sta__UniMsg__0__Proc = 3)) : 3;
+TRUE : Sta__UniMsg__0__Proc;
 esac;
 
 ---------
@@ -2364,15 +2509,12 @@ esac;
 MODULE Proc__n_NI_Remote_GetX_Nak__0__1(Sta__NakcMsg__Cmd, Sta__Proc__1__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__NakcMsg__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : nakc_nakc;
 TRUE : Sta__NakcMsg__Cmd;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : uni_nak;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : 1;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -2429,15 +2571,12 @@ esac;
 MODULE Proc__n_NI_Remote_GetX_Nak__0__2(Sta__NakcMsg__Cmd, Sta__Proc__2__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__NakcMsg__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : nakc_nakc;
 TRUE : Sta__NakcMsg__Cmd;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : uni_nak;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : 2;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -2494,15 +2633,12 @@ esac;
 MODULE Proc__n_NI_Remote_GetX_Nak__0__3(Sta__NakcMsg__Cmd, Sta__Proc__3__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__NakcMsg__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : nakc_nakc;
 TRUE : Sta__NakcMsg__Cmd;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : uni_nak;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : 3;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -2552,6 +2688,71 @@ TRUE : Sta__UniMsg__3__Cmd;
 esac;
 next(Sta__UniMsg__3__Proc) := case
 TRUE : Sta__UniMsg__3__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_Nak_Home__0(Sta__NakcMsg__Cmd, Sta__Proc__0__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_Nak_Home__1(Sta__NakcMsg__Cmd, Sta__Proc__1__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : nakc_nakc;
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : uni_nak;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1) & (!(Sta__Proc__1__CacheState = cache_e))) : 1;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_Nak_Home__2(Sta__NakcMsg__Cmd, Sta__Proc__2__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : nakc_nakc;
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : uni_nak;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2) & (!(Sta__Proc__2__CacheState = cache_e))) : 2;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_Nak_Home__3(Sta__NakcMsg__Cmd, Sta__Proc__3__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__NakcMsg__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : nakc_nakc;
+TRUE : Sta__NakcMsg__Cmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : uni_nak;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3) & (!(Sta__Proc__3__CacheState = cache_e))) : 3;
+TRUE : Sta__UniMsg__0__Proc;
 esac;
 
 ---------
@@ -2639,7 +2840,6 @@ esac;
 MODULE Proc__n_NI_Remote_GetX_PutX__0__1(Sta__Proc__1__CacheState, Sta__ShWbMsg__Cmd, Sta__ShWbMsg__Proc, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__Proc__1__CacheState) := case
-((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1)) : cache_i;
 TRUE : Sta__Proc__1__CacheState;
 esac;
 next(Sta__ShWbMsg__Cmd) := case
@@ -2649,11 +2849,9 @@ next(Sta__ShWbMsg__Proc) := case
 TRUE : Sta__ShWbMsg__Proc;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1)) : uni_putx;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1)) : 1;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -2732,7 +2930,6 @@ esac;
 MODULE Proc__n_NI_Remote_GetX_PutX__0__2(Sta__Proc__2__CacheState, Sta__ShWbMsg__Cmd, Sta__ShWbMsg__Proc, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__Proc__2__CacheState) := case
-((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2)) : cache_i;
 TRUE : Sta__Proc__2__CacheState;
 esac;
 next(Sta__ShWbMsg__Cmd) := case
@@ -2742,11 +2939,9 @@ next(Sta__ShWbMsg__Proc) := case
 TRUE : Sta__ShWbMsg__Proc;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2)) : uni_putx;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2)) : 2;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -2825,7 +3020,6 @@ esac;
 MODULE Proc__n_NI_Remote_GetX_PutX__0__3(Sta__Proc__3__CacheState, Sta__ShWbMsg__Cmd, Sta__ShWbMsg__Proc, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
 ASSIGN
 next(Sta__Proc__3__CacheState) := case
-((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3)) : cache_i;
 TRUE : Sta__Proc__3__CacheState;
 esac;
 next(Sta__ShWbMsg__Cmd) := case
@@ -2835,11 +3029,9 @@ next(Sta__ShWbMsg__Proc) := case
 TRUE : Sta__ShWbMsg__Proc;
 esac;
 next(Sta__UniMsg__0__Cmd) := case
-((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3)) : uni_putx;
 TRUE : Sta__UniMsg__0__Cmd;
 esac;
 next(Sta__UniMsg__0__Proc) := case
-((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3)) : 3;
 TRUE : Sta__UniMsg__0__Proc;
 esac;
 
@@ -2911,6 +3103,71 @@ TRUE : Sta__UniMsg__3__Cmd;
 esac;
 next(Sta__UniMsg__3__Proc) := case
 TRUE : Sta__UniMsg__3__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_PutX_Home__0(Sta__Proc__0__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__0__CacheState) := case
+TRUE : Sta__Proc__0__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_PutX_Home__1(Sta__Proc__1__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__1__CacheState) := case
+((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1)) : cache_i;
+TRUE : Sta__Proc__1__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1)) : uni_putx;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__Proc__1__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 1)) : 1;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_PutX_Home__2(Sta__Proc__2__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__2__CacheState) := case
+((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2)) : cache_i;
+TRUE : Sta__Proc__2__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2)) : uni_putx;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__Proc__2__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 2)) : 2;
+TRUE : Sta__UniMsg__0__Proc;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Remote_GetX_PutX_Home__3(Sta__Proc__3__CacheState, Sta__UniMsg__0__Cmd, Sta__UniMsg__0__Proc)
+ASSIGN
+next(Sta__Proc__3__CacheState) := case
+((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3)) : cache_i;
+TRUE : Sta__Proc__3__CacheState;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3)) : uni_putx;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+next(Sta__UniMsg__0__Proc) := case
+((Sta__Proc__3__CacheState = cache_e) & (Sta__UniMsg__0__Cmd = uni_getx) & (Sta__UniMsg__0__Proc = 3)) : 3;
+TRUE : Sta__UniMsg__0__Proc;
 esac;
 
 ---------
@@ -3226,15 +3483,12 @@ esac;
 MODULE Proc__n_NI_Replace__0(Sta__Dir__InvSet__0, Sta__Dir__ShrSet__0, Sta__Dir__ShrVld, Sta__RpMsg__0__Cmd)
 ASSIGN
 next(Sta__Dir__InvSet__0) := case
-((Sta__Dir__ShrVld = TRUE) & (Sta__RpMsg__0__Cmd = rp_replace)) : FALSE;
 TRUE : Sta__Dir__InvSet__0;
 esac;
 next(Sta__Dir__ShrSet__0) := case
-((Sta__Dir__ShrVld = TRUE) & (Sta__RpMsg__0__Cmd = rp_replace)) : FALSE;
 TRUE : Sta__Dir__ShrSet__0;
 esac;
 next(Sta__RpMsg__0__Cmd) := case
-(Sta__RpMsg__0__Cmd = rp_replace) : rp_none;
 TRUE : Sta__RpMsg__0__Cmd;
 esac;
 
@@ -3478,6 +3732,23 @@ esac;
 
 ---------
 
+MODULE Proc__n_NI_Nak_Home(Sta__Proc__0__InvMarked, Sta__Proc__0__ProcCmd, Sta__UniMsg__0__Cmd)
+ASSIGN
+next(Sta__Proc__0__InvMarked) := case
+(Sta__UniMsg__0__Cmd = uni_nak) : FALSE;
+TRUE : Sta__Proc__0__InvMarked;
+esac;
+next(Sta__Proc__0__ProcCmd) := case
+(Sta__UniMsg__0__Cmd = uni_nak) : node_none;
+TRUE : Sta__Proc__0__ProcCmd;
+esac;
+next(Sta__UniMsg__0__Cmd) := case
+(Sta__UniMsg__0__Cmd = uni_nak) : uni_none;
+TRUE : Sta__UniMsg__0__Cmd;
+esac;
+
+---------
+
 MODULE Proc__n_NI_Nak_Clear(Sta__Dir__Pending, Sta__NakcMsg__Cmd)
 ASSIGN
 next(Sta__Dir__Pending) := case
@@ -3649,4 +3920,21 @@ esac;
 next(Sta__ShWbMsg__Cmd) := case
 (Sta__ShWbMsg__Cmd = shwb_shwb) : shwb_none;
 TRUE : Sta__ShWbMsg__Cmd;
+esac;
+
+---------
+
+MODULE Proc__n_NI_Replace_Home(Sta__Dir__InvSet__0, Sta__Dir__ShrSet__0, Sta__Dir__ShrVld, Sta__RpMsg__0__Cmd)
+ASSIGN
+next(Sta__Dir__InvSet__0) := case
+((Sta__Dir__ShrVld = TRUE) & (Sta__RpMsg__0__Cmd = rp_replace)) : FALSE;
+TRUE : Sta__Dir__InvSet__0;
+esac;
+next(Sta__Dir__ShrSet__0) := case
+((Sta__Dir__ShrVld = TRUE) & (Sta__RpMsg__0__Cmd = rp_replace)) : FALSE;
+TRUE : Sta__Dir__ShrSet__0;
+esac;
+next(Sta__RpMsg__0__Cmd) := case
+(Sta__RpMsg__0__Cmd = rp_replace) : rp_none;
+TRUE : Sta__RpMsg__0__Cmd;
 esac;

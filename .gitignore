@@ -12,4 +12,5 @@ _build
 checker
 *.pyc
 *.res
+*.err
 *.cache
