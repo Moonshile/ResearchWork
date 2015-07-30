@@ -741,7 +741,10 @@ let read_res_cache cinvs =
     try_with_default invlib_file_name (formula_of_sexp) default
   in
   let relations = try_with_default rel_file_name (t_of_sexp) [] in
-  let new_inv_id = try Int.of_string (In_channel.read_all id_file_name) with | _ -> 0 in 
+  let new_inv_id = 
+    try 
+      Int.of_string (In_channel.read_all id_file_name) 
+    with | _ -> List.length cinvs in 
   cinvs', cinvs_all, init_lib, relations, new_inv_id
 
 let write_res_cache cinvs cinv real_new_invs relations new_inv_id () =
@@ -846,7 +849,7 @@ let result_to_str (cinvs, relations) =
     @param prop_params property parameters given
     @return causal relation table
 *)
-let find ~protocol ?(smv="") ?(smv_bmc="") ?(murphi="") () =
+let find ?(smv="") ?(smv_bmc="") ?(murphi="") protocol =
   let {name; types; vardefs; init=_init; rules; properties} = Loach.Trans.act ~loach:protocol in
   let _smt_context = Smt.set_context name (ToStr.Smt2.context_of ~types ~vardefs) in
   let _mu_context = Murphi.set_context name murphi in
@@ -893,4 +896,4 @@ let find ~protocol ?(smv="") ?(smv_bmc="") ?(murphi="") () =
   in
   let rname_paraminfo_pairs = List.map rules ~f:get_rulename_nparam_pair in
   let result = tabular_rules_cinvs rname_paraminfo_pairs cinvs in
-  printf "%s\n" (result_to_str result);
+  printf "%s\n" (result_to_str result); result

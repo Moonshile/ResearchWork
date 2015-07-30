@@ -1,4 +1,4 @@
-
+(* This program is translated from its corresponding murphi version *)
 
 open Core.Std
 open Utils
@@ -8,108 +8,77 @@ open Formula
 open InvFinder
 open Cmdline
 
-(* Common parameter definitions and references *)
-let defi = paramdef "i" "node"
-let defj = paramdef "j" "node"
+let _I = strc "I"
+let _T = strc "T"
+let _C = strc "C"
+let _E = strc "E"
+let _True = boolc true
+let _False = boolc false
 
-let i = paramref "i"
-let j = paramref "j"
-
-(* Constants *)
-let _I = const (strc "i")
-let _T = const (strc "t")
-let _C = const (strc "c")
-let _E = const (strc "e")
-let _True = const (boolc true)
-let _False = const (boolc false)
-
-(* Self-defined types *)
 let types = [
-  enum "state" (str_consts ["i"; "t"; "c"; "e"]);
-  enum "bool" (bool_consts [true; false]);
-  enum "node" (int_consts [1; 2; 3]);
+  enum "state" [_I; _T; _C; _E];
+  enum "client" (int_consts [1; 2; 3; 4; 5]);
+  enum "boolean" [_True; _False];
 ]
 
-(* Variables *)
-let vardefs = [
-  arrdef "x" [] "bool";
-  arrdef "n" [defi] "state";
+
+
+let vardefs = List.concat [
+  [arrdef [("n", [paramdef "i0" "client"])] "state"];
+  [arrdef [("x", [])] "boolean"]
 ]
 
-(* Initialization *)
-let init =
-  let a1 = assign (arr "x" []) _True in
-  let a2 =
-    let pd = [paramdef "k" "node"] in
-    let fs = assign (arr "n" [paramref "k"]) _I in
-    forStatement fs pd
-  in
-  parallel [a1; a2]
+let init = (parallel [(forStatement (assign (arr [("n", [paramref "i"])]) (const _I)) [paramdef "i" "client"]); (assign (global "x") (const (boolc true)))])
 
-let rule_try = 
-  let name = "try" in
-  let params = [defi] in
-  let formula = eqn (var (arr "n" [i])) _I in
-  let statement = assign (arr "n" [i]) _T in
+let n_Try =
+  let name = "n_Try" in
+  let params = [paramdef "i" "client"] in
+  let formula = (eqn (var (arr [("n", [paramref "i"])])) (const _I)) in
+  let statement = (assign (arr [("n", [paramref "i"])]) (const _T)) in
   rule name params formula statement
 
-let rule_crit =
-  let name = "crit" in
-  let params = [defi] in
-  let formula =
-    let f1 = eqn (var (arr "n" [i])) _T in
-    let f2 = eqn (var (arr "x" [])) _True in
-    andList [f1; f2]
-  in
-  let statement =
-    let s1 = assign (arr "n" [i]) _C in
-    let s2 = assign (arr "x" []) _False in
-    parallel [s1; s2]
-  in
+let n_Crit =
+  let name = "n_Crit" in
+  let params = [paramdef "i" "client"] in
+  let formula = (andList [(eqn (var (arr [("n", [paramref "i"])])) (const _T)); (eqn (var (global "x")) (const (boolc true)))]) in
+  let statement = (parallel [(assign (arr [("n", [paramref "i"])]) (const _C)); (assign (global "x") (const (boolc false)))]) in
   rule name params formula statement
 
-let rule_exit =
-  let name = "exit" in
-  let params = [defi] in
-  let formula = eqn (var (arr "n" [i])) _C in
-  let statement = assign (arr "n" [i]) _E in
+let n_Exit =
+  let name = "n_Exit" in
+  let params = [paramdef "i" "client"] in
+  let formula = (eqn (var (arr [("n", [paramref "i"])])) (const _C)) in
+  let statement = (assign (arr [("n", [paramref "i"])]) (const _E)) in
   rule name params formula statement
 
-let rule_idle =
-  let name = "idle" in
-  let params = [defi] in
-  let formula = eqn (var (arr "n" [i])) _E in
-  let statement =
-    let s1 = assign (arr "x" []) _True in
-    let s2 = assign (arr "n" [i]) _I in
-    parallel [s1; s2]
-  in
+let n_Idle =
+  let name = "n_Idle" in
+  let params = [paramdef "i" "client"] in
+  let formula = (eqn (var (arr [("n", [paramref "i"])])) (const _E)) in
+  let statement = (parallel [(assign (arr [("n", [paramref "i"])]) (const _I)); (assign (global "x") (const (boolc true)))]) in
   rule name params formula statement
 
-let rules = [rule_try; rule_crit; rule_exit; rule_idle]
+let rules = [n_Try; n_Crit; n_Exit; n_Idle]
 
-let coherence =
-  let name = "coherence" in
-  let params = [defi; defj] in
-  let formula =
-    let pre = neg (eqn (param i) (param j)) in
-    let f1 = eqn (var (arr "n" [i])) _C in
-    let f2 = eqn (var (arr "n" [j])) _C in
-    imply pre (imply f1 (neg f2))
-  in
+let n_coherence =
+  let name = "n_coherence" in
+  let params = [paramdef "i" "client"; paramdef "j" "client"] in
+  let formula = (imply (neg (eqn (param (paramref "i")) (param (paramref "j")))) (imply (eqn (var (arr [("n", [paramref "i"])])) (const _C)) (neg (eqn (var (arr [("n", [paramref "j"])])) (const _C))))) in
   prop name params formula
 
-let properties = [coherence]
+let properties = [n_coherence]
+
 
 let protocol = {
-  name = "mutualEx";
+  name = "n_mutualEx";
   types;
   vardefs;
   init;
   rules;
   properties;
-};;
+}
 
-(*find ~protocol ();;*)
-
-print_endline (Isabelle.protocol_act protocol []);;
+let () = run_with_cmdline (fun () ->
+  let cinvs, relations = find ~murphi:(In_channel.read_all "n_mutualEx.m") protocol in
+  print_endline (Isabelle.protocol_act protocol cinvs relations)
+)

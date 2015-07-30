@@ -9,4 +9,4 @@ val var_act : Paramecium.var -> string
 val paramref_to_index : Paramecium.paramref -> string
 val exp_act : Paramecium.exp -> string
 val formula_act : Loach.formula -> string
-val protocol_act : Loach.protocol -> Paramecium.formula list -> string
+val protocol_act : Loach.protocol -> InvFinder.concrete_prop list -> InvFinder.t list -> string

@@ -37,11 +37,14 @@ let type_act (Enum(name, consts)) =
   | [] -> None
   | _ -> Some (String.concat ~sep:"\n" const_strs)
 
-let var_act (Arr(name, prs)) =
-  let ident = sprintf "(Ident ''%s'')" name in
-  match prs with
-  | [] -> ident
-  | _ -> List.fold prs ~init:ident ~f:(fun res x -> sprintf "(Para %s %s)" res (name_of_param x))
+let var_act (Arr(name_with_prs)) =
+  let cast_to_string (name, prs) =
+    let ident = sprintf "(Ident ''%s'')" name in
+    List.fold prs ~init:ident ~f:(fun res x -> sprintf "(Para %s %s)" res (name_of_param x))
+  in
+  name_with_prs
+  |> List.map ~f:cast_to_string
+  |> List.reduce_exn ~f:(fun res x -> sprintf "(Field %s %s)" res x)
 
 let paramref_to_index pr =
   match pr with
@@ -234,8 +237,8 @@ let rec paramecium_form_to_loach form =
   | Paramecium.OrList(fl) -> orList (List.map fl ~f:paramecium_form_to_loach)
   | Paramecium.Imply(f1, f2) -> imply (paramecium_form_to_loach f1) (paramecium_form_to_loach f2)
 
-let inv_act inv i =
-  let (pds, pfs, gened_inv) = Generalize.form_act inv in
+let inv_act cinv =
+  let InvFinder.ConcreteProp(Paramecium.Prop(name, pds, gened_inv), pfs) = cinv in
   let gened_inv' = paramecium_form_to_loach gened_inv in
   let has_not_sym = List.exists pfs ~f:(fun (Paramfix(_, _, c)) -> c = intc 0) in
   let pds' =
@@ -254,17 +257,16 @@ let inv_act inv i =
   let pd_str = String.concat ~sep:" \\<Rightarrow> " pd_count_t in
   let inv_type = sprintf "%s \\<Rightarrow> formula" pd_str in
   let pd_names = String.concat ~sep:" " (List.map pds' ~f:(fun (Paramdef(n, _)) -> n)) in
-  List.length pds', sprintf "definition inv%d::\"%s\" where [simp]:
-\"inv%d %s \\<equiv>\n%s\"" i inv_type i pd_names (formula_act gened_inv'')
+  name, List.length pds', sprintf "definition %s::\"%s\" where [simp]:
+\"%s %s \\<equiv>\n%s\"" name inv_type name pd_names (formula_act gened_inv'')
 
-let invs_act invs =
-  let invs_no = up_to (List.length invs) in
-  let invs_with_pd_count = List.map2_exn invs invs_no ~f:inv_act in
-  let inv_strs = String.concat ~sep:"\n\n" (List.map invs_with_pd_count ~f:(fun (_, s) -> s)) in
+let invs_act cinvs =
+  let invs_with_pd_count = List.map cinvs ~f:inv_act in
+  let inv_strs = String.concat ~sep:"\n\n" (List.map invs_with_pd_count ~f:(fun (_, _, s) -> s)) in
   let inv_insts_str = String.concat ~sep:" \\<or>\n" (
-    List.map2_exn invs_no invs_with_pd_count ~f:(fun i (n, _) ->
-      let tmp_vars = String.concat (List.map (gen_tmp_vars n) ~f:(fun t -> sprintf "%%%s." t)) in
-      sprintf "ex%dP N (%% %s. f=inv%d %s)" i tmp_vars i tmp_vars
+    List.map invs_with_pd_count ~f:(fun (name, pd_c, _) ->
+      let tmp_vars = String.concat ~sep:" " (List.map (gen_tmp_vars pd_c) ~f:(fun t -> sprintf "%s" t)) in
+      sprintf "ex%dP N (%% %s. f=%s %s)" pd_c tmp_vars name tmp_vars
     )
   ) in
   sprintf "%s\n\ndefinition invariants::\"nat \\<Rightarrow> formula set\" where [simp]:
@@ -319,18 +321,18 @@ let inits_act statements =
 
 
 
-let protocol_act {name; types; vardefs; init; rules; properties} invs =
+let protocol_act {name; types; vardefs; init; rules; properties} cinvs relations =
   types_ref := types;
   let types_str = String.concat ~sep:"\n" (List.filter_map types ~f:type_act) in
   let rules_str = rules_act rules in
-  let invs_str = invs_act invs in
+  let invs_str = invs_act cinvs in
   let inits_str = inits_act init in
   sprintf "\
-theory %s imports localesDef\n\
-begin\n\
-section{*Main definitions*}\n\
-%s\n\
-%s\n\
-%s\n\
-%s\n\
+theory %s imports localesDef
+begin
+section{*Main definitions*}
+%s\n
+%s\n
+%s\n
+%s\n
 end\n" name types_str rules_str invs_str inits_str
