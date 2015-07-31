@@ -122,10 +122,21 @@ endruleset;
 
 ruleset src : NODE; data : DATA do
 rule "Store"
+  src != Home &
   Sta.Proc[src].CacheState = CACHE_E
 ==>
 begin
   Sta.Proc[src].CacheData := data;
+  Sta.CurrData := data;
+endrule;
+endruleset;
+
+ruleset data : DATA do
+rule "Store_Home"
+  Sta.Proc[Home].CacheState = CACHE_E
+==>
+begin
+  Sta.Proc[Home].CacheData := data;
   Sta.CurrData := data;
 endrule;
 endruleset;

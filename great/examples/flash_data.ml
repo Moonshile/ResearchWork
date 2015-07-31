@@ -123,8 +123,15 @@ let init = (parallel [(assign (global "Home") (param (paramfix "h" "NODE" (intc 
 let n_Store =
   let name = "n_Store" in
   let params = [paramdef "src" "NODE"; paramdef "data" "DATA"] in
-  let formula = (eqn (var (record [global "Sta"; arr [("Proc", [paramref "src"])]; global "CacheState"])) (const _CACHE_E)) in
+  let formula = (andList [(neg (eqn (param (paramref "src")) (param _Home))); (eqn (var (record [global "Sta"; arr [("Proc", [paramref "src"])]; global "CacheState"])) (const _CACHE_E))]) in
   let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [paramref "src"])]; global "CacheData"]) (param (paramref "data"))); (assign (record [global "Sta"; global "CurrData"]) (param (paramref "data")))]) in
+  rule name params formula statement
+
+let n_Store_Home =
+  let name = "n_Store_Home" in
+  let params = [paramdef "data" "DATA"] in
+  let formula = (eqn (var (record [global "Sta"; arr [("Proc", [_Home])]; global "CacheState"])) (const _CACHE_E)) in
+  let statement = (parallel [(assign (record [global "Sta"; arr [("Proc", [_Home])]; global "CacheData"]) (param (paramref "data"))); (assign (record [global "Sta"; global "CurrData"]) (param (paramref "data")))]) in
   rule name params formula statement
 
 let n_PI_Remote_Get =
@@ -393,7 +400,7 @@ let n_NI_Replace_Home =
   let statement = (parallel [(assign (record [global "Sta"; arr [("RpMsg", [_Home])]; global "Cmd"]) (const _RP_None)); (ifStatement (eqn (var (record [global "Sta"; global "Dir"; global "ShrVld"])) (const _True)) (parallel [(assign (record [global "Sta"; global "Dir"; arr [("ShrSet", [_Home])]]) (const (boolc false))); (assign (record [global "Sta"; global "Dir"; arr [("InvSet", [_Home])]]) (const (boolc false)))]))]) in
   rule name params formula statement
 
-let rules = [n_Store; n_PI_Remote_Get; n_PI_Remote_GetX; n_PI_Remote_PutX; n_PI_Remote_Replace; n_NI_Nak; n_NI_Local_Get_Nak; n_NI_Local_Get_Get; n_NI_Local_Get_Put; n_NI_Remote_Get_Nak; n_NI_Remote_Get_Nak_Home; n_NI_Remote_Get_Put; n_NI_Remote_Get_Put_Home; n_NI_Local_GetX_Nak; n_NI_Local_GetX_GetX; n_NI_Local_GetX_PutX; n_NI_Remote_GetX_Nak; n_NI_Remote_GetX_Nak_Home; n_NI_Remote_GetX_PutX; n_NI_Remote_GetX_PutX_Home; n_NI_Remote_Put; n_NI_Remote_PutX; n_NI_Inv; n_NI_InvAck; n_NI_Replace; n_PI_Local_Get_Get; n_PI_Local_Get_Put; n_PI_Local_GetX_GetX; n_PI_Local_GetX_PutX; n_PI_Local_PutX; n_PI_Local_Replace; n_NI_Nak_Home; n_NI_Nak_Clear; n_NI_Local_Put; n_NI_Local_PutXAcksDone; n_NI_Wb; n_NI_FAck; n_NI_ShWb; n_NI_Replace_Home]
+let rules = [n_Store; n_Store_Home; n_PI_Remote_Get; n_PI_Remote_GetX; n_PI_Remote_PutX; n_PI_Remote_Replace; n_NI_Nak; n_NI_Local_Get_Nak; n_NI_Local_Get_Get; n_NI_Local_Get_Put; n_NI_Remote_Get_Nak; n_NI_Remote_Get_Nak_Home; n_NI_Remote_Get_Put; n_NI_Remote_Get_Put_Home; n_NI_Local_GetX_Nak; n_NI_Local_GetX_GetX; n_NI_Local_GetX_PutX; n_NI_Remote_GetX_Nak; n_NI_Remote_GetX_Nak_Home; n_NI_Remote_GetX_PutX; n_NI_Remote_GetX_PutX_Home; n_NI_Remote_Put; n_NI_Remote_PutX; n_NI_Inv; n_NI_InvAck; n_NI_Replace; n_PI_Local_Get_Get; n_PI_Local_Get_Put; n_PI_Local_GetX_GetX; n_PI_Local_GetX_PutX; n_PI_Local_PutX; n_PI_Local_Replace; n_NI_Nak_Home; n_NI_Nak_Clear; n_NI_Local_Put; n_NI_Local_PutXAcksDone; n_NI_Wb; n_NI_FAck; n_NI_ShWb; n_NI_Replace_Home]
 
 let n_CacheStateProp =
   let name = "n_CacheStateProp" in
@@ -421,7 +428,7 @@ let protocol = {
 
 let () = run_with_cmdline (fun () ->
   let cinvs, relations = find protocol
-    ~smv:(In_channel.read_all "flash_nodata.smv")
+    ~smv:(In_channel.read_all "n_flash_data.smv")
     ~murphi:(In_channel.read_all "n_flash_data.m")
   in
   ()
