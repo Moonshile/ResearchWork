@@ -20,7 +20,7 @@ exception Parameter_overflow
     + ConcreteRule: instantiated rule, concrete param list
 *)
 type concrete_rule =
-  | ConcreteRule of rule * paramref list
+  | ConcreteRule of string * paramref list
 with sexp
 
 val concrete_rule : rule -> paramref list -> concrete_rule
@@ -60,7 +60,7 @@ type t = {
 with sexp
 
 
-val rule_2_concrete : rule -> paramref list list -> concrete_rule list
+val rule_2_concrete : rule -> paramref list list -> (concrete_rule list * Paramecium.paramref list) list
 
 (** Convert t to a string *)
 val to_str : t -> string

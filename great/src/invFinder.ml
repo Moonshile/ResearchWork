@@ -24,10 +24,12 @@ exception Parameter_overflow
     + ConcreteRule: instantiated rule, concrete param list
 *)
 type concrete_rule =
-  | ConcreteRule of rule * paramref list
+  | ConcreteRule of string * paramref list
 with sexp
 
-let concrete_rule r ps = ConcreteRule(r, ps)
+let concrete_rule r ps =
+  let Rule(name, _, _, _) = r in
+  ConcreteRule(name, ps)
 
 (** Concrete property
 
@@ -65,19 +67,51 @@ with sexp
 
 let type_defs = ref []
 let protocol_name = ref ""
+let rule_table = Hashtbl.create ~hashable:String.hashable ()
+
+let simplify_inst_guard (Rule(n, pd, f, s)) =
+  let gs = match simplify f with
+    | OrList(fl) -> fl
+    | _ as g -> [g]
+  in
+  let sat_gs = List.filter gs ~f:is_satisfiable in
+  let indice = up_to (List.length sat_gs) in
+  let gen_new_name name i = sprintf "%s__part__%d" name i in
+  List.map2_exn sat_gs indice ~f:(fun g i -> rule (gen_new_name n i) pd g s)
 
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ps =
-  if List.length ps = 0 then
-    [concrete_rule r []]
-  else begin
-    List.map ps ~f:(fun p -> concrete_rule (apply_rule r ~p) p)
-  end
+  let r_insts =
+    if List.length ps = 0 then [([r], [])] else List.map ps ~f:(fun p ->
+      (simplify_inst_guard (apply_rule r ~p), p)
+    )
+  in
+  let rec store_rules rs =
+    match rs with
+    | [] -> ()
+    | (ris, _)::rs' ->
+      let rec do_store ris =
+        match ris with
+        | [] -> ()
+        | ri::ris' ->
+          let Rule(name, _, _, _) = ri in
+          Hashtbl.replace rule_table ~key:name ~data:ri;
+          do_store ris'
+      in
+      do_store ris;
+      store_rules rs'
+  in
+  store_rules r_insts;
+  List.map r_insts ~f:(fun (ris, p) -> List.map ris ~f:(fun ri -> concrete_rule ri p), p)
 
 (* Convert concrete rule to rule instances *)
 let concrete_rule_2_rule_inst cr =
-  let ConcreteRule(r, _) = cr in
-  r
+  let ConcreteRule(rname, _) = cr in
+  match Hashtbl.find rule_table rname with
+  | Some(r) -> r
+  | None ->
+    Prt.error (sprintf "%s not in [%s]" rname (String.concat ~sep:", " (Hashtbl.keys rule_table)));
+    raise Empty_exception
 
 (* Convert concrete property to formula *)
 let concrete_prop_2_form cprop =
@@ -107,13 +141,13 @@ let relation_2_str relation =
   | InvHoldForRule1 -> "invHoldForRule1"
   | InvHoldForRule2 -> "invHoldForRule2"
   | InvHoldForRule3(cp) -> 
-    let form = simplify (neg (concrete_prop_2_form cp)) in
+    let form = (concrete_prop_2_form cp) in
     sprintf "invHoldForRule3-%s" (ToStr.Smv.form_act form)
 
 (** Convert t to a string *)
 let to_str {rule; inv; relation} =
-  let ConcreteRule(Rule(rname, _, _, _), _) = rule in
-  let inv_str = ToStr.Smv.form_act (simplify (concrete_prop_2_form inv)) in
+  let ConcreteRule(rname, _) = rule in
+  let inv_str = ToStr.Smv.form_act (concrete_prop_2_form inv) in
   let rel_str = relation_2_str relation in
   sprintf "rule: %s; inv: %s; rel: %s" rname inv_str rel_str
 
@@ -632,7 +666,7 @@ let deal_with_case_3 crule cinv cons old_invs =
       print_endline (sprintf "rule %s, new %s, old %s" _name new_inv_str causal_inv_str);
       ([simplified], simplified)
     | Choose.Not_inv ->
-      let ConcreteRule(Rule(name, _, _, _), ps) = crule in
+      let ConcreteRule(name, ps) = crule in
       let cp_2_str pr =
         match pr with
         | Paramref(_) -> raise Empty_exception
@@ -756,11 +790,11 @@ let write_res_cache cinvs cinv real_new_invs relations new_inv_id () =
     |> List.map ~f:sexp_of_formula
     |> List.map ~f:Sexp.to_string
   in
-  (*let relations_sexp_str =
+  let relations_sexp_str =
     relations
     |> List.map ~f:sexp_of_t
     |> List.map ~f:Sexp.to_string
-  in*)
+  in
   let id_sexp_str = sprintf "%d" new_inv_id in
   let append_file fn lines () =
     let f = Out_channel.create fn ~append:true in
@@ -769,7 +803,7 @@ let write_res_cache cinvs cinv real_new_invs relations new_inv_id () =
     Out_channel.write_lines cinv_file_name cinvs_sexp_str;
     append_file all_cinv_file_name [all_cinv_sexp_str] ();
     append_file invlib_file_name real_new_inv_sexp_str ();
-    (*append_file rel_file_name relations_sexp_str ();*)
+    append_file rel_file_name relations_sexp_str ();
     Out_channel.write_all id_file_name ~data:id_sexp_str
   )
 
@@ -796,7 +830,7 @@ let tabular_rules_cinvs rname_paraminfo_pairs cinvs =
       in
       let (new_cinvs, new_inv_id') = invs_to_cinvs real_new_invs [] new_inv_id in
       let cinvs'' = cinvs'@new_cinvs in
-      write_res_cache cinvs'' cinv real_new_invs relations new_inv_id' ();
+      write_res_cache cinvs'' cinv real_new_invs new_relation new_inv_id' ();
       wrapper cinvs'' (cinvs_all@[cinv]) new_inv_id' (old_invs@real_new_invs) (relations@new_relation)
   in
   let cinvs, cinvs_all, init_lib, relations, new_inv_id = read_res_cache cinvs in
@@ -858,30 +892,18 @@ let find ?(smv="") ?(smv_bmc="") ?(murphi="") protocol =
     |> List.map ~f:form_2_concreate_prop
   in
   let get_rulename_nparam_pair r =
-    let simplify_inst_guard (ConcreteRule(Rule(n, pd, f, s), p)) =
-      let gs = match simplify f with
-        | OrList(fl) -> fl
-        | _ as g -> [g]
-      in
-      let sat_gs = List.filter gs ~f:is_satisfiable in
-      let indice = up_to (List.length sat_gs) in
-      let gen_new_name name i = sprintf "%s__part__%d" name i in
-      List.map2_exn sat_gs indice ~f:(fun g i -> concrete_rule (rule (gen_new_name n i) pd g s) p)
-    in
-    let rec store_table insts () =
-      match insts with
-      | [] -> ()
-      | r_inst::insts' ->
-        let (ConcreteRule(Rule(n, _, _, _), _)) = r_inst in
-        let data = simplify_inst_guard r_inst in
-        (*Prt.info n;*)
-        Hashtbl.replace rule_insts_table ~key:n ~data;
-        store_table insts' ()
-    in
     let Paramecium.Rule(rname, paramdefs, _, _) = r in
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
-    let raw_insts = rule_2_concrete r ps in
-    store_table raw_insts ();
+    let raw_insts_of_p = rule_2_concrete r ps in
+    let rec store_table raw_insts_of_p =
+      match raw_insts_of_p with
+      | [] -> ()
+      | (crs, p)::raw_insts_of_p' ->
+        let key = get_rule_inst_name rname p in
+      Hashtbl.replace rule_insts_table ~key ~data:crs;
+      store_table raw_insts_of_p'
+    in
+    store_table raw_insts_of_p;
     (rname, paramdefs)
   in
   let rname_paraminfo_pairs = List.map rules ~f:get_rulename_nparam_pair in
