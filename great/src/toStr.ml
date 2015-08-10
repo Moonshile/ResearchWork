@@ -352,12 +352,12 @@ module Smv = struct
     )) in
     let vars_str = String.concat vars ~sep:", " in
     (* rule process instance *)
-    let Rule(n, _, f, s) = r in
+    let Rule(n, _, f, g, s) = r in
     let name = escape n
     in
     let rule_proc_inst = sprintf "%s : process Proc__%s(%s);" name name vars_str in
     (* rule process *)
-    let form_str = form_act f in
+    let form_str = form_act (andList [f; g]) in
     let statement_str = escape (statement_act s form_str) in
     let rule_proc = 
       sprintf "MODULE Proc__%s(%s)\nASSIGN\n%s" name (escape vars_str) statement_str

@@ -122,10 +122,10 @@ let parallel statements = Parallel statements
     + Rule: name, parameters, guard, assignments
 *)
 type rule = 
-  | Rule of string * paramdef list * formula * statement
+  | Rule of string * paramdef list * formula * formula * statement
 with sexp
 
-let rule name paramdef f s = Rule(name, paramdef, f, s)
+let rule name paramdef f g s = Rule(name, paramdef, f, g, s)
 
 (** Represents properties
     + Prop: name, parameters, formula
@@ -297,7 +297,7 @@ let name_match params defs =
 
 (** Apply rule with param *)
 let apply_rule r ~p =
-  let Rule(n, paramdefs, f, s) = r in
+  let Rule(n, paramdefs, f, g, s) = r in
   let name =
     if p = [] then n
     else begin
@@ -316,7 +316,7 @@ let apply_rule r ~p =
     end
   in
   if name_match p paramdefs then
-    rule name [] (apply_form f ~p) (apply_statement s ~p)
+    rule name [] (apply_form f ~p) (apply_form g ~p) (apply_statement s ~p)
   else
     raise Unmatched_parameters
 
@@ -375,7 +375,7 @@ module VarNames = struct
 
   let of_rule r = 
     match r with
-    | Rule(_, _, f, s) -> union_list [of_form f; of_statement s]
+    | Rule(_, _, f, g, s) -> union_list [of_form f; of_form g; of_statement s]
 end
 
 
@@ -414,5 +414,5 @@ module VarNamesWithParam = struct
 
   let of_rule ~of_var r = 
     match r with
-    | Rule(_, _, f, s) -> union_list [of_form ~of_var f; of_statement ~of_var s]
+    | Rule(_, _, f, g, s) -> union_list [of_form ~of_var f; of_form ~of_var g; of_statement ~of_var s]
 end

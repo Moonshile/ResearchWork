@@ -28,7 +28,7 @@ type concrete_rule =
 with sexp
 
 let concrete_rule r ps =
-  let Rule(name, _, _, _) = r in
+  let Rule(name, _, _, _, _) = r in
   ConcreteRule(name, ps)
 
 (** Concrete property
@@ -69,15 +69,20 @@ let type_defs = ref []
 let protocol_name = ref ""
 let rule_table = Hashtbl.create ~hashable:String.hashable ()
 
-let simplify_inst_guard (Rule(n, pd, f, s)) =
-  let gs = match simplify f with
+let simplify_inst_guard (Rule(n, pd, f, g, s)) =
+  let fs = match simplify f with
     | OrList(fl) -> fl
-    | _ as g -> [g]
+    | _ as f' -> [f']
   in
-  let sat_gs = List.filter gs ~f:is_satisfiable in
-  let indice = up_to (List.length sat_gs) in
+  let gs = match simplify g with
+    | OrList(fl) -> fl
+    | _ as g' -> [g']
+  in
+  let conditions = cartesian_product [fs; gs] in
+  let sat_fs = List.filter conditions ~f:(fun f -> is_satisfiable (andList f)) in
+  let indice = up_to (List.length sat_fs) in
   let gen_new_name name i = sprintf "%s__part__%d" name i in
-  List.map2_exn sat_gs indice ~f:(fun g i -> rule (gen_new_name n i) pd g s)
+  List.map2_exn sat_fs indice ~f:(fun [f; g] i -> rule (gen_new_name n i) pd f g s)
 
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ps =
@@ -94,7 +99,7 @@ let rule_2_concrete r ps =
         match ris with
         | [] -> ()
         | ri::ris' ->
-          let Rule(name, _, _, _) = ri in
+          let Rule(name, _, _, _, _) = ri in
           Hashtbl.replace rule_table ~key:name ~data:ri;
           do_store ris'
       in
@@ -147,9 +152,11 @@ let relation_2_str relation =
 (** Convert t to a string *)
 let to_str {rule; inv; relation} =
   let ConcreteRule(rname, _) = rule in
+  let Rule(_, _, _, g, _) = Hashtbl.find_exn rule_table rname in
+  let g_str = ToStr.Smv.form_act g in
   let inv_str = ToStr.Smv.form_act (concrete_prop_2_form inv) in
   let rel_str = relation_2_str relation in
-  sprintf "rule: %s; inv: %s; rel: %s" rname inv_str rel_str
+  sprintf "rule: %s; g: %s; inv: %s; rel: %s" rname g_str inv_str rel_str
 
 
 (* Evaluate exp with assignments
@@ -651,8 +658,8 @@ let deal_with_case_2 crule cinv =
 
 (* Deal with case invHoldForRule3 *)
 let deal_with_case_3 crule cinv cons old_invs =
-  let Rule(_name, _, guard, statement) = concrete_rule_2_rule_inst crule in
-  let guards = flat_and_to_list guard in
+  let Rule(_name, _, guard, branch, statement) = concrete_rule_2_rule_inst crule in
+  let guards = flat_and_to_list (simplify (andList [guard; branch])) in
   let assigns = statement_2_assigns statement in
   let level = Choose.choose guards assigns cons old_invs in
   let (new_inv, causal_inv) =
@@ -693,7 +700,7 @@ let symmetry_form f1 f2 =
 
 (* Find new inv and relations with concrete rule and a concrete invariant *)
 let tabular_expans crule ~cinv ~old_invs =
-  let Rule(_name, _, form, statement) = concrete_rule_2_rule_inst crule in
+  let Rule(_name, _, form, g, statement) = concrete_rule_2_rule_inst crule in
   let inv_inst = simplify (concrete_prop_2_form cinv) in
   (* preCond *)
   let obligation =
@@ -705,7 +712,7 @@ let tabular_expans crule ~cinv ~old_invs =
   if obligation = inv_inst || symmetry_form obligation inv_inst = 0 then
     ([], deal_with_case_2 crule cinv)
   (* case 1 *)
-  else if is_tautology (imply (simplify form) (simplify (neg obligation))) then
+  else if is_tautology (imply (simplify (andList [form; g])) (simplify (neg obligation))) then
     ([], deal_with_case_1 crule cinv)
   (* case 3 *)
   else begin
@@ -892,7 +899,7 @@ let find ?(smv="") ?(smv_bmc="") ?(murphi="") protocol =
     |> List.map ~f:form_2_concreate_prop
   in
   let get_rulename_nparam_pair r =
-    let Paramecium.Rule(rname, paramdefs, _, _) = r in
+    let Paramecium.Rule(rname, paramdefs, _, _, _) = r in
     let ps = cart_product_with_paramfix paramdefs (!type_defs) in
     let raw_insts_of_p = rule_2_concrete r ps in
     let rec store_table raw_insts_of_p =

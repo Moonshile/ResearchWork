@@ -120,10 +120,10 @@ val parallel : statement list -> statement
     + Rule: name, parameters, guard, assignments
 *)
 type rule = 
-  | Rule of string * paramdef list * formula * statement
+  | Rule of string * paramdef list * formula * formula * statement
 with sexp
 
-val rule : string -> paramdef list -> formula -> statement -> rule
+val rule : string -> paramdef list -> formula -> formula -> statement -> rule
 
 (** Represents properties
     + Prop: name, parameters, formula
