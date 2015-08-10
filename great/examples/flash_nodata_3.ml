@@ -391,7 +391,7 @@ let properties = [n_CacheStateProp]
 
 
 let protocol = {
-  name = "n_flash_nodata";
+  name = "n_flash_nodata_3";
   types;
   vardefs;
   init;

@@ -87,7 +87,7 @@ let simplify_inst_guard (Rule(n, pd, f, g, s)) =
 (* Convert rule to concrete rules *)
 let rule_2_concrete r ps =
   let r_insts =
-    if List.length ps = 0 then [([r], [])] else List.map ps ~f:(fun p ->
+    if List.length ps = 0 then [(simplify_inst_guard r, [])] else List.map ps ~f:(fun p ->
       (simplify_inst_guard (apply_rule r ~p), p)
     )
   in
