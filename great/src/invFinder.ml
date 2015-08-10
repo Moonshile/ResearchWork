@@ -112,12 +112,10 @@ let relation_2_str relation =
 
 (** Convert t to a string *)
 let to_str {rule; inv; relation} =
-  let ConcreteRule(Rule(rname, _, _, _), rps) = rule in
-  let rps = List.map rps ~f:ToStr.Smv.paramref_act in
-  let rule_str = sprintf "%s%s" rname (String.concat rps) in
+  let ConcreteRule(Rule(rname, _, _, _), _) = rule in
   let inv_str = ToStr.Smv.form_act (simplify (concrete_prop_2_form inv)) in
   let rel_str = relation_2_str relation in
-  sprintf "rule: %s; inv: %s; rel: %s" rule_str inv_str rel_str
+  sprintf "rule: %s; inv: %s; rel: %s" rname inv_str rel_str
 
 
 (* Evaluate exp with assignments
@@ -627,7 +625,7 @@ let deal_with_case_3 crule cinv cons old_invs =
     match level with
     | Choose.Tautology(_) -> ([], chaos)
     | Choose.Implied(_, old) -> ([], old)
-    | Choose.New_inv(inv) -> 
+    | Choose.New_inv(inv) ->
       let simplified = simplify inv in
       let new_inv_str = ToStr.Smv.form_act simplified in
       let causal_inv_str = ToStr.Smv.form_act (simplify (concrete_prop_2_form cinv)) in
@@ -709,15 +707,9 @@ let get_res_of_cinv cinv rname_paraminfo_pairs old_invs =
 let get_real_new_invs new_invs =
   List.concat new_invs
   |> List.map ~f:simplify
-  |> List.filter ~f:(fun form -> not (form = chaos))
   |> List.map ~f:minify_inv_inc
   |> List.dedup ~compare:symmetry_form
   |> List.map ~f:(normalize ~types:(!type_defs))
-  |> List.filter ~f:(fun x ->
-    let key = ToStr.Smv.form_act x in
-    match Hashtbl.find inv_table key with 
-    | None -> Hashtbl.replace inv_table ~key ~data:true; true
-    | _ -> false)
 
 let read_res_cache cinvs =
   let cinv_file_name = sprintf "%s.cinvs.cache" (!protocol_name) in
@@ -808,11 +800,9 @@ let tabular_rules_cinvs rname_paraminfo_pairs cinvs =
       wrapper cinvs'' (cinvs_all@[cinv]) new_inv_id' (old_invs@real_new_invs) (relations@new_relation)
   in
   let cinvs, cinvs_all, init_lib, relations, new_inv_id = read_res_cache cinvs in
-  if (!debug_switch) then
-    Prt.warning ("initial invs:\n"^String.concat ~sep:"\n" (
-      List.map init_lib ~f:(fun f -> ToStr.Smv.form_act f)
-    ))
-  else begin () end;
+  Prt.warning ("initial invs:\n"^String.concat ~sep:"\n" (
+    List.map init_lib ~f:(fun f -> ToStr.Smv.form_act f)
+  ));
   wrapper cinvs cinvs_all new_inv_id init_lib relations
 
 
@@ -841,7 +831,7 @@ let result_to_str (cinvs, relations) =
     |> List.map ~f:ToStr.Smv.form_act
   in
   let relations_str = List.map relations ~f:to_str in
-  String.concat ~sep:"\n" ((*relations_str@*)invs_str)
+  String.concat ~sep:"\n" (relations_str@invs_str)
 
 (** Find invs and causal relations of a protocol
 
